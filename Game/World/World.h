@@ -17,6 +17,8 @@ namespace Okari
 		const std::vector<WorldObject>& GetObjects() const;
 
 		WorldObject& CreateObject(const std::string& name);
+		bool RemoveObject(uint64_t id);
+		WorldObject* DuplicateObject(uint64_t id);
 		WorldObject* GetObjectByID(uint64_t id);
 
 		bool LoadFromFile(const std::string& path);

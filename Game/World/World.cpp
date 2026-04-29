@@ -46,6 +46,33 @@ namespace Okari
         return m_Objects.back();
     }
 
+    bool World::RemoveObject(uint64_t id)
+    {
+        for (auto it = m_Objects.begin(); it != m_Objects.end(); ++it)
+        {
+            if (it->ID == id)
+            {
+                m_Objects.erase(it);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    WorldObject* World::DuplicateObject(uint64_t id)
+    {
+        WorldObject* original = GetObjectByID(id);
+        if (!original)
+            return nullptr;
+        
+        WorldObject copy = *original;
+        copy.ID = m_NextID++;
+
+        m_Objects.push_back(copy);
+        return &m_Objects.back();
+    }
+
     WorldObject* World::GetObjectByID(uint64_t id)
     {
         for (auto& obj : m_Objects)
