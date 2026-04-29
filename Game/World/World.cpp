@@ -36,6 +36,27 @@ namespace Okari
         return m_Objects;
     }
 
+    WorldObject& World::CreateObject(const std::string& name)
+    {
+        WorldObject obj;
+        obj.ID = m_NextID++;
+        obj.Name = name;
+
+        m_Objects.push_back(obj);
+        return m_Objects.back();
+    }
+
+    WorldObject* World::GetObjectByID(uint64_t id)
+    {
+        for (auto& obj : m_Objects)
+        {
+            if (obj.ID == id)
+                return &obj;
+        }
+
+        return nullptr;
+    }
+
     bool World::LoadFromFile(const std::string& path)
     {
         std::ifstream file(path);
@@ -54,6 +75,7 @@ namespace Okari
         for (const auto& obj : data["objects"])
         {
             WorldObject worldObject;
+            worldObject.ID = m_NextID++;
             worldObject.Name = obj["name"].get<std::string>();
             worldObject.Transform.Position = ReadVec3(obj["position"]);
             worldObject.Transform.Rotation = ReadVec3(obj["rotation"]);

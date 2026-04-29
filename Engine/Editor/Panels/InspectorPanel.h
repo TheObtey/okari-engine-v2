@@ -7,12 +7,12 @@ namespace Okari
 	class InspectorPanel
 	{
 	public:
-		InspectorPanel(World* world, int* selectedIndex);
+		InspectorPanel(World* world, uint64_t* selectedID);
 
 		void OnImGuiRender();
 
 	private:
 		World* m_World;
-		int* m_SelectedIndex;
+		uint64_t* m_SelectedID;
 	};
 }

@@ -7,12 +7,12 @@ namespace Okari
     class HierarchyPanel
     {
     public:
-        HierarchyPanel(World* world, int* selectedIndex);
+        HierarchyPanel(World* world, uint64_t* selectedID);
 
         void OnImGuiRender();
 
     private:
         World* m_World;
-        int* m_SelectedIndex;
+        uint64_t* m_SelectedID;
     };
 }

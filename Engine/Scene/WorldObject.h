@@ -2,11 +2,13 @@
 
 #include "Scene/Transform.h"
 #include <string>
+#include <cstdint>
 
 namespace Okari
 {
 	struct WorldObject
 	{
+		uint64_t ID = 0;
 		std::string Name;
 		Transform Transform;
 		std::string TexturePath;

@@ -16,6 +16,9 @@ namespace Okari
 		std::vector<WorldObject>& GetObjects();
 		const std::vector<WorldObject>& GetObjects() const;
 
+		WorldObject& CreateObject(const std::string& name);
+		WorldObject* GetObjectByID(uint64_t id);
+
 		bool LoadFromFile(const std::string& path);
 		bool SaveToFile(const std::string& path) const;
 
@@ -24,5 +27,6 @@ namespace Okari
 
 	private:
 		std::vector<WorldObject> m_Objects;
+		uint64_t m_NextID = 1;
 	};
 }

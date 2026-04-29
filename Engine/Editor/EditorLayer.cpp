@@ -14,7 +14,7 @@ namespace Okari
         m_InspectorPanel(nullptr),
         m_ViewportPanel(nullptr),
         m_EditorCamera(nullptr),
-        m_SelectedObject(-1)
+        m_SelectedObjectID(0)
     { }
 
     void EditorLayer::Init()
@@ -33,8 +33,8 @@ namespace Okari
         //objects.push_back({ "Je suis pas un putain de node!!" });
         //objects.push_back({ "Light" });
 
-        m_HierarchyPanel = std::make_unique<HierarchyPanel>(m_World.get(), &m_SelectedObject);
-        m_InspectorPanel = std::make_unique<InspectorPanel>(m_World.get(), &m_SelectedObject);
+        m_HierarchyPanel = std::make_unique<HierarchyPanel>(m_World.get(), &m_SelectedObjectID);
+        m_InspectorPanel = std::make_unique<InspectorPanel>(m_World.get(), &m_SelectedObjectID);
         m_ViewportPanel = std::make_unique<ViewportPanel>();
 
         auto window = Application::Get().GetWindow().GetNativeWindow();

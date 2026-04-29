@@ -28,6 +28,6 @@ namespace Okari
 		std::unique_ptr<ViewportPanel> m_ViewportPanel;
 		std::unique_ptr<Camera> m_EditorCamera;
 		
-		int m_SelectedObject = -1;
+		uint64_t m_SelectedObjectID = 0;
 	};
 }

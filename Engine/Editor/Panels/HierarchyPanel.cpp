@@ -5,8 +5,8 @@
 
 namespace Okari
 {
-    HierarchyPanel::HierarchyPanel(World* world, int* selectedIndex)
-        : m_World(world), m_SelectedIndex(selectedIndex)
+    HierarchyPanel::HierarchyPanel(World* world, uint64_t* selectedID)
+        : m_World(world), m_SelectedID(selectedID)
     { }
 
     void HierarchyPanel::OnImGuiRender()
@@ -24,12 +24,15 @@ namespace Okari
 
         for (int i = 0; i < objects.size(); i++)
         {
-            bool selected = (*m_SelectedIndex == i);
-            std::string label = objects[i].Name + "##" + std::to_string(i);
+            auto& obj = objects[i];
+
+            bool selected = (obj.ID == *m_SelectedID);
+            
+            std::string label = obj.Name + "##" + std::to_string(obj.ID);
 
             if (ImGui::Selectable(label.c_str(), selected))
             {
-                *m_SelectedIndex = i;
+                *m_SelectedID = obj.ID;
             }
         }
 
