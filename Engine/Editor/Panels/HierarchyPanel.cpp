@@ -1,6 +1,7 @@
 #include "Editor/Panels/HierarchyPanel.h"
 
 #include <imgui.h>
+#include <cstring>
 #include <string>
 
 namespace Okari
@@ -28,9 +29,41 @@ namespace Okari
 
             std::string label = obj.Name + "##" + std::to_string(obj.ID);
 
-            if (ImGui::Selectable(label.c_str(), selected))
+            if (m_RenamingID == obj.ID)
             {
-                *m_SelectedID = obj.ID;
+                ImGui::SetKeyboardFocusHere();
+
+                std::string inputID = "##rename_" + std::to_string(obj.ID);
+
+                bool validate = ImGui::InputText(
+                    inputID.c_str(),
+                    m_RenameBuffer,
+                    sizeof(m_RenameBuffer),
+                    ImGuiInputTextFlags_EnterReturnsTrue
+                );
+
+                if (validate)
+                {
+                    obj.Name = m_RenameBuffer;
+                    m_RenamingID = 0;
+                }
+
+                if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+                    m_RenamingID = 0;
+            }
+            else
+            {
+                if (ImGui::Selectable(label.c_str(), selected))
+                    *m_SelectedID = obj.ID;
+
+                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+                {
+                    *m_SelectedID = obj.ID;
+                    m_RenamingID = obj.ID;
+
+                    std::strncpy(m_RenameBuffer, obj.Name.c_str(), sizeof(m_RenameBuffer));
+                    m_RenameBuffer[sizeof(m_RenameBuffer) - 1] = '\0';
+                }
             }
 
             if (ImGui::BeginPopupContextItem())

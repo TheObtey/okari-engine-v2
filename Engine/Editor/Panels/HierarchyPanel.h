@@ -2,6 +2,9 @@
 
 #include "World/World.h"
 
+#include <string>
+#include <cstdint>
+
 namespace Okari
 {
     class HierarchyPanel
@@ -14,5 +17,8 @@ namespace Okari
     private:
         World* m_World;
         uint64_t* m_SelectedID;
+
+        uint64_t m_RenamingID = 0;
+        char m_RenameBuffer[256] = {};
     };
 }
