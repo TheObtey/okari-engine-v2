@@ -71,11 +71,19 @@ namespace Okari
         file >> data;
 
         m_Objects.clear();
+        m_NextID = 1;
 
         for (const auto& obj : data["objects"])
         {
             WorldObject worldObject;
-            worldObject.ID = m_NextID++;
+
+            if (obj.contains("id"))
+                worldObject.ID = obj["id"].get<uint64_t>();
+            else
+                worldObject.ID = m_NextID++;
+
+            m_NextID = std::max(m_NextID, worldObject.ID + 1);
+
             worldObject.Name = obj["name"].get<std::string>();
             worldObject.Transform.Position = ReadVec3(obj["position"]);
             worldObject.Transform.Rotation = ReadVec3(obj["rotation"]);
@@ -99,6 +107,7 @@ namespace Okari
         for (const auto& obj : m_Objects)
         {
             json jsonObj;
+            jsonObj["id"] = obj.ID;
             jsonObj["name"] = "WorldObject";
             jsonObj["type"] = "Cube";
             jsonObj["texture"] = obj.TexturePath;
