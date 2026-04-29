@@ -1,0 +1,108 @@
+cmake_minimum_required(VERSION 3.20)
+
+project(OkariEngine)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+add_subdirectory(External/glfw)
+
+find_package(OpenGL REQUIRED)
+
+set(ENGINE_SOURCES
+    External/glad/src/glad.c
+
+    Engine/Core/Application.cpp
+    Engine/Core/Time.cpp
+
+    Engine/Platform/Window.cpp
+
+    Engine/Input/Input.cpp
+    Engine/Input/InputContext.cpp
+    Engine/Input/InputManager.cpp
+
+    Engine/Rendering/Shader.cpp
+    Engine/Rendering/Renderer.cpp
+    Engine/Rendering/Camera.cpp
+    Engine/Rendering/Texture2D.cpp
+    Engine/Rendering/Framebuffer.cpp
+)
+
+set(EDITOR_SOURCES
+    Engine/Editor/EditorLayer.cpp
+    Engine/Editor/EditorUI.cpp
+
+    Engine/Editor/Panels/HierarchyPanel.cpp
+    Engine/Editor/Panels/InspectorPanel.cpp
+    Engine/Editor/Panels/ViewportPanel.cpp
+    Engine/Editor/Panels/AssetBrowserPanel.cpp
+)
+
+set(COMMON_INCLUDES
+    ${CMAKE_SOURCE_DIR}/Engine
+    ${CMAKE_SOURCE_DIR}/Game
+
+    ${CMAKE_SOURCE_DIR}/External/glfw/include
+    ${CMAKE_SOURCE_DIR}/External/glad/include
+    ${CMAKE_SOURCE_DIR}/External/glm
+    ${CMAKE_SOURCE_DIR}/External/nlohmann
+    ${CMAKE_SOURCE_DIR}/External/stb
+)
+
+set(IMGUI_SOURCES
+    External/imgui/imgui.cpp
+    External/imgui/imgui_draw.cpp
+    External/imgui/imgui_tables.cpp
+    External/imgui/imgui_widgets.cpp
+    External/imgui/backends/imgui_impl_glfw.cpp
+    External/imgui/backends/imgui_impl_opengl3.cpp
+)
+
+add_executable(Sandbox
+    Sandbox/main.cpp
+    ${ENGINE_SOURCES}
+
+    Game/GameLayer.cpp
+    Game/World/World.cpp
+    Game/Actors/PlayerActor.cpp
+)
+
+target_include_directories(Sandbox PRIVATE ${COMMON_INCLUDES})
+
+target_link_libraries(Sandbox PRIVATE
+    glfw
+    OpenGL::GL
+)
+
+add_executable(OkariEditor
+    Editor/main.cpp
+    ${ENGINE_SOURCES}
+    ${EDITOR_SOURCES}
+    ${IMGUI_SOURCES}
+
+    Game/World/World.cpp
+)
+
+target_include_directories(OkariEditor PRIVATE
+    ${COMMON_INCLUDES}
+
+    ${CMAKE_SOURCE_DIR}/External/imgui
+    ${CMAKE_SOURCE_DIR}/External/imgui/backends
+)
+
+target_link_libraries(OkariEditor PRIVATE
+    glfw
+    OpenGL::GL
+)
+
+add_custom_command(TARGET Sandbox POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/Assets
+    $<TARGET_FILE_DIR:Sandbox>/Assets
+)
+
+add_custom_command(TARGET OkariEditor POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/Assets
+    $<TARGET_FILE_DIR:OkariEditor>/Assets
+)
