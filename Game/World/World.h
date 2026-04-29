@@ -16,6 +16,8 @@ namespace Okari
 		std::vector<WorldObject>& GetObjects();
 		const std::vector<WorldObject>& GetObjects() const;
 
+		std::string GenerateUniqueName(const std::string& baseName) const;
+
 		WorldObject& CreateObject(const std::string& name);
 		bool RemoveObject(uint64_t id);
 		WorldObject* DuplicateObject(uint64_t id);

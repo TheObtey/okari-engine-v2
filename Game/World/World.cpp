@@ -36,11 +36,40 @@ namespace Okari
         return m_Objects;
     }
 
+    std::string World::GenerateUniqueName(const std::string& baseName) const
+    {
+        auto nameExists = [&](const std::string& name)
+            {
+                for (const auto& obj : m_Objects)
+                {
+                    if (obj.Name == name)
+                        return true;
+                }
+
+                return false;
+            };
+
+        if (!nameExists(baseName))
+            return baseName;
+
+        constexpr int MAX_ATTEMPTS = 100000;
+
+        for (int i = 1; i <= MAX_ATTEMPTS; i++)
+        {
+            std::string candidate = baseName + " (" + std::to_string(i) + ")";
+
+            if (!nameExists(candidate))
+                return candidate;
+        }
+
+        return baseName + " (UniqueNameFailed)";
+    }
+
     WorldObject& World::CreateObject(const std::string& name)
     {
         WorldObject obj;
         obj.ID = m_NextID++;
-        obj.Name = name;
+        obj.Name = GenerateUniqueName(name);
 
         m_Objects.push_back(obj);
         return m_Objects.back();
@@ -68,6 +97,7 @@ namespace Okari
         
         WorldObject copy = *original;
         copy.ID = m_NextID++;
+        copy.Name = GenerateUniqueName(copy.Name);
 
         m_Objects.push_back(copy);
         return &m_Objects.back();
