@@ -22,6 +22,8 @@ namespace Okari
 		void Render(Renderer& renderer) override;
 
 	private:
+		std::string m_CurrentScenePath;
+
 		std::unique_ptr<World> m_World;
 		std::unique_ptr<HierarchyPanel> m_HierarchyPanel;
 		std::unique_ptr<InspectorPanel> m_InspectorPanel;

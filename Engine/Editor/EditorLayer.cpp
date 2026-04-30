@@ -5,6 +5,7 @@
 
 #include <imgui.h>
 #include <imgui_internal.h>
+#include <iostream>
 
 namespace Okari
 {
@@ -19,19 +20,14 @@ namespace Okari
 
     void EditorLayer::Init()
     {
-        m_World = std::make_unique<World>();
+        m_CurrentScenePath = std::string(OKARI_ASSET_DIR) + "/Levels/test_level.json";
 
-        m_World->LoadFromFile("Assets/Levels/test_level.json");
+        m_World = std::make_unique<World>();
+        m_World->LoadFromFile(m_CurrentScenePath);
 
         m_EditorCamera = std::make_unique<Camera>(16.0f / 9.0f);
         m_EditorCamera->SetPosition(glm::vec3(0.0f, 3.0f, 6.0f));
         m_EditorCamera->SetTarget(glm::vec3(0.0f, 0.0f, 0.0f));
-
-        //auto& objects = m_World->GetObjects();
-
-        //objects.push_back({ "Cube 1" });
-        //objects.push_back({ "Je suis pas un putain de node!!" });
-        //objects.push_back({ "Light" });
 
         m_HierarchyPanel = std::make_unique<HierarchyPanel>(m_World.get(), &m_SelectedObjectID);
         m_InspectorPanel = std::make_unique<InspectorPanel>(m_World.get(), &m_SelectedObjectID);
@@ -56,6 +52,9 @@ namespace Okari
         m_ViewportPanel->GetFramebuffer().Unbind();
 
         EditorUI::BeginFrame();
+
+        if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_S))
+            m_World->SaveToFile(m_CurrentScenePath);
 
         ImGuiWindowFlags windowFlags =
             ImGuiWindowFlags_MenuBar |
@@ -133,7 +132,10 @@ namespace Okari
             {
                 ImGui::MenuItem("New Scene");
                 ImGui::MenuItem("Open Scene");
-                ImGui::MenuItem("Save Scene");
+                
+                if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
+                    m_World->SaveToFile(m_CurrentScenePath);
+
                 ImGui::Separator();
                 ImGui::MenuItem("Exit");
                 ImGui::EndMenu();

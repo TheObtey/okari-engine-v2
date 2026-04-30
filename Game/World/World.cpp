@@ -261,7 +261,7 @@ namespace Okari
             json jsonObj;
             jsonObj["id"] = obj.ID;
             jsonObj["parentId"] = obj.ParentID;
-            jsonObj["name"] = "WorldObject";
+            jsonObj["name"] = obj.Name;
             jsonObj["type"] = "Cube";
             jsonObj["texture"] = obj.TexturePath;
             jsonObj["position"] = WriteVec3(obj.Transform.Position);

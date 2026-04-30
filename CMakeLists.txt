@@ -95,6 +95,10 @@ target_link_libraries(OkariEditor PRIVATE
     OpenGL::GL
 )
 
+target_compile_definitions(OkariEditor PRIVATE
+    OKARI_ASSET_DIR="${CMAKE_SOURCE_DIR}/Assets"
+)
+
 add_custom_command(TARGET Sandbox POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_SOURCE_DIR}/Assets
