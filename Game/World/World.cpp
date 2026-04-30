@@ -141,6 +141,69 @@ namespace Okari
         return true;
     }
 
+    bool World::MoveObjectToEndOfParent(uint64_t movingID, uint64_t parentID)
+    {
+        WorldObject* movingObj = GetObjectByID(movingID);
+        if (!movingObj)
+            return false;
+
+        if (!SetParent(movingID, parentID))
+            return false;
+
+        auto movingIt = std::find_if(m_Objects.begin(), m_Objects.end(),
+            [movingID](const WorldObject& obj) { return obj.ID == movingID; });
+        
+        if (movingIt == m_Objects.end())
+            return false;
+
+        WorldObject movingCopy = *movingIt;
+        m_Objects.erase(movingIt);
+        m_Objects.push_back(movingCopy);
+
+        return true;
+    }
+
+    bool World::SetParent(uint64_t childID, uint64_t parentID)
+    {
+        if (childID == parentID)
+            return false;
+
+        WorldObject* child = GetObjectByID(childID);
+        if (!child)
+            return false;
+
+        uint64_t current = parentID;
+
+        while (current != 0)
+        {
+            if (current == childID)
+                return false;
+
+            WorldObject* obj = GetObjectByID(current);
+            if (!obj)
+                break;
+
+            current = obj->ParentID;
+        }
+
+        child->ParentID = parentID;
+        
+        return true;
+    }
+
+    std::vector<WorldObject*> World::GetChildren(uint64_t parentID)
+    {
+        std::vector<WorldObject*> result;
+
+        for (auto& obj : m_Objects)
+        {
+            if (obj.ParentID == parentID)
+                result.push_back(&obj);
+        }
+
+        return result;
+    }
+
     bool World::LoadFromFile(const std::string& path)
     {
         std::ifstream file(path);
@@ -168,6 +231,11 @@ namespace Okari
 
             m_NextID = std::max(m_NextID, worldObject.ID + 1);
 
+            if (obj.contains("parentId"))
+                worldObject.ParentID = obj["parentId"].get<uint64_t>();
+            else
+                worldObject.ParentID = 0;
+
             worldObject.Name = obj["name"].get<std::string>();
             worldObject.Transform.Position = ReadVec3(obj["position"]);
             worldObject.Transform.Rotation = ReadVec3(obj["rotation"]);
@@ -192,6 +260,7 @@ namespace Okari
         {
             json jsonObj;
             jsonObj["id"] = obj.ID;
+            jsonObj["parentId"] = obj.ParentID;
             jsonObj["name"] = "WorldObject";
             jsonObj["type"] = "Cube";
             jsonObj["texture"] = obj.TexturePath;

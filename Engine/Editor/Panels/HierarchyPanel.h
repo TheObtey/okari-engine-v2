@@ -11,6 +11,9 @@ namespace Okari
     public:
         HierarchyPanel(World* world, uint64_t* selectedID);
 
+        void DrawObjectNode(WorldObject& obj, uint64_t parentID);
+        void DrawDropLine(uint64_t parentID, uint64_t beforeID);
+
         void OnImGuiRender();
 
     private:

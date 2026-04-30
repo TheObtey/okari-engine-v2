@@ -2,8 +2,9 @@
   "name": "Test Level",
   "objects": [
     {
-      "id":  1,
-      "name": "WorldObject",
+      "id": 1,
+      "parentId":  0,
+      "name": "Floor",
       "type": "Cube",
       "texture": "Assets/Textures/arrow.png",
       "position": [ 0, -1, 0 ],
@@ -12,7 +13,7 @@
     },
     {
       "id": 2,
-      "name": "WorldObject",
+      "name": "Samuel",
       "type": "Cube",
       "texture": "Assets/Textures/arrow.png",
       "position": [ 3, 0, 0 ],
@@ -21,7 +22,8 @@
     },
     {
       "id": 3,
-      "name": "WorldObject",
+      "parentId": 0,
+      "name": "Johnson",
       "type": "Cube",
       "texture": "Assets/Textures/arrow.png",
       "position": [ -2, 0, -2 ],

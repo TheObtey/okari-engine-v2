@@ -26,6 +26,10 @@ namespace Okari
 		WorldObject* GetObjectByID(uint64_t id);
 
 		bool MoveObjectBefore(uint64_t movingID, uint64_t targetID);
+		bool MoveObjectToEndOfParent(uint64_t movingID, uint64_t parentID);
+
+		bool SetParent(uint64_t childID, uint64_t parentID);
+		std::vector<WorldObject*> GetChildren(uint64_t parentID);
 
 		bool LoadFromFile(const std::string& path);
 		bool SaveToFile(const std::string& path) const;
