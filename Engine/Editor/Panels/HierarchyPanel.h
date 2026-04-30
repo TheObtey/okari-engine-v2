@@ -2,7 +2,6 @@
 
 #include "World/World.h"
 
-#include <string>
 #include <cstdint>
 
 namespace Okari

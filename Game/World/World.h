@@ -4,6 +4,7 @@
 #include "Scene/WorldObject.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/Camera.h"
+
 #include <string>
 #include <vector>
 
@@ -13,6 +14,7 @@ namespace Okari
 	{
 	public:
 		void AddObject(const WorldObject& object);
+
 		std::vector<WorldObject>& GetObjects();
 		const std::vector<WorldObject>& GetObjects() const;
 
@@ -22,6 +24,8 @@ namespace Okari
 		bool RemoveObject(uint64_t id);
 		WorldObject* DuplicateObject(uint64_t id);
 		WorldObject* GetObjectByID(uint64_t id);
+
+		bool MoveObjectBefore(uint64_t movingID, uint64_t targetID);
 
 		bool LoadFromFile(const std::string& path);
 		bool SaveToFile(const std::string& path) const;

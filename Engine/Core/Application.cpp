@@ -15,7 +15,7 @@ namespace Okari
 	Application::Application(const std::string& title)
 	{
 		s_Instance = this;
-		m_Window = std::make_unique<Window>(1280, 720, title);
+		m_Window = std::make_unique<Window>(1920, 1080, title);
 
 		Input::Init(m_Window->GetNativeWindow());
 

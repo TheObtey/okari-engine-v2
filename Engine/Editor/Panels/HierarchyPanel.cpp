@@ -25,8 +25,45 @@ namespace Okari
 
         for (auto& obj : objects)
         {
-            bool selected = (obj.ID == *m_SelectedID);
+            ImGui::PushID(static_cast<int>(obj.ID));
 
+            // Create drop line before the object row
+            ImVec2 lineStart = ImGui::GetCursorScreenPos();
+
+            ImGui::InvisibleButton("DropLine", ImVec2(-1.0f, 4.0f));
+
+            bool dropLineHovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+
+            if (dropLineHovered)
+            {
+                ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+                float width = ImGui::GetContentRegionAvail().x;
+                float y = lineStart.y + 3.0f;
+
+                drawList->AddLine(
+                    ImVec2(lineStart.x, y),
+                    ImVec2(lineStart.x + width, y),
+                    IM_COL32(120, 170, 255, 255),
+                    2.0f
+                );
+            }
+
+            if (ImGui::BeginDragDropTarget())
+            {
+                const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_OBJECT");
+
+                if (payload)
+                {
+                    uint64_t movingID = *(const uint64_t*)payload->Data;
+                    m_World->MoveObjectBefore(movingID, obj.ID);
+                }
+
+                ImGui::EndDragDropTarget();
+            }
+
+            // Create the object row
+            bool selected = (obj.ID == *m_SelectedID);
             std::string label = obj.Name + "##" + std::to_string(obj.ID);
 
             if (m_RenamingID == obj.ID)
@@ -55,6 +92,15 @@ namespace Okari
             {
                 if (ImGui::Selectable(label.c_str(), selected))
                     *m_SelectedID = obj.ID;
+
+                if (ImGui::BeginDragDropSource())
+                {
+                    uint64_t draggedID = obj.ID;
+
+                    ImGui::SetDragDropPayload("HIERARCHY_OBJECT", &draggedID, sizeof(uint64_t));
+                    ImGui::Text("%s", obj.Name.c_str());
+                    ImGui::EndDragDropSource();
+                }
 
                 if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
                 {
@@ -86,11 +132,14 @@ namespace Okari
                         *m_SelectedID = 0;
 
                     ImGui::EndPopup();
+                    ImGui::PopID();
                     break;
                 }
 
                 ImGui::EndPopup();
             }
+
+            ImGui::PopID();
         }
 
         if (ImGui::BeginPopupContextWindow("HierarchyContextMenu", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))

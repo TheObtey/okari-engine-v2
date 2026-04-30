@@ -1,7 +1,9 @@
 #include "World.h"
-#include "../../External/nlohmann/json.hpp"
+#include "../External/nlohmann/json.hpp"
+
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 
 using json = nlohmann::json;
 
@@ -112,6 +114,31 @@ namespace Okari
         }
 
         return nullptr;
+    }
+
+    bool World::MoveObjectBefore(uint64_t movingID, uint64_t targetID)
+    {
+        if (movingID == targetID)
+            return false;
+        
+        auto movingIt = std::find_if(m_Objects.begin(), m_Objects.end(),
+            [movingID](const WorldObject& obj) { return obj.ID == movingID; });
+
+        auto targetIt = std::find_if(m_Objects.begin(), m_Objects.end(),
+            [targetID](const WorldObject& obj) { return obj.ID == targetID; });
+
+        if (movingIt == m_Objects.end() || targetIt == m_Objects.end())
+            return false;
+
+        WorldObject movingObject = *movingIt;
+        m_Objects.erase(movingIt);
+
+        targetIt = std::find_if(m_Objects.begin(), m_Objects.end(),
+            [targetID](const WorldObject& obj) { return obj.ID == targetID; });
+
+        m_Objects.insert(targetIt, movingObject);
+
+        return true;
     }
 
     bool World::LoadFromFile(const std::string& path)
