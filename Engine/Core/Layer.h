@@ -12,5 +12,6 @@ namespace Okari
 		virtual void Init() {};
 		virtual void Update(float deltaTime) {};
 		virtual void Render(Renderer& renderer) {};
+		virtual bool OnWindowCloseRequested() { return true; }
 	};
 }

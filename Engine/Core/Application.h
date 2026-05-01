@@ -19,6 +19,7 @@ namespace Okari
 
 		void SetLayer(std::unique_ptr<Layer> layer);
 		void Run();
+		void Close();
 
 	private:
 		std::unique_ptr<Window> m_Window;

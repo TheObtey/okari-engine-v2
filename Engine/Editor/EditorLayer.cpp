@@ -104,6 +104,87 @@ namespace Okari
         SetActiveScene(static_cast<int>(m_OpenScenes.size()) - 1);
     }
 
+#pragma region SAVE_DIRTY_SCENE
+    bool EditorLayer::HasDirtyScenes() const
+    {
+        for (const auto& scene : m_OpenScenes)
+        {
+            if (scene && scene->Dirty)
+                return true;
+        }
+
+        return false;
+    }
+
+    void EditorLayer::SaveDirtyScenesAndClose()
+    {
+        for (int i = 0; i < static_cast<int>(m_OpenScenes.size()); i++)
+        {
+            SceneDocument* scene = m_OpenScenes[i].get();
+
+            if (!scene || !scene->Dirty)
+                continue;
+
+            SetActiveScene(i);
+
+            if (!scene->HasBeenSaved || scene->Path.empty())
+            {
+                m_CloseEditorAfterSave = true;
+                RequestSaveActiveScene();
+                return;
+            }
+
+            scene->World->SaveToFile(scene->Path, scene->Name);
+            scene->Dirty = false;
+        }
+
+        m_ForceCloseEditor = true;
+        Application::Get().Close();
+    }
+
+    void EditorLayer::DrawCloseEditorPopup()
+    {
+        if (m_ShouldOpenCloseEditorPopup)
+        {
+            ImGui::OpenPopup("Unsaved Scenes");
+            m_ShouldOpenCloseEditorPopup = false;
+        }
+
+        if (ImGui::BeginPopupModal("Unsaved Scenes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::Text("Some scenes have unsaved changes.");
+            ImGui::Text("Do you want to save before closing?");
+
+            ImGui::Separator();
+
+            if (ImGui::Button("Save All"))
+            {
+                SaveDirtyScenesAndClose();
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Don't Save"))
+            {
+                m_ForceCloseEditor = true;
+
+                Application::Get().Close();
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Cancel"))
+            {
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+    }
+#pragma endregion
+
 #pragma region LOAD_SCENE
     void EditorLayer::RequestLoadScene()
     {
@@ -244,6 +325,12 @@ namespace Okari
                     {
                         activeScene->Dirty = false;
                         activeScene->HasBeenSaved = true;
+
+                        if (m_CloseEditorAfterSave)
+                        {
+                            m_CloseEditorAfterSave = false;
+                            SaveDirtyScenesAndClose();
+                        }
 
                         if (m_ClosePendingSceneAfterSave)
                         {
@@ -514,9 +601,22 @@ namespace Okari
         DrawLoadScenePopup();
         DrawSaveScenePopup();
         DrawUnsavedScenePopup();
+        DrawCloseEditorPopup();
 
         ImGui::End();
 
         EditorUI::EndFrame();
+    }
+
+    bool EditorLayer::OnWindowCloseRequested()
+    {
+        if (m_ForceCloseEditor)
+            return true;
+
+        if (!HasDirtyScenes())
+            return true;
+
+        m_ShouldOpenCloseEditorPopup = true;
+        return false;
     }
 }

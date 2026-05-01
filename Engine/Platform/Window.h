@@ -15,6 +15,7 @@ namespace Okari
         void PollEvents();
         void SwapBuffers();
 
+        void SetShouldClose(bool shouldClose);
         bool ShouldClose() const;
 
         GLFWwindow* GetNativeWindow() const { return m_Window; }

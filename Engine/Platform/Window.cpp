@@ -55,6 +55,11 @@ namespace Okari
         glfwSwapBuffers(m_Window);
     }
 
+    void Window::SetShouldClose(bool shouldClose)
+    {
+        glfwSetWindowShouldClose(m_Window, shouldClose);
+    }
+
     bool Window::ShouldClose() const
     {
         return glfwWindowShouldClose(m_Window);

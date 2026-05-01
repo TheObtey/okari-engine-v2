@@ -66,24 +66,26 @@ namespace Okari
 
 	void Application::Run()
 	{
-		while (!m_Window->ShouldClose())
+		while (true)
 		{
 			Time::Update();
 			Input::Update();
 
+			if (m_Window->ShouldClose())
+			{
+				bool canClose = true;
+
+				if (m_Layer)
+					canClose = m_Layer->OnWindowCloseRequested();
+
+				if (canClose)
+					break;
+
+				m_Window->SetShouldClose(false);
+			}
+
 			if (m_Layer)
 				m_Layer->Update(Time::GetDeltaTime());
-
-			//m_GameLayer->Update(Time::GetDeltaTime());
-
-			//if (InputManager::IsActionPressed("Confirm"))
-			//	std::cout << "Confirm in menu" << std::endl;
-			//
-			//if (InputManager::IsActionPressed("Interact"))
-			//	std::cout << "[Exploration] Interact pressed" << std::endl;
-
-			//if (InputManager::IsActionPressed("Cancel"))
-			//	InputManager::PushContext("Menu");
 
 			glClearColor(0.08f, 0.08f, 0.10f, 1.0f);
 
@@ -92,12 +94,15 @@ namespace Okari
 			if (m_Layer)
 				m_Layer->Render(*m_Renderer);
 
-			//m_GameLayer->Render(*m_Renderer);
-
 			m_Renderer->EndFrame();
 
 			m_Window->SwapBuffers();
 			m_Window->PollEvents();
 		}
+	}
+
+	void Application::Close()
+	{
+		m_Window->SetShouldClose(true);
 	}
 }

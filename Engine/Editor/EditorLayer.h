@@ -21,6 +21,7 @@ namespace Okari
 		void Init() override;
 		void Update(float deltaTime) override;
 		void Render(Renderer& renderer) override;
+		bool OnWindowCloseRequested() override;
 
 	private:
 		SceneDocument* GetActiveScene();
@@ -29,6 +30,10 @@ namespace Okari
 
 		void NewScene();
 		void SaveActiveScene();
+
+		bool HasDirtyScenes() const;
+		void DrawCloseEditorPopup();
+		void SaveDirtyScenesAndClose();
 
 		void RequestLoadScene();
 		void LoadSceneFromFile(const std::string& path);
@@ -56,6 +61,10 @@ namespace Okari
 		bool m_ShouldOpenUnsavedScenePopup = false;
 
 		bool m_ClosePendingSceneAfterSave = false;
+
+		bool m_ShouldOpenCloseEditorPopup = false;
+		bool m_CloseEditorAfterSave = false;
+		bool m_ForceCloseEditor = false;
 
 		std::unique_ptr<HierarchyPanel> m_HierarchyPanel;
 		std::unique_ptr<InspectorPanel> m_InspectorPanel;
