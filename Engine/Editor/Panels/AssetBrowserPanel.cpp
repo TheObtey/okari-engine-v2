@@ -15,6 +15,11 @@ namespace Okari
 		m_CurrentDirectory = m_RootDirectory;
 	}
 
+	void AssetBrowserPanel::SetSceneOpenCallback(const std::function<void(const std::string&)>& callback)
+	{
+		m_OnSceneOpenRequested = callback;
+	}
+
 	void AssetBrowserPanel::OnImGuiRender()
 	{
 		ImGui::Begin("Assets");
@@ -111,8 +116,16 @@ namespace Okari
 					);
 				}
 
-				if (isDirectory && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-					m_CurrentDirectory = path;
+				if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+				{
+					if (isDirectory)
+						m_CurrentDirectory = path;
+					else if (path.extension() == ".okscene")
+					{
+						if (m_OnSceneOpenRequested)
+							m_OnSceneOpenRequested(path.string());
+					}
+				}
 
 				float textWidth = ImGui::CalcTextSize(filename.c_str()).x;
 				float textX = ImGui::GetCursorPosX() + (cellSize - textWidth) * 0.5f;

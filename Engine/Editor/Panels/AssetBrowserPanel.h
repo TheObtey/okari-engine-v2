@@ -3,6 +3,7 @@
 #include "../../Rendering/Texture2D.h"
 
 #include <filesystem>
+#include <functional>
 
 namespace Okari
 {
@@ -10,6 +11,8 @@ namespace Okari
 	{
 	public:
 		AssetBrowserPanel();
+
+		void SetSceneOpenCallback(const std::function<void(const std::string&)>& callback);
 
 		void OnImGuiRender();
 
@@ -23,5 +26,7 @@ namespace Okari
 
 		std::filesystem::path m_RootDirectory;
 		std::filesystem::path m_CurrentDirectory;
+
+		std::function<void(const std::string&)> m_OnSceneOpenRequested;
 	};
 }

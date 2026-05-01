@@ -227,6 +227,13 @@ namespace Okari
         m_ViewportPanel = std::make_unique<ViewportPanel>();
         m_AssetBrowserPanel = std::make_unique<AssetBrowserPanel>();
 
+        m_AssetBrowserPanel->SetSceneOpenCallback(
+            [this](const std::string& path)
+            {
+                LoadSceneFromFile(path);
+            }
+        );
+
         NewScene();
 
         auto window = Application::Get().GetWindow().GetNativeWindow();
