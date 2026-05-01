@@ -10,6 +10,12 @@ namespace Okari
         : m_World(world), m_SelectedID(selectedID)
     { }
 
+    void HierarchyPanel::SetContext(World* world, uint64_t* selectedID)
+    {
+        m_World = world;
+        m_SelectedID = selectedID;
+    }
+
     void HierarchyPanel::DrawObjectNode(WorldObject& obj, uint64_t parentID)
     {
         ImGui::PushID(static_cast<int>(obj.ID));
@@ -25,32 +31,77 @@ namespace Okari
         if (!hasChildren)
             flags |= ImGuiTreeNodeFlags_Leaf;
 
-        bool opened = ImGui::TreeNodeEx(
-            obj.Name.c_str(),
-            flags
-        );
+        bool isRenaming = (m_RenamingID == obj.ID);
+        bool opened = false;
 
-        if (ImGui::IsItemClicked())
-            *m_SelectedID = obj.ID;
-
-        if (ImGui::BeginDragDropSource())
+        if (isRenaming)
         {
-            ImGui::SetDragDropPayload("HIERARCHY_OBJECT", &obj.ID, sizeof(uint64_t));
-            ImGui::Text("%s", obj.Name.c_str());
-            ImGui::EndDragDropSource();
-        }
+            ImGui::Indent();
 
-        if (ImGui::BeginDragDropTarget())
-        {
-            const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_OBJECT");
+            ImGui::SetKeyboardFocusHere();
+            ImGui::SetNextItemWidth(-1.0f);
 
-            if (payload)
+            bool validateRename = ImGui::InputText(
+                "##RenameObject",
+                m_RenameBuffer,
+                sizeof(m_RenameBuffer),
+                ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll
+            );
+
+            if (validateRename)
             {
-                uint64_t draggedID = *(const uint64_t*)payload->Data;
-                m_World->SetParent(draggedID, obj.ID);
+                obj.Name = m_RenameBuffer;
+                m_RenamingID = 0;
             }
 
-            ImGui::EndDragDropTarget();
+            if (ImGui::IsItemDeactivatedAfterEdit())
+            {
+                obj.Name = m_RenameBuffer;
+                m_RenamingID = 0;
+            }
+
+            ImGui::Unindent();
+
+            opened = false;
+        }
+        else
+        {
+            opened = ImGui::TreeNodeEx(obj.Name.c_str(), flags);
+
+            if (ImGui::IsItemClicked())
+                *m_SelectedID = obj.ID;
+
+            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+            {
+                *m_SelectedID = obj.ID;
+                m_RenamingID = obj.ID;
+
+                std::strncpy(m_RenameBuffer, obj.Name.c_str(), sizeof(m_RenameBuffer));
+                m_RenameBuffer[sizeof(m_RenameBuffer) - 1] = '\0';
+            }
+        }
+
+        if (!isRenaming)
+        {
+            if (ImGui::BeginDragDropSource())
+            {
+                ImGui::SetDragDropPayload("HIERARCHY_OBJECT", &obj.ID, sizeof(uint64_t));
+                ImGui::Text("%s", obj.Name.c_str());
+                ImGui::EndDragDropSource();
+            }
+
+            if (ImGui::BeginDragDropTarget())
+            {
+                const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_OBJECT");
+
+                if (payload)
+                {
+                    uint64_t draggedID = *(const uint64_t*)payload->Data;
+                    m_World->SetParent(draggedID, obj.ID);
+                }
+
+                ImGui::EndDragDropTarget();
+            }
         }
 
         if (opened && hasChildren)

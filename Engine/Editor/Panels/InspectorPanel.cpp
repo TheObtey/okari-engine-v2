@@ -8,6 +8,12 @@ namespace Okari
 		: m_World(world), m_SelectedID(selectedID)
 	{ }
 
+	void InspectorPanel::SetContext(World* world, uint64_t* selectedID)
+	{
+		m_World = world;
+		m_SelectedID = selectedID;
+	}
+
 	void InspectorPanel::OnImGuiRender()
 	{
 		ImGui::Begin("Inspector");

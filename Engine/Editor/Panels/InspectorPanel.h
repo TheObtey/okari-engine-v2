@@ -9,6 +9,8 @@ namespace Okari
 	public:
 		InspectorPanel(World* world, uint64_t* selectedID);
 
+		void SetContext(World* world, uint64_t* selectedID);
+
 		void OnImGuiRender();
 
 	private:

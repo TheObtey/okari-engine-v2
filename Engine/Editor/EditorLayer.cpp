@@ -10,28 +10,159 @@
 namespace Okari
 {
     EditorLayer::EditorLayer()
-        : m_World(nullptr),
-        m_HierarchyPanel(nullptr),
+        : m_HierarchyPanel(nullptr),
         m_InspectorPanel(nullptr),
         m_ViewportPanel(nullptr),
-        m_EditorCamera(nullptr),
-        m_SelectedObjectID(0)
+        m_EditorCamera(nullptr)
     { }
+
+    SceneDocument* EditorLayer::GetActiveScene()
+    {
+        if (m_ActiveSceneIndex < 0 || m_ActiveSceneIndex >= static_cast<int>(m_OpenScenes.size()))
+            return nullptr;
+
+        return m_OpenScenes[m_ActiveSceneIndex].get();
+    }
+
+    void EditorLayer::SetActiveScene(int index)
+    {
+        if (index < 0 || index >= static_cast<int>(m_OpenScenes.size()))
+            return;
+
+        m_ActiveSceneIndex = index;
+
+        SceneDocument* activeScene = GetActiveScene();
+
+        if (!activeScene)
+            return;
+
+        if (m_HierarchyPanel)
+            m_HierarchyPanel->SetContext(activeScene->World.get(), &activeScene->SelectedObjectID);
+
+        if (m_InspectorPanel)
+            m_InspectorPanel->SetContext(activeScene->World.get(), &activeScene->SelectedObjectID);
+    }
+
+    void EditorLayer::NewScene()
+    {
+        auto scene = std::make_unique<SceneDocument>();
+
+        scene->World = std::make_unique<World>();
+        scene->Name = "untitled";
+        scene->Path = "";
+        scene->SelectedObjectID = 0;
+        scene->Dirty = true;
+        scene->HasBeenSaved = false;
+
+        m_OpenScenes.push_back(std::move(scene));
+
+        SetActiveScene(static_cast<int>(m_OpenScenes.size()) - 1);
+    }
+
+    void EditorLayer::SaveActiveScene()
+    {
+        SceneDocument* activeScene = GetActiveScene();
+
+        if (!activeScene || !activeScene->World)
+            return;
+
+        activeScene->World->SaveToFile(activeScene->Path, activeScene->Name);
+        activeScene->Dirty = false;
+    }
+
+    void EditorLayer::RequestSaveActiveScene()
+    {
+        SceneDocument* activeScene = GetActiveScene();
+
+        if (!activeScene)
+            return;
+
+        if (!activeScene->HasBeenSaved || activeScene->Path.empty())
+        {
+            OpenSaveScenePopup();
+            return;
+        }
+
+        SaveActiveScene();
+    }
+
+    void EditorLayer::OpenSaveScenePopup()
+    {
+        SceneDocument* activeScene = GetActiveScene();
+
+        if (!activeScene)
+            return;
+
+        std::snprintf(m_SaveSceneNameBuffer, sizeof(m_SaveSceneNameBuffer), "%s", activeScene->Name.c_str());
+
+        std::string defaultDirectory = std::string(OKARI_ASSET_DIR) + "/Levels/";
+        std::snprintf(m_SaveSceneDirectoryBuffer, sizeof(m_SaveSceneDirectoryBuffer), "%s", defaultDirectory.c_str());
+
+        m_ShouldOpenSaveScenePopup = true;
+    }
+
+    void EditorLayer::DrawSaveScenePopup()
+    {
+        if (m_ShouldOpenSaveScenePopup)
+        {
+            ImGui::OpenPopup("Save Scene As");
+            m_ShouldOpenSaveScenePopup = false;
+        }
+
+        if (ImGui::BeginPopupModal("Save Scene As", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::InputText("Scene Name", m_SaveSceneNameBuffer, sizeof(m_SaveSceneNameBuffer));
+            ImGui::InputText("Directory", m_SaveSceneDirectoryBuffer, sizeof(m_SaveSceneDirectoryBuffer));
+
+            ImGui::Separator();
+
+            if (ImGui::Button("Save"))
+            {
+                SceneDocument* activeScene = GetActiveScene();
+
+                if (activeScene && activeScene->World)
+                {
+                    std::string sceneName = m_SaveSceneNameBuffer;
+                    std::string directory = m_SaveSceneDirectoryBuffer;
+
+                    if (!directory.empty() && directory.back() != '/' && directory.back() != '\\')
+                        directory += "/";
+
+                    std::string path = directory + sceneName + ".json";
+
+                    activeScene->Name = sceneName;
+                    activeScene->Path = path;
+
+                    if (activeScene->World->SaveToFile(activeScene->Path, activeScene->Name))
+                    {
+                        activeScene->Dirty = false;
+                        activeScene->HasBeenSaved = true;
+                    }
+                }
+
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Cancel"))
+                ImGui::CloseCurrentPopup();
+
+            ImGui::EndPopup();
+        }
+    }
 
     void EditorLayer::Init()
     {
-        m_CurrentScenePath = std::string(OKARI_ASSET_DIR) + "/Levels/test_level.json";
-
-        m_World = std::make_unique<World>();
-        m_World->LoadFromFile(m_CurrentScenePath);
-
         m_EditorCamera = std::make_unique<Camera>(16.0f / 9.0f);
         m_EditorCamera->SetPosition(glm::vec3(0.0f, 3.0f, 6.0f));
         m_EditorCamera->SetTarget(glm::vec3(0.0f, 0.0f, 0.0f));
 
-        m_HierarchyPanel = std::make_unique<HierarchyPanel>(m_World.get(), &m_SelectedObjectID);
-        m_InspectorPanel = std::make_unique<InspectorPanel>(m_World.get(), &m_SelectedObjectID);
+        m_HierarchyPanel = std::make_unique<HierarchyPanel>(nullptr, nullptr);
+        m_InspectorPanel = std::make_unique<InspectorPanel>(nullptr, nullptr);
         m_ViewportPanel = std::make_unique<ViewportPanel>();
+
+        NewScene();
 
         auto window = Application::Get().GetWindow().GetNativeWindow();
         EditorUI::Init(window);
@@ -46,15 +177,20 @@ namespace Okari
 
         renderer.BeginFrame();
 
-        if (m_World && m_EditorCamera)
-            m_World->Render(renderer, *m_EditorCamera);
+        SceneDocument* activeScene = GetActiveScene();
+
+        if (activeScene && activeScene->World && m_EditorCamera)
+            activeScene->World->Render(renderer, *m_EditorCamera);
 
         m_ViewportPanel->GetFramebuffer().Unbind();
 
         EditorUI::BeginFrame();
 
+        if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_N))
+            NewScene();
+
         if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_S))
-            m_World->SaveToFile(m_CurrentScenePath);
+            RequestSaveActiveScene();
 
         ImGuiWindowFlags windowFlags =
             ImGuiWindowFlags_MenuBar |
@@ -130,11 +266,13 @@ namespace Okari
         {
             if (ImGui::BeginMenu("File"))
             {
-                ImGui::MenuItem("New Scene");
+                if (ImGui::MenuItem("New Scene", "Ctrl+N"))
+                    NewScene();
+
                 ImGui::MenuItem("Open Scene");
                 
                 if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
-                    m_World->SaveToFile(m_CurrentScenePath);
+                    RequestSaveActiveScene();
 
                 ImGui::Separator();
                 ImGui::MenuItem("Exit");
@@ -153,6 +291,8 @@ namespace Okari
         ImGui::Begin("Assets");
         ImGui::Text("Asset Browser");
         ImGui::End();
+
+        DrawSaveScenePopup();
 
         ImGui::End();
 

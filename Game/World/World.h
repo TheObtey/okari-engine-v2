@@ -32,7 +32,7 @@ namespace Okari
 		std::vector<WorldObject*> GetChildren(uint64_t parentID);
 
 		bool LoadFromFile(const std::string& path);
-		bool SaveToFile(const std::string& path) const;
+		bool SaveToFile(const std::string& path, const std::string& sceneName) const;
 
 		void Update(float deltaTime);
 		void Render(Renderer& renderer, const Camera& camera);

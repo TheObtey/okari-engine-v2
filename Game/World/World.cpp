@@ -250,10 +250,10 @@ namespace Okari
         return true;
     }
 
-    bool World::SaveToFile(const std::string& path) const
+    bool World::SaveToFile(const std::string& path, const std::string& sceneName) const
     {
         json data;
-        data["name"] = "Saved Level";
+        data["name"] = sceneName.c_str();
         data["objects"] = json::array();
 
         for (const auto& obj : m_Objects)
