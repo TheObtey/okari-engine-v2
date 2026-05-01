@@ -204,7 +204,7 @@ namespace Okari
         return result;
     }
 
-    bool World::LoadFromFile(const std::string& path)
+    bool World::LoadFromFile(const std::string& path, std::string* outSceneName)
     {
         std::ifstream file(path);
 
@@ -216,6 +216,14 @@ namespace Okari
 
         json data;
         file >> data;
+
+        if (outSceneName)
+        {
+            if (data.contains("name"))
+                *outSceneName = data["name"].get<std::string>();
+            else
+                *outSceneName = "untitled";
+        }
 
         m_Objects.clear();
         m_NextID = 1;

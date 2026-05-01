@@ -28,6 +28,10 @@ namespace Okari
 		void NewScene();
 		void SaveActiveScene();
 
+		void RequestLoadScene();
+		void LoadSceneFromFile(const std::string& path);
+		void DrawLoadScenePopup();
+
 		void RequestSaveActiveScene();
 		void OpenSaveScenePopup();
 		void DrawSaveScenePopup();
@@ -35,6 +39,9 @@ namespace Okari
 	private:
 		std::vector<std::unique_ptr<SceneDocument>> m_OpenScenes;
 		int m_ActiveSceneIndex = -1;
+
+		char m_LoadScenePathBuffer[512] = "";
+		bool m_ShouldOpenLoadScenePopup = false;
 
 		char m_SaveSceneNameBuffer[128] = "untitled";
 		char m_SaveSceneDirectoryBuffer[512] = "";

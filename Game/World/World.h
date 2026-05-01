@@ -31,7 +31,7 @@ namespace Okari
 		bool SetParent(uint64_t childID, uint64_t parentID);
 		std::vector<WorldObject*> GetChildren(uint64_t parentID);
 
-		bool LoadFromFile(const std::string& path);
+		bool LoadFromFile(const std::string& path, std::string* outSceneName = nullptr);
 		bool SaveToFile(const std::string& path, const std::string& sceneName) const;
 
 		void Update(float deltaTime);

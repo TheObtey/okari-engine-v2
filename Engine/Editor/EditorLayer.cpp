@@ -59,6 +59,68 @@ namespace Okari
         SetActiveScene(static_cast<int>(m_OpenScenes.size()) - 1);
     }
 
+#pragma region LOAD_SCENE
+    void EditorLayer::RequestLoadScene()
+    {
+        std::string defaultPath = std::string(OKARI_ASSET_DIR) + "/Levels/untitled.json";
+
+        std::snprintf(m_LoadScenePathBuffer, sizeof(m_LoadScenePathBuffer), "%s", defaultPath.c_str());
+
+        m_ShouldOpenLoadScenePopup = true;
+    }
+
+    void EditorLayer::LoadSceneFromFile(const std::string& path)
+    {
+        auto scene = std::make_unique<SceneDocument>();
+
+        scene->World = std::make_unique<World>();
+        scene->Path = path;
+        scene->SelectedObjectID= 0;
+        scene->Dirty = false;
+        scene->HasBeenSaved = true;
+
+        std::string loadedSceneName = "untitled";
+
+        if (!scene->World->LoadFromFile(path, &loadedSceneName))
+            return;
+
+        scene->Name = loadedSceneName;
+
+        m_OpenScenes.push_back(std::move(scene));
+        SetActiveScene(static_cast<int>(m_OpenScenes.size()) - 1);
+    }
+
+    void EditorLayer::DrawLoadScenePopup()
+    {
+        if (m_ShouldOpenLoadScenePopup)
+        {
+            ImGui::OpenPopup("Load Scene");
+            m_ShouldOpenLoadScenePopup = false;
+        }
+
+        if (ImGui::BeginPopupModal("Load Scene", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::InputText("Path", m_LoadScenePathBuffer, sizeof(m_LoadScenePathBuffer));
+
+            ImGui::Separator();
+
+            if (ImGui::Button("Load"))
+            {
+                LoadSceneFromFile(m_LoadScenePathBuffer);
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Cancel"))
+                ImGui::CloseCurrentPopup();
+
+            ImGui::EndPopup();
+        }
+    }
+#pragma endregion
+
+#pragma region SAVE_SCENE
     void EditorLayer::SaveActiveScene()
     {
         SceneDocument* activeScene = GetActiveScene();
@@ -151,6 +213,7 @@ namespace Okari
             ImGui::EndPopup();
         }
     }
+#pragma endregion
 
     void EditorLayer::Init()
     {
@@ -185,6 +248,9 @@ namespace Okari
         m_ViewportPanel->GetFramebuffer().Unbind();
 
         EditorUI::BeginFrame();
+
+        if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_O))
+            RequestLoadScene();
 
         if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_N))
             NewScene();
@@ -269,7 +335,8 @@ namespace Okari
                 if (ImGui::MenuItem("New Scene", "Ctrl+N"))
                     NewScene();
 
-                ImGui::MenuItem("Open Scene");
+                if (ImGui::MenuItem("Open Scene", "Ctrl+O"))
+                    RequestLoadScene();
                 
                 if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
                     RequestSaveActiveScene();
@@ -292,6 +359,7 @@ namespace Okari
         ImGui::Text("Asset Browser");
         ImGui::End();
 
+        DrawLoadScenePopup();
         DrawSaveScenePopup();
 
         ImGui::End();
