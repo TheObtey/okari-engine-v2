@@ -217,6 +217,12 @@ namespace Okari
         json data;
         file >> data;
 
+        if (data.contains("fileType") && data["fileType"] != "Okari.Scene")
+        {
+            std::cerr << "Selected file is not a scene: " << path << std::endl;
+            return false;
+        }
+
         if (outSceneName)
         {
             if (data.contains("name"))
@@ -267,6 +273,7 @@ namespace Okari
         for (const auto& obj : m_Objects)
         {
             json jsonObj;
+            jsonObj["fileType"] = "Okari.Scene";
             jsonObj["id"] = obj.ID;
             jsonObj["parentId"] = obj.ParentID;
             jsonObj["name"] = obj.Name;

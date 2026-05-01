@@ -63,7 +63,7 @@ namespace Okari
 #pragma region LOAD_SCENE
     void EditorLayer::RequestLoadScene()
     {
-        std::string defaultPath = std::string(OKARI_ASSET_DIR) + "/Levels/untitled.json";
+        std::string defaultPath = std::string(OKARI_ASSET_DIR) + "/Levels/";
 
         std::snprintf(m_LoadScenePathBuffer, sizeof(m_LoadScenePathBuffer), "%s", defaultPath.c_str());
 
@@ -191,7 +191,7 @@ namespace Okari
                     if (!directory.empty() && directory.back() != '/' && directory.back() != '\\')
                         directory += "/";
 
-                    std::string path = directory + sceneName + ".json";
+                    std::string path = directory + sceneName + ".okscene";
 
                     activeScene->Name = sceneName;
                     activeScene->Path = path;

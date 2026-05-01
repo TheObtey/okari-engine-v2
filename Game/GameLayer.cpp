@@ -26,7 +26,7 @@ namespace Okari
 
         m_Camera = std::make_unique<Camera>(1280.0f / 720.0f);
         m_World = std::make_unique<World>();
-        m_World->LoadFromFile("Assets/Levels/test_level.json");
+        m_World->LoadFromFile("Assets/Levels/test_level.okscene");
 
         WorldObject cube;
         cube.Transform.Position = glm::vec3(3.0f, 0.0f, 0.0f);
@@ -42,9 +42,6 @@ namespace Okari
 
         glm::vec3 playerPos = m_Player.GetTransform().Position;
         glm::vec3 cameraOffset = glm::vec3(0.0f, 2.0f, 5.0f);
-
-        if (InputManager::IsActionPressed("Save"))
-            m_World->SaveToFile("Assets/Levels/saved_level.json");
 
         m_Camera->SetPosition(playerPos + cameraOffset);
         m_Camera->SetTarget(playerPos);
