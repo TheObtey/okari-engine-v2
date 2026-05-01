@@ -4,6 +4,7 @@
 #include "Editor/Panels/HierarchyPanel.h"
 #include "Editor/Panels/InspectorPanel.h"
 #include "Editor/Panels/ViewportPanel.h"
+#include "Editor/Panels/AssetBrowserPanel.h"
 #include "Rendering/Camera.h"
 #include "Scene/SceneDocument.h"
 
@@ -50,6 +51,7 @@ namespace Okari
 		std::unique_ptr<HierarchyPanel> m_HierarchyPanel;
 		std::unique_ptr<InspectorPanel> m_InspectorPanel;
 		std::unique_ptr<ViewportPanel> m_ViewportPanel;
+		std::unique_ptr<AssetBrowserPanel> m_AssetBrowserPanel;
 		std::unique_ptr<Camera> m_EditorCamera;	
 	};
 }

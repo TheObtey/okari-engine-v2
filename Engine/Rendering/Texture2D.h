@@ -13,6 +13,8 @@ namespace Okari
 		void Bind(unsigned int slot = 0) const;
 		void Unbind() const;
 
+		unsigned int GetRendererID() { return m_RendererID; }
+
 	private:
 		unsigned int m_RendererID = 0;
 		int m_Width = 0;

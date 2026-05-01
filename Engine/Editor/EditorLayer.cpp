@@ -13,6 +13,7 @@ namespace Okari
         : m_HierarchyPanel(nullptr),
         m_InspectorPanel(nullptr),
         m_ViewportPanel(nullptr),
+        m_AssetBrowserPanel(nullptr),
         m_EditorCamera(nullptr)
     { }
 
@@ -224,6 +225,7 @@ namespace Okari
         m_HierarchyPanel = std::make_unique<HierarchyPanel>(nullptr, nullptr);
         m_InspectorPanel = std::make_unique<InspectorPanel>(nullptr, nullptr);
         m_ViewportPanel = std::make_unique<ViewportPanel>();
+        m_AssetBrowserPanel = std::make_unique<AssetBrowserPanel>();
 
         NewScene();
 
@@ -335,7 +337,7 @@ namespace Okari
                 if (ImGui::MenuItem("New Scene", "Ctrl+N"))
                     NewScene();
 
-                if (ImGui::MenuItem("Open Scene", "Ctrl+O"))
+                if (ImGui::MenuItem("Load Scene", "Ctrl+O"))
                     RequestLoadScene();
                 
                 if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
@@ -355,9 +357,7 @@ namespace Okari
 
         m_InspectorPanel->OnImGuiRender();
 
-        ImGui::Begin("Assets");
-        ImGui::Text("Asset Browser");
-        ImGui::End();
+        m_AssetBrowserPanel->OnImGuiRender();
 
         DrawLoadScenePopup();
         DrawSaveScenePopup();
