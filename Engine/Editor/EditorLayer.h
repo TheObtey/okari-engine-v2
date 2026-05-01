@@ -16,7 +16,7 @@ namespace Okari
 	{
 	public:
 		EditorLayer();
-		~EditorLayer() override = default;
+		~EditorLayer() override;
 
 		void Init() override;
 		void Update(float deltaTime) override;
@@ -25,6 +25,7 @@ namespace Okari
 	private:
 		SceneDocument* GetActiveScene();
 		void SetActiveScene(int index);
+		void CloseScene(int index);
 
 		void NewScene();
 		void SaveActiveScene();
@@ -37,6 +38,9 @@ namespace Okari
 		void OpenSaveScenePopup();
 		void DrawSaveScenePopup();
 
+		void RequestCloseScene(int index);
+		void DrawUnsavedScenePopup();
+
 	private:
 		std::vector<std::unique_ptr<SceneDocument>> m_OpenScenes;
 		int m_ActiveSceneIndex = -1;
@@ -47,6 +51,11 @@ namespace Okari
 		char m_SaveSceneNameBuffer[128] = "untitled";
 		char m_SaveSceneDirectoryBuffer[512] = "";
 		bool m_ShouldOpenSaveScenePopup = false;
+
+		int m_PendingCloseSceneIndex = -1;
+		bool m_ShouldOpenUnsavedScenePopup = false;
+
+		bool m_ClosePendingSceneAfterSave = false;
 
 		std::unique_ptr<HierarchyPanel> m_HierarchyPanel;
 		std::unique_ptr<InspectorPanel> m_InspectorPanel;

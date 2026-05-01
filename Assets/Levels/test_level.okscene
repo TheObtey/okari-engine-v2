@@ -1,72 +1,74 @@
 {
-  "fileType":  "Okari.Scene",
-  "name": "Test Level",
-  "objects": [
-    {
-      "id": 1,
-      "name": "Floor",
-      "parentId": 0,
-      "position": [
-        0.0,
-        -1.0,
-        0.0
-      ],
-      "rotation": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "scale": [
-        10.0,
-        0.20000000298023224,
-        10.0
-      ],
-      "texture": "Assets/Textures/arrow.png",
-      "type": "Cube"
-    },
-    {
-      "id": 2,
-      "name": "Samuel",
-      "parentId": 0,
-      "position": [
-        3.0,
-        0.0,
-        0.0
-      ],
-      "rotation": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "scale": [
-        0.5,
-        0.5,
-        0.5
-      ],
-      "texture": "Assets/Textures/arrow.png",
-      "type": "Cube"
-    },
-    {
-      "id": 3,
-      "name": "Johnson",
-      "parentId": 0,
-      "position": [
-        -2.0,
-        0.0,
-        -2.0
-      ],
-      "rotation": [
-        0.0,
-        0.6000000238418579,
-        0.0
-      ],
-      "scale": [
-        1.0,
-        1.0,
-        1.0
-      ],
-      "texture": "Assets/Textures/arrow.png",
-      "type": "Cube"
-    }
-  ]
+    "name": "Test Level",
+    "objects": [
+        {
+            "fileType": "Okari.Scene",
+            "id": 1,
+            "name": "Floor",
+            "parentId": 0,
+            "position": [
+                0.0,
+                -1.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                10.0,
+                0.20000000298023224,
+                10.0
+            ],
+            "texture": "Assets/Textures/arrow.png",
+            "type": "Cube"
+        },
+        {
+            "fileType": "Okari.Scene",
+            "id": 2,
+            "name": "Samuel",
+            "parentId": 0,
+            "position": [
+                3.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "texture": "Assets/Textures/arrow.png",
+            "type": "Cube"
+        },
+        {
+            "fileType": "Okari.Scene",
+            "id": 3,
+            "name": "Johnson",
+            "parentId": 0,
+            "position": [
+                -2.0,
+                0.0,
+                -2.0
+            ],
+            "rotation": [
+                0.0,
+                0.6000000238418579,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "texture": "Assets/Textures/arrow.png",
+            "type": "Cube"
+        }
+    ]
 }

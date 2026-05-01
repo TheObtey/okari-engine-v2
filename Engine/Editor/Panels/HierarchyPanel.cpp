@@ -16,6 +16,11 @@ namespace Okari
         m_SelectedID = selectedID;
     }
 
+    void HierarchyPanel::SetOnModifedCallback(const std::function<void()>& callback)
+    {
+        m_OnModified = callback;
+    }
+
     void HierarchyPanel::DrawObjectNode(WorldObject& obj, uint64_t parentID)
     {
         ImGui::PushID(static_cast<int>(obj.ID));
@@ -52,12 +57,19 @@ namespace Okari
             {
                 obj.Name = m_RenameBuffer;
                 m_RenamingID = 0;
+
+                if (m_OnModified)
+                    m_OnModified();
             }
 
             if (ImGui::IsItemDeactivatedAfterEdit())
             {
                 obj.Name = m_RenameBuffer;
                 m_RenamingID = 0;
+
+                if (m_OnModified)
+                    m_OnModified();
+
             }
 
             ImGui::Unindent();
@@ -98,6 +110,9 @@ namespace Okari
                 {
                     uint64_t draggedID = *(const uint64_t*)payload->Data;
                     m_World->SetParent(draggedID, obj.ID);
+
+                    if (m_OnModified)
+                        m_OnModified();
                 }
 
                 ImGui::EndDragDropTarget();
@@ -159,6 +174,9 @@ namespace Okari
                 {
                     m_World->SetParent(draggedID, parentID);
                     m_World->MoveObjectBefore(draggedID, beforeID);
+
+                    if (m_OnModified)
+                        m_OnModified();
                 }
                 else
                     m_World->MoveObjectToEndOfParent(draggedID, parentID);
@@ -175,9 +193,9 @@ namespace Okari
     {
         ImGui::Begin("Hierarchy");
 
-        if (!m_World)
+        if (!m_World || !m_SelectedID)
         {
-            ImGui::Text("No World loaded");
+            ImGui::TextDisabled("No scene loaded");
             ImGui::End();
             return;
         }
@@ -198,6 +216,9 @@ namespace Okari
             {
                 WorldObject& obj = m_World->CreateObject("Empty");
                 *m_SelectedID = obj.ID;
+
+                if (m_OnModified)
+                    m_OnModified();
             }
 
             ImGui::EndPopup();

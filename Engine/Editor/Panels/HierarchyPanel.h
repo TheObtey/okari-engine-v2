@@ -3,6 +3,7 @@
 #include "World/World.h"
 
 #include <cstdint>
+#include <functional>
 
 namespace Okari
 {
@@ -12,6 +13,7 @@ namespace Okari
         HierarchyPanel(World* world, uint64_t* selectedID);
 
         void SetContext(World* world, uint64_t* selectedID);
+        void SetOnModifedCallback(const std::function<void()>& callback);
 
         void DrawObjectNode(WorldObject& obj, uint64_t parentID);
         void DrawDropLine(uint64_t parentID, uint64_t beforeID);
@@ -24,5 +26,7 @@ namespace Okari
 
         uint64_t m_RenamingID = 0;
         char m_RenameBuffer[256] = {};
+
+        std::function<void()> m_OnModified;
     };
 }
