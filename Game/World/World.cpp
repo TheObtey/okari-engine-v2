@@ -347,11 +347,15 @@ namespace Okari
     void World::Update(float)
     { }
 
-    void World::Render(Renderer& renderer, const Camera& camera)
+    void World::Render(Renderer& renderer, const Camera& camera, uint64_t selectedObjectID)
     {
         for (auto& obj : m_Objects)
-        {
             renderer.DrawCube(obj.Transform, obj.TexturePath, camera);
+
+        if (selectedObjectID != 0)
+        {
+            if (WorldObject* selectedObject = GetObjectByID(selectedObjectID))
+                renderer.DrawCubeOutline(selectedObject->Transform, camera);
         }
 
         if (m_IsPlaying && m_Player)

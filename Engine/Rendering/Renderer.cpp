@@ -100,6 +100,11 @@ namespace Okari
             "Assets/Shaders/basic.frag"
         );
 
+        m_OutlineShader = std::make_unique<Shader>(
+            "Assets/Shaders/outline.vert",
+            "Assets/Shaders/outline.frag"
+        );
+
         m_PickingShader = std::make_unique<Shader>(
             "Assets/Shaders/picking.vert",
             "Assets/Shaders/picking.frag"
@@ -130,6 +135,34 @@ namespace Okari
         glBindVertexArray(m_VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
+    }
+    
+    void Renderer::DrawCubeOutline(const Transform& transform, const Camera& camera)
+    {
+        m_OutlineShader->Bind();
+
+        Transform outlineTransform = transform;
+        //outlineTransform.Scale *= 1.03f;
+
+        glm::mat4 model = outlineTransform.GetModelMatrix();
+        glm::mat4 view = camera.GetViewMatrix();
+        glm::mat4 projection = camera.GetProjectionMatrix();
+
+        glm::mat4 mvp = projection * view * model;
+
+        m_OutlineShader->SetMat4("u_MVP", mvp);
+        m_OutlineShader->SetVec3("u_Color", glm::vec3(1.0f, 0.85f, 0.05f));
+
+        glDisable(GL_CULL_FACE);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glLineWidth(3.0f);
+
+        glBindVertexArray(m_VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glLineWidth(1.0f);
     }
 
     void Renderer::DrawCubeID(const Transform& transform, uint32_t objectID, const Camera& camera)

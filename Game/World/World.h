@@ -37,7 +37,7 @@ namespace Okari
 		bool SaveToFile(const std::string& path, const std::string& sceneName) const;
 
 		void Update(float deltaTime);
-		void Render(Renderer& renderer, const Camera& camera);
+		void Render(Renderer& renderer, const Camera& camera, uint64_t selectedObjectID = 0);
 		void RenderPicking(Renderer& renderer, const Camera& camera);
 
 		void BuildRuntimeActors();

@@ -514,7 +514,7 @@ namespace Okari
         SceneDocument* activeScene = GetActiveScene();
 
         if (activeScene && activeScene->World && m_EditorCamera)
-            activeScene->World->Render(renderer, *m_EditorCamera);
+            activeScene->World->Render(renderer, *m_EditorCamera, activeScene->SelectedObjectID);
 
         viewportFramebuffer.ClearPickingAttachment();
         glClear(GL_DEPTH_BUFFER_BIT);
