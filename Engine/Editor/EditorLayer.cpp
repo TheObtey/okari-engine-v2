@@ -2,6 +2,7 @@
 #include "Editor/EditorUI.h"
 #include "Platform/Window.h"
 #include "Core/Application.h"
+#include "../../Game/Actors/ActorRegistry.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -430,6 +431,8 @@ namespace Okari
 
     void EditorLayer::Init()
     {
+        ActorRegistry::Init();
+
         m_EditorCamera = std::make_unique<Camera>(16.0f / 9.0f);
         m_EditorCamera->SetPosition(glm::vec3(0.0f, 3.0f, 6.0f));
         m_EditorCamera->SetTarget(glm::vec3(0.0f, 0.0f, 0.0f));

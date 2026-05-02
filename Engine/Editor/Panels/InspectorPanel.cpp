@@ -1,4 +1,5 @@
 #include "Editor/Panels/InspectorPanel.h"
+#include "../../../Game/Actors/ActorRegistry.h"
 
 #include <imgui.h>
 
@@ -67,13 +68,13 @@ namespace Okari
 
 		if (ImGui::BeginCombo("##ActorType", obj->ActorType.c_str()))
 		{
-			const char* types[] = { "None", "Door", "NPC", "Enemy" };
+			const auto& actorTypes = ActorRegistry::GetActorTypes();
 
-			for (const char* type : types)
+			for (const std::string& type : actorTypes)
 			{
 				bool selected = obj->ActorType == type;
 
-				if (ImGui::Selectable(type, selected))
+				if (ImGui::Selectable(type.c_str(), selected))
 				{
 					obj->ActorType = type;
 					if (m_OnModified) m_OnModified();

@@ -81,6 +81,7 @@ add_executable(OkariEditor
     ${IMGUI_SOURCES}
 
     Game/World/World.cpp
+    Game/Actors/ActorRegistry.cpp
 )
 
 target_include_directories(OkariEditor PRIVATE
