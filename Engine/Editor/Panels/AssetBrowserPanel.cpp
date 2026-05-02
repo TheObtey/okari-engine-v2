@@ -29,6 +29,8 @@ namespace Okari
 		ImGui::Separator();
 
 		DrawContent();
+		DrawCreateFolderPopup();
+		DrawRenamePopup();
 
 		ImGui::End();
 	}
@@ -137,12 +139,185 @@ namespace Okari
 
 				ImGui::EndGroup();
 
+				if (ImGui::BeginPopupContextItem("AssetContextMenu"))
+				{
+					if (ImGui::MenuItem("Rename"))
+					{
+						m_EntryToRename = path;
+
+						std::string filename = path.filename().string();
+						std::snprintf(m_RenameBuffer, sizeof(m_RenameBuffer), "%s", filename.c_str());
+
+						m_ShouldOpenRenamePopup = true;
+					}
+
+					if (ImGui::MenuItem("Delete"))
+					{
+						m_EntryToDelete = path;
+						m_ShouldDeleteEntry = true;
+					}
+
+					ImGui::EndPopup();
+				}
+
 				ImGui::PopID();
 			}
 
 			ImGui::EndTable();
 		}
 
+		if (ImGui::BeginPopupContextWindow("AssetBrowserEmptyContext", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
+		{
+			if (ImGui::MenuItem("Create Folder"))
+			{
+				std::snprintf(m_CreateFolderBuffer, sizeof(m_CreateFolderBuffer), "New Folder");
+				m_ShouldOpenCreateFolderPopup = true;
+			}
+
+			ImGui::EndPopup();
+		}
+
+		if (m_ShouldDeleteEntry)
+		{
+			DeleteEntry(m_EntryToDelete);
+
+			m_EntryToDelete.clear();
+			m_ShouldDeleteEntry = false;
+		}
+
 		ImGui::EndChild();
+	}
+
+	void AssetBrowserPanel::DrawCreateFolderPopup()
+	{
+		if (m_ShouldOpenCreateFolderPopup)
+		{
+			ImGui::OpenPopup("Create Folder");
+			m_ShouldOpenCreateFolderPopup = false;
+		}
+
+		if (ImGui::BeginPopupModal("Create Folder", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::InputText("Name", m_CreateFolderBuffer, sizeof(m_CreateFolderBuffer));
+
+			ImGui::Separator();
+
+			if (ImGui::Button("Create"))
+			{
+				CreateFolder(m_CreateFolderBuffer);
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Cancel"))
+				ImGui::CloseCurrentPopup();
+
+			ImGui::EndPopup();
+		}
+	}
+
+	void AssetBrowserPanel::DrawRenamePopup()
+	{
+		if (m_ShouldOpenRenamePopup)
+		{
+			ImGui::OpenPopup("Rename");
+			m_ShouldOpenRenamePopup = false;
+		}
+
+		if (ImGui::BeginPopupModal("Rename", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::InputText("New Name", m_RenameBuffer, sizeof(m_RenameBuffer));
+
+			ImGui::Separator();
+
+			if (ImGui::Button("Rename"))
+			{
+				RenameEntry(m_EntryToRename, m_RenameBuffer);
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Cancel"))
+				ImGui::CloseCurrentPopup();
+
+			ImGui::EndPopup();
+		}
+	}
+
+	bool AssetBrowserPanel::IsInsideRoot(const std::filesystem::path& path) const
+	{
+		auto normalizedRoot = std::filesystem::weakly_canonical(m_RootDirectory);
+		auto normalizedPath = std::filesystem::weakly_canonical(path);
+
+		auto rootStr = normalizedRoot.string();
+		auto pathStr = normalizedPath.string();
+
+		return pathStr.rfind(rootStr, 0) == 0;
+	}
+
+	void AssetBrowserPanel::CreateFolder(const std::string& name)
+	{
+		if (name.empty())
+			return;
+
+		std::filesystem::path folderPath = m_CurrentDirectory / name;
+
+		if (!IsInsideRoot(folderPath))
+			return;
+
+		std::error_code ec;
+		std::filesystem::create_directory(folderPath, ec);
+	}
+
+	void AssetBrowserPanel::RenameEntry(const std::filesystem::path& path, const std::string& newName)
+	{
+		if (newName.empty())
+			return;
+
+		if (!IsInsideRoot(path))
+			return;
+
+		std::filesystem::path newPath = path.parent_path() / newName;
+
+		if (!IsInsideRoot(newPath))
+			return;
+
+		std::error_code ec;
+		std::filesystem::rename(path, newPath, ec);
+	}
+
+	void AssetBrowserPanel::DeleteEntry(const std::filesystem::path& path)
+	{
+		if (!IsInsideRoot(path))
+			return;
+
+		std::error_code ec;
+
+		if (std::filesystem::is_directory(path))
+			std::filesystem::remove_all(path, ec);
+		else
+			std::filesystem::remove(path, ec);
+	}
+
+	void AssetBrowserPanel::MoveEntry(const std::filesystem::path& source, const std::filesystem::path& destinationDirectory)
+	{
+		if (!IsInsideRoot(source) || !IsInsideRoot(destinationDirectory))
+			return;
+
+		if (!std::filesystem::is_directory(destinationDirectory))
+			return;
+
+		std::filesystem::path destination = destinationDirectory / source.filename();
+
+		if (!IsInsideRoot(destination))
+			return;
+
+		if (source == destination)
+			return;
+
+		std::error_code ec;
+		std::filesystem::rename(source, destination, ec);
 	}
 }
