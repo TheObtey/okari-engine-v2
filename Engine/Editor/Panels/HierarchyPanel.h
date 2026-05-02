@@ -28,6 +28,7 @@ namespace Okari
 
         uint64_t m_RenamingID = 0;
         char m_RenameBuffer[256] = {};
+        bool m_RenameJustStarted = false;
 
         uint64_t m_PendingDeleteID = 0;
 

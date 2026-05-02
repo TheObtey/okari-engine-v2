@@ -41,19 +41,22 @@ namespace Okari
 
         if (isRenaming)
         {
-            ImGui::Indent();
+            ImGui::PushID(obj.ID);
 
-            ImGui::SetKeyboardFocusHere();
-            ImGui::SetNextItemWidth(-1.0f);
+            if (m_RenameJustStarted)
+            {
+                ImGui::SetKeyboardFocusHere();
+                m_RenameJustStarted = false;
+            }
 
-            bool validateRename = ImGui::InputText(
-                "##RenameObject",
+            bool validated = ImGui::InputText(
+                "##Rename",
                 m_RenameBuffer,
                 sizeof(m_RenameBuffer),
-                ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll
+                ImGuiInputTextFlags_EnterReturnsTrue
             );
 
-            if (validateRename)
+            if (validated)
             {
                 obj.Name = m_RenameBuffer;
                 m_RenamingID = 0;
@@ -62,19 +65,10 @@ namespace Okari
                     m_OnModified();
             }
 
-            if (ImGui::IsItemDeactivatedAfterEdit())
-            {
-                obj.Name = m_RenameBuffer;
+            if (ImGui::IsKeyPressed(ImGuiKey_Escape))
                 m_RenamingID = 0;
 
-                if (m_OnModified)
-                    m_OnModified();
-
-            }
-
-            ImGui::Unindent();
-
-            opened = false;
+            ImGui::PopID();
         }
         else
         {
@@ -87,6 +81,7 @@ namespace Okari
             {
                 *m_SelectedID = obj.ID;
                 m_RenamingID = obj.ID;
+                m_RenameJustStarted = true;
 
                 std::strncpy(m_RenameBuffer, obj.Name.c_str(), sizeof(m_RenameBuffer));
                 m_RenameBuffer[sizeof(m_RenameBuffer) - 1] = '\0';
