@@ -2,6 +2,8 @@
     "name": "Test Level",
     "objects": [
         {
+            "actorType": "None",
+            "enabled": true,
             "fileType": "Okari.Scene",
             "id": 1,
             "name": "Floor",
@@ -25,6 +27,8 @@
             "type": "Cube"
         },
         {
+            "actorType": "NPC",
+            "enabled": true,
             "fileType": "Okari.Scene",
             "id": 2,
             "name": "Samuel",
@@ -48,6 +52,8 @@
             "type": "Cube"
         },
         {
+            "actorType": "NPC",
+            "enabled": true,
             "fileType": "Okari.Scene",
             "id": 3,
             "name": "Johnson",

@@ -238,6 +238,12 @@ namespace Okari
         {
             WorldObject worldObject;
 
+            if (obj.contains("enabled"))
+                worldObject.Enabled = obj["enabled"];
+
+            if (obj.contains("actorType"))
+                worldObject.ActorType = obj["actorType"];
+
             if (obj.contains("id"))
                 worldObject.ID = obj["id"].get<uint64_t>();
             else
@@ -274,6 +280,8 @@ namespace Okari
         {
             json jsonObj;
             jsonObj["fileType"] = "Okari.Scene";
+            jsonObj["enabled"] = obj.Enabled;
+            jsonObj["actorType"] = obj.ActorType;
             jsonObj["id"] = obj.ID;
             jsonObj["parentId"] = obj.ParentID;
             jsonObj["name"] = obj.Name;

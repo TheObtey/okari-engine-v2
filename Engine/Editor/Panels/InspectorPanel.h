@@ -20,6 +20,9 @@ namespace Okari
 		World* m_World;
 		uint64_t* m_SelectedID;
 
+		uint64_t m_LastSelectedID = -1;
+		char m_NameBuffer[256] = {};
+
 		std::function<void()> m_OnModified;
 	};
 }
