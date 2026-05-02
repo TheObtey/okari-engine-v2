@@ -76,6 +76,60 @@ namespace Okari
 
 		if (ImGui::BeginTable("AssetBrowserTable", columnCount))
 		{
+			if (m_CurrentDirectory != m_RootDirectory)
+			{
+				std::filesystem::path parentPath = m_CurrentDirectory.parent_path();
+
+				ImGui::TableNextColumn();
+
+				ImGui::PushID("ParentDirectory");
+
+				ImGui::BeginGroup();
+
+				float cursorX = ImGui::GetCursorPosX();
+				ImGui::SetCursorPosX(cursorX + (cellSize - iconSize) * 0.5f);
+
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0, 0, 0, 0));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
+
+				ImGui::ImageButton(
+					"##ParentIcon",
+					(ImTextureID)(intptr_t)m_FolderIcon->GetRendererID(),
+					ImVec2(iconSize, iconSize),
+					ImVec2(0, 1),
+					ImVec2(1, 0)
+				);
+
+				ImGui::PopStyleColor(3);
+
+				if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+					m_CurrentDirectory = parentPath;
+
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_BROWSER_ITEM"))
+					{
+						const char* droppedPath = static_cast<const char*>(payload->Data);
+						MoveEntry(droppedPath, parentPath);
+					}
+
+					ImGui::EndDragDropTarget();
+				}
+
+				float textWidth = ImGui::CalcTextSize("..").x;
+				float textCursorX = ImGui::GetCursorPosX();
+
+				if (textWidth < cellSize)
+					ImGui::SetCursorPosX(textCursorX + (cellSize - textWidth) * 0.5f);
+
+				ImGui::Text("..");
+
+				ImGui::EndGroup();
+
+				ImGui::PopID();
+			}
+
 			for (const auto& entry : std::filesystem::directory_iterator(m_CurrentDirectory))
 			{
 				const auto& path = entry.path();
@@ -127,6 +181,28 @@ namespace Okari
 						if (m_OnSceneOpenRequested)
 							m_OnSceneOpenRequested(path.string());
 					}
+				}
+
+				if (ImGui::BeginDragDropSource())
+				{
+					std::string sourcePath = path.string();
+
+					ImGui::SetDragDropPayload("ASSET_BROWSER_ITEM", sourcePath.c_str(), sourcePath.size() + 1);
+
+					ImGui::Text("%s", filename.c_str());
+
+					ImGui::EndDragDropSource();
+				}
+
+				if (isDirectory && ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_BROWSER_ITEM"))
+					{
+						const char* droppedPath = static_cast<const char*>(payload->Data);
+						MoveEntry(droppedPath, path);
+					}
+
+					ImGui::EndDragDropTarget();
 				}
 
 				float textWidth = ImGui::CalcTextSize(filename.c_str()).x;
@@ -308,6 +384,21 @@ namespace Okari
 
 		if (!std::filesystem::is_directory(destinationDirectory))
 			return;
+
+		if (std::filesystem::equivalent(source, destinationDirectory))
+			return;
+
+		if (std::filesystem::is_directory(source))
+		{
+			auto normalizedSource = std::filesystem::weakly_canonical(source);
+			auto normalizedDestination = std::filesystem::weakly_canonical(destinationDirectory);
+
+			std::string sourceStr = normalizedSource.string();
+			std::string destinationStr = normalizedDestination.string();
+
+			if (destinationStr.rfind(sourceStr, 0) == 0)
+				return;
+		}
 
 		std::filesystem::path destination = destinationDirectory / source.filename();
 
