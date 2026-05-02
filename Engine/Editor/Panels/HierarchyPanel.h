@@ -18,6 +18,8 @@ namespace Okari
         void DrawObjectNode(WorldObject& obj, uint64_t parentID);
         void DrawDropLine(uint64_t parentID, uint64_t beforeID);
 
+        void DeleteObject(int id);
+
         void OnImGuiRender();
 
     private:
@@ -26,6 +28,8 @@ namespace Okari
 
         uint64_t m_RenamingID = 0;
         char m_RenameBuffer[256] = {};
+
+        uint64_t m_PendingDeleteID = 0;
 
         std::function<void()> m_OnModified;
     };

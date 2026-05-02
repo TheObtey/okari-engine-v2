@@ -91,6 +91,14 @@ namespace Okari
                 std::strncpy(m_RenameBuffer, obj.Name.c_str(), sizeof(m_RenameBuffer));
                 m_RenameBuffer[sizeof(m_RenameBuffer) - 1] = '\0';
             }
+
+            if (ImGui::BeginPopupContextItem())
+            {
+                if (ImGui::MenuItem("Delete"))
+                    m_PendingDeleteID = obj.ID;
+
+                ImGui::EndPopup();
+            }
         }
 
         if (!isRenaming)
@@ -200,7 +208,7 @@ namespace Okari
             return;
         }
 
-        auto& roots = m_World->GetChildren(0);
+        auto roots = m_World->GetChildren(0);
 
         for (auto* obj : roots)
         {
@@ -222,6 +230,20 @@ namespace Okari
             }
 
             ImGui::EndPopup();
+        }
+
+        if (m_PendingDeleteID != 0)
+        {
+            if (*m_SelectedID == m_PendingDeleteID)
+                *m_SelectedID = 0;
+
+            if (m_World->RemoveObject(m_PendingDeleteID))
+            {
+                if (m_OnModified)
+                    m_OnModified();
+            }
+
+            m_PendingDeleteID = 0;
         }
 
         ImGui::End();

@@ -86,16 +86,36 @@ namespace Okari
 
     bool World::RemoveObject(uint64_t id)
     {
-        for (auto it = m_Objects.begin(); it != m_Objects.end(); ++it)
+        if (id == 0)
+            return false;
+
+        bool removedSomething = false;
+
+        std::vector<uint64_t> childrenToRemove;
+
+        for (const auto& obj : m_Objects)
         {
-            if (it->ID == id)
-            {
-                m_Objects.erase(it);
-                return true;
-            }
+            if (obj.ParentID == id)
+                childrenToRemove.push_back(obj.ID);
         }
 
-        return false;
+        for (uint64_t childID : childrenToRemove)
+            RemoveObject(childID);
+
+        auto it = std::find_if(m_Objects.begin(), m_Objects.end(),
+            [id](const WorldObject& obj)
+            {
+                return obj.ID == id;
+            }
+        );
+
+        if (it != m_Objects.end())
+        {
+            m_Objects.erase(it);
+            removedSomething = true;
+        }
+
+        return removedSomething;
     }
 
     WorldObject* World::DuplicateObject(uint64_t id)
