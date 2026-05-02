@@ -6,6 +6,7 @@
 #include "Input/InputManager.h"
 #include "Actors/ActorRegistry.h"
 
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -503,7 +504,10 @@ namespace Okari
 
     void EditorLayer::Render(Renderer& renderer)
     {
-        m_ViewportPanel->GetFramebuffer().Bind();
+        Framebuffer& viewportFramebuffer = m_ViewportPanel->GetFramebuffer();
+
+        viewportFramebuffer.Bind();
+        viewportFramebuffer.SetDrawAttachment(0);
 
         renderer.BeginFrame();
 
@@ -512,7 +516,14 @@ namespace Okari
         if (activeScene && activeScene->World && m_EditorCamera)
             activeScene->World->Render(renderer, *m_EditorCamera);
 
-        m_ViewportPanel->GetFramebuffer().Unbind();
+        viewportFramebuffer.ClearPickingAttachment();
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        if (activeScene && activeScene->World && m_EditorCamera)
+            activeScene->World->RenderPicking(renderer, *m_EditorCamera);
+
+        viewportFramebuffer.SetDrawAttachment(0);
+        viewportFramebuffer.Unbind();
 
         EditorUI::BeginFrame();
 
@@ -636,6 +647,16 @@ namespace Okari
             ImGui::EndMenuBar();
         }
 
+        uint32_t pickedID = 0;
+
+        if (m_ViewportPanel->GetFramebuffer().PollPickResult(pickedID))
+        {
+            SceneDocument* activeScene = GetActiveScene();
+
+            if (activeScene)
+                activeScene->SelectedObjectID = pickedID;
+        }
+
         m_HierarchyPanel->OnImGuiRender();
 
         m_ViewportPanel->OnImGuiRender();
@@ -648,6 +669,21 @@ namespace Okari
         DrawSaveScenePopup();
         DrawUnsavedScenePopup();
         DrawCloseEditorPopup();
+
+        if (m_ViewportPanel->HasPendingPick())
+        {
+            SceneDocument* activeScene = GetActiveScene();
+
+            if (activeScene && activeScene->World)
+            {
+                m_ViewportPanel->GetFramebuffer().RequestPickRead(
+                    m_ViewportPanel->GetPickX(),
+                    m_ViewportPanel->GetPickY()
+                );
+            }
+
+            m_ViewportPanel->ClearPendingPick();
+        }
 
         ImGui::End();
 

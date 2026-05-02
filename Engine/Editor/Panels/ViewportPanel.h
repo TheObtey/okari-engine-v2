@@ -23,6 +23,11 @@ namespace Okari
 
 		Framebuffer& GetFramebuffer() { return *m_Framebuffer; }
 
+		bool HasPendingPick() const { return m_HasPendingPick; }
+		uint32_t GetPickX() const { return m_PickX; }
+		uint32_t GetPickY() const { return m_PickY; }
+		void ClearPendingPick() { m_HasPendingPick = false; }
+
 	private:
 		const std::vector<std::unique_ptr<SceneDocument>>* m_Scenes = nullptr;
 		int* m_ActiveSceneIndex = nullptr;
@@ -34,5 +39,9 @@ namespace Okari
 
 		float m_ViewportWidth = 1280.0f;
 		float m_ViewportHeight = 720.0f;
+
+		bool m_HasPendingPick = false;
+		uint32_t m_PickX = 0;
+		uint32_t m_PickY = 0;
 	};
 }

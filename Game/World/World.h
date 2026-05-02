@@ -38,6 +38,7 @@ namespace Okari
 
 		void Update(float deltaTime);
 		void Render(Renderer& renderer, const Camera& camera);
+		void RenderPicking(Renderer& renderer, const Camera& camera);
 
 		void BuildRuntimeActors();
 		void DestroyRuntimeActors();

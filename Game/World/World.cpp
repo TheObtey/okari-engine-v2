@@ -367,6 +367,18 @@ namespace Okari
         }
     }
 
+    void World::RenderPicking(Renderer& renderer, const Camera& camera)
+    {
+        for (auto& obj : m_Objects)
+        {
+            renderer.DrawCubeID(
+                obj.Transform,
+                static_cast<uint32_t>(obj.ID),
+                camera
+            );
+        }
+    }
+
     void World::BuildRuntimeActors()
     {
         DestroyRuntimeActors();

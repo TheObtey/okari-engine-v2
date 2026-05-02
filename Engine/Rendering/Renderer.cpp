@@ -99,6 +99,11 @@ namespace Okari
             "Assets/Shaders/basic.vert",
             "Assets/Shaders/basic.frag"
         );
+
+        m_PickingShader = std::make_unique<Shader>(
+            "Assets/Shaders/picking.vert",
+            "Assets/Shaders/picking.frag"
+        );
     }
 
     void Renderer::BeginFrame()
@@ -121,6 +126,24 @@ namespace Okari
 
         Texture2D* texture = GetTexture(texturePath);
         texture->Bind(0);
+
+        glBindVertexArray(m_VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+    }
+
+    void Renderer::DrawCubeID(const Transform& transform, uint32_t objectID, const Camera& camera)
+    {
+        m_PickingShader->Bind();
+
+        glm::mat4 model = transform.GetModelMatrix();
+        glm::mat4 view = camera.GetViewMatrix();
+        glm::mat4 projection = camera.GetProjectionMatrix();
+
+        glm::mat4 mvp = projection * view * model;
+
+        m_PickingShader->SetMat4("u_MVP", mvp);
+        m_PickingShader->SetUInt("u_ObjectID", objectID);
 
         glBindVertexArray(m_VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);

@@ -38,7 +38,7 @@ namespace Okari
     void GameLayer::Update(float deltaTime)
     {
         m_World->Update(deltaTime);
-        m_Player.Update(deltaTime, *m_Camera);
+        m_Player.UpdateMovement(deltaTime, *m_Camera);
 
         glm::vec3 playerPos = m_Player.GetTransform().Position;
         glm::vec3 cameraOffset = glm::vec3(0.0f, 2.0f, 5.0f);

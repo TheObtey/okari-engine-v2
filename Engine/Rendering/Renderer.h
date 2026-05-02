@@ -20,6 +20,7 @@ namespace Okari
         void Init();
         void BeginFrame();
         void DrawCube(const Transform& transform, std::string& texturePath, const Camera& camera);
+        void DrawCubeID(const Transform& transform, uint32_t objectID, const Camera& camera);
         void EndFrame();
 
     private:
@@ -27,6 +28,7 @@ namespace Okari
         unsigned int m_VBO = 0;
 
         std::unique_ptr<Shader> m_Shader;
+        std::unique_ptr<Shader> m_PickingShader;
         std::unordered_map<std::string, std::unique_ptr<Texture2D>> m_TextureCache;
 
         Texture2D* GetTexture(const std::string& path);

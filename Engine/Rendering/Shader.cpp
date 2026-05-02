@@ -76,6 +76,19 @@ namespace Okari
         glUniform1i(location, value);
     }
 
+    void Shader::SetUInt(const std::string& name, unsigned int value) const
+    {
+        int location = glGetUniformLocation(m_RendererID, name.c_str());
+
+        if (location == -1)
+        {
+            std::cerr << "Uniform not found: " << name << std::endl;
+            return;
+        }
+
+        glUniform1ui(location, value);
+    }
+
     unsigned int Shader::CompileShader(unsigned int type, const std::string& source)
     {
         unsigned int shader = glCreateShader(type);

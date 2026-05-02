@@ -86,6 +86,25 @@ namespace Okari
 			ImVec2(1, 0)
 		);
 
+		if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		{
+			ImVec2 mousePos = ImGui::GetMousePos();
+			ImVec2 imageMin = ImGui::GetItemRectMin();
+			ImVec2 imageMax = ImGui::GetItemRectMax();
+
+			float localX = mousePos.x - imageMin.x;
+			float localY = mousePos.y - imageMin.y;
+
+			if (localX >= 0.0f && localY >= 0.0f &&
+				localX < m_ViewportWidth && localY < m_ViewportHeight)
+			{
+				m_PickX = static_cast<uint32_t>(localX);
+				m_PickY = static_cast<uint32_t>(m_ViewportHeight - localY);
+
+				m_HasPendingPick = true;
+			}
+		}
+
 		ImGui::End();
 	}
 }
