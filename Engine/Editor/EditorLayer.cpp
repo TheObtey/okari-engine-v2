@@ -1,9 +1,12 @@
+#include "Core/Application.h"
 #include "Editor/EditorLayer.h"
 #include "Editor/EditorUI.h"
 #include "Platform/Window.h"
-#include "Core/Application.h"
-#include "../../Game/Actors/ActorRegistry.h"
+#include "Input/InputContext.h"
+#include "Input/InputManager.h"
+#include "Actors/ActorRegistry.h"
 
+#include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <iostream>
@@ -67,6 +70,9 @@ namespace Okari
     {
         if (index < 0 || index >= static_cast<int>(m_OpenScenes.size()))
             return;
+
+        if (m_OpenScenes[index] && m_OpenScenes[index]->World)
+            m_OpenScenes[index]->World->ExitPlayMode();
 
         m_OpenScenes.erase(m_OpenScenes.begin() + index);
 
@@ -433,6 +439,16 @@ namespace Okari
     {
         ActorRegistry::Init();
 
+        auto explorationCtx = std::make_shared<InputContext>("Exploration");
+        explorationCtx->BindKey(GLFW_KEY_W, "MoveForward");
+        explorationCtx->BindKey(GLFW_KEY_S, "MoveBackward");
+        explorationCtx->BindKey(GLFW_KEY_A, "MoveLeft");
+        explorationCtx->BindKey(GLFW_KEY_D, "MoveRight");
+        explorationCtx->BindKey(GLFW_KEY_E, "Interact");
+        explorationCtx->BindKey(GLFW_KEY_ESCAPE, "Cancel");
+
+        InputManager::RegisterContext(explorationCtx);
+
         m_EditorCamera = std::make_unique<Camera>(16.0f / 9.0f);
         m_EditorCamera->SetPosition(glm::vec3(0.0f, 3.0f, 6.0f));
         m_EditorCamera->SetTarget(glm::vec3(0.0f, 0.0f, 0.0f));
@@ -478,7 +494,12 @@ namespace Okari
     }
 
     void EditorLayer::Update(float deltaTime)
-    { }
+    {
+        SceneDocument* activeScene = GetActiveScene();
+
+        if (activeScene && activeScene->World)
+            activeScene->World->UpdateActors(deltaTime, *m_EditorCamera);
+    }
 
     void EditorLayer::Render(Renderer& renderer)
     {
@@ -588,6 +609,28 @@ namespace Okari
                     RequestSaveActiveScene();
 
                 ImGui::EndMenu();
+            }
+
+            SceneDocument* activeScene = GetActiveScene();
+
+            if (activeScene && activeScene->World)
+            {
+                if (!activeScene->World->IsPlaying())
+                {
+                    if (ImGui::Button("Play"))
+                    {
+                        activeScene->World->EnterPlayMode();
+                        InputManager::PushContext("Exploration");
+                    }
+                }
+                else
+                {
+                    if (ImGui::Button("Stop"))
+                    {
+                        activeScene->World->ExitPlayMode();
+                        InputManager::PopContext("Exploration");
+                    }
+                }
             }
 
             ImGui::EndMenuBar();

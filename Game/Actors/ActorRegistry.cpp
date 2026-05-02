@@ -1,28 +1,60 @@
 #include "ActorRegistry.h"
 
-#include <algorithm>
-
 namespace Okari
 {
-	std::vector<std::string> ActorRegistry::s_ActorTypes;
+	std::unordered_map<std::string, ActorDefinition> ActorRegistry::s_Definitions;
+	std::vector<std::string> ActorRegistry::s_TypeNames;
 
 	void ActorRegistry::Init()
 	{
-		s_ActorTypes.clear();
+		s_Definitions.clear();
+		s_TypeNames.clear();
 
-		s_ActorTypes.push_back("None");
-		s_ActorTypes.push_back("Door");
-		s_ActorTypes.push_back("NPC");
-		s_ActorTypes.push_back("Enemy");
+		{ // NONE
+			ActorDefinition def;
+			def.TypeName = "None";
+
+			s_Definitions[def.TypeName] = def;
+			s_TypeNames.push_back(def.TypeName);
+		}
+
+		{ // DOOR
+			ActorDefinition def;
+			def.TypeName = "Door";
+
+			s_Definitions[def.TypeName] = def;
+			s_TypeNames.push_back(def.TypeName);
+		}
+
+		{ // NPC
+			ActorDefinition def;
+			def.TypeName = "NPC";
+
+			s_Definitions[def.TypeName] = def;
+			s_TypeNames.push_back(def.TypeName);
+		}
+
+		{ // ENEMY
+			ActorDefinition def;
+			def.TypeName = "Enemy";
+
+			s_Definitions[def.TypeName] = def;
+			s_TypeNames.push_back(def.TypeName);
+		}
 	}
 
 	const std::vector<std::string>& ActorRegistry::GetActorTypes()
 	{
-		return s_ActorTypes;
+		return s_TypeNames;
 	}
 
-	bool ActorRegistry::IsValidActorType(const std::string& type)
+	const ActorDefinition* ActorRegistry::GetDefinition(const std::string& type)
 	{
-		return std::find(s_ActorTypes.begin(), s_ActorTypes.end(), type) != s_ActorTypes.end();
+		auto it = s_Definitions.find(type);
+
+		if (it == s_Definitions.end())
+			return nullptr;
+
+		return &it->second;
 	}
 }

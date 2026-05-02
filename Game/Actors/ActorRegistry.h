@@ -1,7 +1,8 @@
 #pragma once
 
-#include <string>
-#include <vector>
+#include "ActorDefinition.h"
+
+#include <unordered_map>
 
 namespace Okari
 {
@@ -11,9 +12,10 @@ namespace Okari
 		static void Init();
 
 		static const std::vector<std::string>& GetActorTypes();
-		static bool IsValidActorType(const std::string& type);
+		static const ActorDefinition* GetDefinition(const std::string& type);
 
 	private:
-		static std::vector<std::string> s_ActorTypes;
+		static std::unordered_map<std::string, ActorDefinition> s_Definitions;
+		static std::vector<std::string> s_TypeNames;
 	};
 }

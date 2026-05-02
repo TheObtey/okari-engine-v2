@@ -82,6 +82,9 @@ add_executable(OkariEditor
 
     Game/World/World.cpp
     Game/Actors/ActorRegistry.cpp
+    Game/Actors/ActorFactory.cpp
+    Game/Actors/PlayerActor.cpp
+    Game/Actors/DoorActor.cpp
 )
 
 target_include_directories(OkariEditor PRIVATE

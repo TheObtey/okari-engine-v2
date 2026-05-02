@@ -1,14 +1,21 @@
 #pragma once
 
+#include "Actor/Actor.h"
 #include "Scene/Transform.h"
 #include "Rendering/Camera.h"
 
 namespace Okari
 {
-	class PlayerActor
+	class PlayerActor : public Actor
 	{
 	public:
-		void Update(float deltaTime, const Camera& camera);
+		PlayerActor(WorldObject* object = nullptr);
+
+		void OnCreate() override;
+		void OnUpdate(float deltaTime) override;
+		void OnDestroy() override;
+
+		void UpdateMovement(float deltaTime, const Camera& camera);
 
 		Transform& GetTransform() { return m_Transform; }
 		const Transform& GetTransform() const { return m_Transform; }

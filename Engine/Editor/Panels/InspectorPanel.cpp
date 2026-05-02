@@ -102,21 +102,64 @@ namespace Okari
 
 		ImGui::Separator();
 
-		if (obj->ActorType == "Door")
+		ImGui::Text("Actor's Custom Data");
+
+		const ActorDefinition* def = ActorRegistry::GetDefinition(obj->ActorType);
+
+		if (!def || def->Properties.empty())
 		{
-			ImGui::Text("Door settings...");
-		}
-		else if (obj->ActorType == "NPC")
-		{
-			ImGui::Text("NPC settings...");
-		}
-		else if (obj->ActorType == "Enemy")
-		{
-			ImGui::Text("Enemy settings...");
+			ImGui::TextDisabled("No custom data");
 		}
 		else
 		{
-			ImGui::Text("No custom data...");
+			for (const auto& prop : def->Properties)
+			{
+				switch (prop.Type)
+				{
+				case ActorPropertyType::Bool:
+				{
+					bool value = obj->ActorData.value(prop.Name, false);
+
+					if (ImGui::Checkbox(prop.Name.c_str(), &value))
+					{
+						obj->ActorData[prop.Name] = value;
+						if (m_OnModified) m_OnModified();
+					}
+					break;
+				}
+
+				case ActorPropertyType::Float:
+				{
+					float value = obj->ActorData.value(prop.Name, 0.0f);
+
+					if (ImGui::DragFloat(prop.Name.c_str(), &value))
+					{
+						obj->ActorData[prop.Name] = value;
+						if (m_OnModified) m_OnModified();
+					}
+					break;
+				}
+
+				case ActorPropertyType::String:
+				{
+					std::string str = obj->ActorData.value(prop.Name, "");
+
+					char buffer[256];
+					std::snprintf(buffer, sizeof(buffer), "%s", str.c_str());
+
+					if (ImGui::InputText(prop.Name.c_str(), buffer, sizeof(buffer)))
+					{
+						obj->ActorData[prop.Name] = std::string(buffer);
+						if (m_OnModified) m_OnModified();
+					}
+					break;
+				}
+
+				default:
+					ImGui::Text("%s (unsupported)", prop.Name.c_str());
+					break;
+				}
+			}
 		}
 
 		ImGui::End();

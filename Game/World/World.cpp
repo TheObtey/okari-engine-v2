@@ -1,4 +1,6 @@
 #include "World.h"
+#include "Actors/ActorFactory.h"
+#include "Actors/PlayerActor.h"
 #include "../External/nlohmann/json.hpp"
 
 #include <fstream>
@@ -9,6 +11,11 @@ using json = nlohmann::json;
 
 namespace Okari
 {
+    World::~World()
+    {
+        DestroyRuntimeActors();
+    }
+
     static glm::vec3 ReadVec3(const json& value)
     {
         return glm::vec3(
@@ -206,6 +213,10 @@ namespace Okari
 
     bool World::LoadFromFile(const std::string& path, std::string* outSceneName)
     {
+        DestroyRuntimeActors();
+        
+        m_IsPlaying = false;
+
         std::ifstream file(path);
 
         if (!file.is_open())
@@ -262,6 +273,9 @@ namespace Okari
             worldObject.Transform.Scale = ReadVec3(obj["scale"]);
             worldObject.TexturePath = obj["texture"].get<std::string>();
 
+            if (obj.contains("actorData"))
+                worldObject.ActorData = obj["actorData"];
+
             m_Objects.push_back(worldObject);
         }
 
@@ -290,6 +304,7 @@ namespace Okari
             jsonObj["position"] = WriteVec3(obj.Transform.Position);
             jsonObj["rotation"] = WriteVec3(obj.Transform.Rotation);
             jsonObj["scale"] = WriteVec3(obj.Transform.Scale);
+            jsonObj["actorData"] = obj.ActorData;
 
             data["objects"].push_back(jsonObj);
         }
@@ -318,5 +333,100 @@ namespace Okari
         {
             renderer.DrawCube(obj.Transform, obj.TexturePath, camera);
         }
+
+        if (m_IsPlaying && m_Player)
+        {
+            if (auto* player = dynamic_cast<PlayerActor*>(m_Player))
+            {
+                renderer.DrawCube(
+                    player->GetTransform(),
+                    std::string("Assets/Textures/link.png"),
+                    camera
+                );
+            }
+        }
+    }
+
+    void World::BuildRuntimeActors()
+    {
+        DestroyRuntimeActors();
+
+        for (WorldObject& object : m_Objects)
+        {
+            if (!object.Enabled)
+                continue;
+
+            if (object.ActorType.empty() || object.ActorType == "None")
+                continue;
+
+            std::unique_ptr<Actor> actor = ActorFactory::CreateActor(object.ActorType, &object);
+
+            if (!actor)
+                continue;
+
+            actor->OnCreate();
+            m_RuntimeActors.push_back(std::move(actor));
+
+        }
+
+        std::unique_ptr<Actor> player = ActorFactory::CreateActor("Player", nullptr);
+
+        if (player)
+        {
+            player->OnCreate();
+            m_Player = player.get();
+            m_RuntimeActors.push_back(std::move(player));
+        }
+    }
+
+    void World::DestroyRuntimeActors()
+    {
+        for (auto& actor : m_RuntimeActors)
+        {
+            if (actor)
+                actor->OnDestroy();
+        }
+
+        m_RuntimeActors.clear();
+    }
+
+    void World::UpdateActors(float deltaTime, const Camera& camera)
+    {
+        if (!m_IsPlaying)
+            return;
+
+        for (auto& actor : m_RuntimeActors)
+        {
+            if (actor)
+                actor->OnUpdate(deltaTime);
+        }
+
+        if (auto* player = dynamic_cast<PlayerActor*>(m_Player))
+        {
+            player->UpdateMovement(deltaTime, camera);
+            
+            //const glm::vec3 playerPos = player->GetTransform().Position;
+
+            //camera.SetPosition(playerPos + glm::vec3(0.0f, 3.0f, 0.0f));
+            //camera.SetTarget(playerPos);
+        }
+    }
+
+    void World::EnterPlayMode()
+    {
+        if (m_IsPlaying)
+            return;
+
+        m_IsPlaying = true;
+        BuildRuntimeActors();
+    }
+
+    void World::ExitPlayMode()
+    {
+        if (!m_IsPlaying)
+            return;
+
+        m_IsPlaying = false;
+        DestroyRuntimeActors();
     }
 }

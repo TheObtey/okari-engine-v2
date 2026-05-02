@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Scene/Transform.h"
+#include "Actor/Actor.h"
 #include "Scene/WorldObject.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/Camera.h"
@@ -13,6 +13,8 @@ namespace Okari
 	class World
 	{
 	public:
+		~World();
+
 		void AddObject(const WorldObject& object);
 
 		std::vector<WorldObject>& GetObjects();
@@ -37,8 +39,24 @@ namespace Okari
 		void Update(float deltaTime);
 		void Render(Renderer& renderer, const Camera& camera);
 
+		void BuildRuntimeActors();
+		void DestroyRuntimeActors();
+		void UpdateActors(float deltaTime, const Camera& camera);
+
+		void EnterPlayMode();
+		void ExitPlayMode();
+
+		bool IsPlaying() const { return m_IsPlaying; }
+
+		Actor* GetPlayer() const { return m_Player; }
+
 	private:
 		std::vector<WorldObject> m_Objects;
+		std::vector<std::unique_ptr<Actor>> m_RuntimeActors;
 		uint64_t m_NextID = 1;
+
+		bool m_IsPlaying = false;
+
+		Actor* m_Player = nullptr;
 	};
 }
