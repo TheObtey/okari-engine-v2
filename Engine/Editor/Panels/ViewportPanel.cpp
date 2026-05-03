@@ -86,6 +86,16 @@ namespace Okari
 			ImVec2(1, 0)
 		);
 
+		m_IsViewportHovered = ImGui::IsItemHovered();
+
+		ImVec2 imageMin = ImGui::GetItemRectMin();
+		ImVec2 imageMax = ImGui::GetItemRectMax();
+
+		m_ViewportCenter = glm::vec2(
+			(imageMin.x + imageMax.x) * 0.5,
+			(imageMin.y + imageMax.y) * 0.5
+		);
+
 		if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 		{
 			ImVec2 mousePos = ImGui::GetMousePos();

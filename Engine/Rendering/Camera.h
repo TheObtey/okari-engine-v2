@@ -15,6 +15,7 @@ namespace Okari
         void SetPosition(const glm::vec3& pos) { m_Position = pos; }
         void SetTarget(const glm::vec3& target) { m_Target = target; }
 
+        glm::vec3 GetPosition() const { return m_Position; }
         glm::vec3 GetForward() const;
         glm::vec3 GetRight() const;
 

@@ -5,7 +5,7 @@
 #include "Editor/Panels/InspectorPanel.h"
 #include "Editor/Panels/ViewportPanel.h"
 #include "Editor/Panels/AssetBrowserPanel.h"
-#include "Rendering/Camera.h"
+#include "Editor/EditorCameraController.h"
 #include "Scene/SceneDocument.h"
 
 #include <memory>
@@ -47,6 +47,8 @@ namespace Okari
 		void DrawUnsavedScenePopup();
 
 	private:
+		GLFWwindow* m_Window = nullptr;
+
 		std::vector<std::unique_ptr<SceneDocument>> m_OpenScenes;
 		int m_ActiveSceneIndex = -1;
 
@@ -70,6 +72,8 @@ namespace Okari
 		std::unique_ptr<InspectorPanel> m_InspectorPanel;
 		std::unique_ptr<ViewportPanel> m_ViewportPanel;
 		std::unique_ptr<AssetBrowserPanel> m_AssetBrowserPanel;
-		std::unique_ptr<Camera> m_EditorCamera;	
+		std::unique_ptr<Camera> m_EditorCamera;
+
+		EditorCameraController m_EditorCameraController;
 	};
 }

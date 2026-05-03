@@ -31,6 +31,7 @@ set(ENGINE_SOURCES
 set(EDITOR_SOURCES
     Engine/Editor/EditorLayer.cpp
     Engine/Editor/EditorUI.cpp
+    Engine/Editor/EditorCameraController.cpp
 
     Engine/Editor/Panels/HierarchyPanel.cpp
     Engine/Editor/Panels/InspectorPanel.cpp

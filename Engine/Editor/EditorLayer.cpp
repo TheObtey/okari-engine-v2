@@ -450,6 +450,18 @@ namespace Okari
 
         InputManager::RegisterContext(explorationCtx);
 
+        auto editorCameraCtx = std::make_shared<InputContext>("EditorCamera");
+        editorCameraCtx->BindKey(GLFW_KEY_W, "MoveForward");
+        editorCameraCtx->BindKey(GLFW_KEY_S, "MoveBackward");
+        editorCameraCtx->BindKey(GLFW_KEY_A, "MoveLeft");
+        editorCameraCtx->BindKey(GLFW_KEY_D, "MoveRight");
+        editorCameraCtx->BindKey(GLFW_KEY_E, "MoveUp");
+        editorCameraCtx->BindKey(GLFW_KEY_Q, "MoveDown");
+        editorCameraCtx->BindKey(GLFW_KEY_LEFT_SHIFT, "SpeedUp");
+
+        InputManager::RegisterContext(editorCameraCtx);
+        InputManager::PushContext("EditorCamera");
+
         m_EditorCamera = std::make_unique<Camera>(16.0f / 9.0f);
         m_EditorCamera->SetPosition(glm::vec3(0.0f, 3.0f, 6.0f));
         m_EditorCamera->SetTarget(glm::vec3(0.0f, 0.0f, 0.0f));
@@ -490,16 +502,22 @@ namespace Okari
 
         NewScene();
 
-        auto window = Application::Get().GetWindow().GetNativeWindow();
-        EditorUI::Init(window);
+        m_Window = Application::Get().GetWindow().GetNativeWindow();
+
+        EditorUI::Init(m_Window);
     }
 
     void EditorLayer::Update(float deltaTime)
     {
         SceneDocument* activeScene = GetActiveScene();
 
-        if (activeScene && activeScene->World)
+        if (activeScene && activeScene->World && m_EditorCamera)
+        {
+            if (!activeScene->World->IsPlaying() && m_Window)
+                m_EditorCameraController.Update(deltaTime, *m_EditorCamera, m_Window, m_ViewportPanel->IsViewportHovered(), m_ViewportPanel->GetViewportCenter());
+
             activeScene->World->UpdateActors(deltaTime, *m_EditorCamera);
+        }
     }
 
     void EditorLayer::Render(Renderer& renderer)

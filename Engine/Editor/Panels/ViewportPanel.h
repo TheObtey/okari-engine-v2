@@ -3,6 +3,7 @@
 #include "Rendering/Framebuffer.h"
 #include "Scene/SceneDocument.h"
 
+#include <glm.hpp>
 #include <memory>
 #include <vector>
 #include <functional>
@@ -27,6 +28,9 @@ namespace Okari
 		uint32_t GetPickX() const { return m_PickX; }
 		uint32_t GetPickY() const { return m_PickY; }
 		void ClearPendingPick() { m_HasPendingPick = false; }
+		
+		bool IsViewportHovered() const { return m_IsViewportHovered; }
+		glm::vec2 GetViewportCenter() const { return m_ViewportCenter; }
 
 	private:
 		const std::vector<std::unique_ptr<SceneDocument>>* m_Scenes = nullptr;
@@ -39,9 +43,12 @@ namespace Okari
 
 		float m_ViewportWidth = 1280.0f;
 		float m_ViewportHeight = 720.0f;
+		glm::vec2 m_ViewportCenter = glm::vec2(0.0f);
 
 		bool m_HasPendingPick = false;
 		uint32_t m_PickX = 0;
 		uint32_t m_PickY = 0;
+
+		bool m_IsViewportHovered = false;
 	};
 }
