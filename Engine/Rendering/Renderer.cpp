@@ -183,6 +183,58 @@ namespace Okari
         glBindVertexArray(0);
     }
 
+    void Renderer::DrawMesh(const Transform& transform, Mesh* mesh, std::string& texturePath, const Camera& camera)
+    {
+        if (!mesh)
+            return;
+
+        m_Shader->Bind();
+
+        glm::mat4 model = transform.GetModelMatrix();
+        glm::mat4 view = camera.GetViewMatrix();
+        glm::mat4 projection = camera.GetProjectionMatrix();
+
+        glm::mat4 mvp = projection * view * model;
+
+        m_Shader->SetMat4("u_MVP", mvp);
+        m_Shader->SetInt("u_Texture", 0);
+
+        Texture2D* texture = GetTexture(texturePath);
+        texture->Bind(0);
+
+        mesh->Bind();
+        glDrawArrays(GL_TRIANGLES, 0, mesh->GetVertexCount());
+    }
+
+    void Renderer::DrawMeshOutline(const Transform& transform, Mesh* mesh, const Camera& camera)
+    {
+        if (!mesh)
+            return;
+
+        m_OutlineShader->Bind();
+        
+        glm::mat4 model = transform.GetModelMatrix();
+        glm::mat4 view = camera.GetViewMatrix();
+        glm::mat4 projection = camera.GetProjectionMatrix();
+        glm::mat4 mvp = projection * view * model;
+
+        m_OutlineShader->SetMat4("u_MVP", mvp);
+        m_OutlineShader->SetVec3("u_Color", glm::vec3(1.0f, 0.85f, 0.05f));
+
+        glDisable(GL_CULL_FACE);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glLineWidth(3.0f);
+
+        mesh->Bind();
+        
+        glDrawArrays(GL_TRIANGLES, 0, mesh->GetVertexCount());
+
+        glBindVertexArray(0);
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glLineWidth(1.0f);
+    }
+
     Texture2D* Renderer::GetTexture(const std::string& path)
     {
         auto it = m_TextureCache.find(path);

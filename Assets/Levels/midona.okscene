@@ -1,0 +1,35 @@
+{
+    "name": "midona",
+    "objects": [
+        {
+            "actorData": null,
+            "actorType": "NPC",
+            "enabled": true,
+            "fileType": "Okari.Scene",
+            "id": 1,
+            "meshComponent": {
+                "enabled": true,
+                "mesh": "Assets/Models/files__res__Object__Dmidna_000.fbx",
+                "texture": ""
+            },
+            "name": "Midona",
+            "parentId": 0,
+            "position": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.05000000074505806,
+                0.05000000074505806,
+                0.05000000074505806
+            ],
+            "type": "Cube"
+        }
+    ]
+}

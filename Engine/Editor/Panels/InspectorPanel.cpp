@@ -38,7 +38,10 @@ namespace Okari
 		if (*m_SelectedID != m_LastSelectedID)
 		{
 			m_LastSelectedID = *m_SelectedID;
+
 			std::snprintf(m_NameBuffer, sizeof(m_NameBuffer), "%s", obj->Name.c_str());
+			std::snprintf(m_MeshPathBuffer, sizeof(m_MeshPathBuffer), "%s", obj->Mesh.MeshPath.c_str());
+			std::snprintf(m_TexturePathBuffer, sizeof(m_TexturePathBuffer), "%s", obj->Mesh.TexturePath.c_str());
 		}
 
 		if (!obj)
@@ -109,16 +112,19 @@ namespace Okari
 		if (ImGui::Checkbox("Mesh Enabled", &obj->Mesh.Enabled))
 			if (m_OnModified) m_OnModified();
 
-		auto drawAssetField = [&](const char* label, std::string& path)
+		auto drawAssetField = [&](const char* label, std::string& path, char* buffer, size_t bufferSize, bool affectsRuntimeMesh)
 			{
-				char buffer[512];
-				std::snprintf(buffer, sizeof(buffer), "%s", path.c_str());
-
 				ImGui::SetNextItemWidth(-80.0f);
 
-				if (ImGui::InputText(label, buffer, sizeof(buffer)))
+				ImGui::InputText(label, buffer, bufferSize);
+
+				if (ImGui::IsItemDeactivatedAfterEdit())
 				{
 					path = buffer;
+
+					if (affectsRuntimeMesh)
+						obj->Mesh.RuntimeMesh = nullptr;
+
 					if (m_OnModified) m_OnModified();
 				}
 
@@ -136,6 +142,11 @@ namespace Okari
 							std::filesystem::path relative = std::filesystem::relative(dropped, assetRoot);
 							path = "Assets/" + relative.generic_string();
 
+							std::snprintf(buffer, bufferSize, "%s", path.c_str());
+
+							if (affectsRuntimeMesh)
+								obj->Mesh.RuntimeMesh = nullptr;
+
 							if (m_OnModified) m_OnModified();
 						}
 					}
@@ -148,12 +159,17 @@ namespace Okari
 				if (ImGui::Button((std::string("Clear##") + label).c_str()))
 				{
 					path.clear();
+					buffer[0] = '\0';
+
+					if (affectsRuntimeMesh)
+						obj->Mesh.RuntimeMesh = nullptr;
+
 					if (m_OnModified) m_OnModified();
 				}
 			};
 
-		drawAssetField("Mesh", obj->Mesh.MeshPath);
-		drawAssetField("Texture", obj->Mesh.TexturePath);
+		drawAssetField("Mesh", obj->Mesh.MeshPath, m_MeshPathBuffer, sizeof(m_MeshPathBuffer), true);
+		drawAssetField("Texture", obj->Mesh.TexturePath, m_TexturePathBuffer, sizeof(m_TexturePathBuffer), true);
 
 		ImGui::Separator();
 

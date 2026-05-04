@@ -3,6 +3,7 @@
 #include "Rendering/Shader.h"
 #include "Rendering/Texture2D.h"
 #include "Rendering/Camera.h"
+#include "Rendering/Mesh.h"
 #include "Scene/Transform.h"
 #include "Scene/WorldObject.h"
 #include <memory>
@@ -19,9 +20,14 @@ namespace Okari
 
         void Init();
         void BeginFrame();
+
         void DrawCube(const Transform& transform, std::string& texturePath, const Camera& camera);
         void DrawCubeOutline(const Transform& transform, const Camera& camera);
         void DrawCubeID(const Transform& transform, uint32_t objectID, const Camera& camera);
+        
+        void DrawMesh(const Transform& transform, Mesh* mesh, std::string& texturePath, const Camera& camera);
+        void DrawMeshOutline(const Transform& transform, Mesh* mesh, const Camera& camera);
+        
         void EndFrame();
 
     private:

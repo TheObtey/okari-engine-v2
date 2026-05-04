@@ -7,6 +7,11 @@
             "enabled": true,
             "fileType": "Okari.Scene",
             "id": 1,
+            "meshComponent": {
+                "enabled": true,
+                "mesh": "",
+                "texture": "Assets/Textures/arrow.png"
+            },
             "name": "Floor",
             "parentId": 0,
             "position": [
@@ -24,7 +29,6 @@
                 0.20000000298023224,
                 10.0
             ],
-            "texture": "Assets/Textures/arrow.png",
             "type": "Cube"
         },
         {
@@ -33,6 +37,11 @@
             "enabled": true,
             "fileType": "Okari.Scene",
             "id": 2,
+            "meshComponent": {
+                "enabled": true,
+                "mesh": "",
+                "texture": "Assets/Textures/arrow.png"
+            },
             "name": "Samuel",
             "parentId": 0,
             "position": [
@@ -50,7 +59,6 @@
                 0.5,
                 0.5
             ],
-            "texture": "Assets/Textures/arrow.png",
             "type": "Cube"
         },
         {
@@ -59,6 +67,11 @@
             "enabled": true,
             "fileType": "Okari.Scene",
             "id": 3,
+            "meshComponent": {
+                "enabled": true,
+                "mesh": "",
+                "texture": "Assets/Textures/arrow.png"
+            },
             "name": "Johnson",
             "parentId": 0,
             "position": [
@@ -76,7 +89,6 @@
                 1.0,
                 1.0
             ],
-            "texture": "Assets/Textures/arrow.png",
             "type": "Cube"
         }
     ]

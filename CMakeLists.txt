@@ -9,8 +9,13 @@ add_subdirectory(External/glfw)
 
 find_package(OpenGL REQUIRED)
 
+# =========================
+# SOURCES
+# =========================
+
 set(ENGINE_SOURCES
     External/glad/src/glad.c
+    External/ufbx/ufbx.c
 
     Engine/Core/Application.cpp
     Engine/Core/Time.cpp
@@ -26,6 +31,10 @@ set(ENGINE_SOURCES
     Engine/Rendering/Camera.cpp
     Engine/Rendering/Texture2D.cpp
     Engine/Rendering/Framebuffer.cpp
+    Engine/Rendering/Mesh.cpp
+
+    Engine/Resources/MeshManager.cpp
+    Engine/Resources/FBXLoader.cpp
 )
 
 set(EDITOR_SOURCES
@@ -39,6 +48,15 @@ set(EDITOR_SOURCES
     Engine/Editor/Panels/AssetBrowserPanel.cpp
 )
 
+set(IMGUI_SOURCES
+    External/imgui/imgui.cpp
+    External/imgui/imgui_draw.cpp
+    External/imgui/imgui_tables.cpp
+    External/imgui/imgui_widgets.cpp
+    External/imgui/backends/imgui_impl_glfw.cpp
+    External/imgui/backends/imgui_impl_opengl3.cpp
+)
+
 set(COMMON_INCLUDES
     ${CMAKE_SOURCE_DIR}/Engine
     ${CMAKE_SOURCE_DIR}/Game
@@ -48,16 +66,12 @@ set(COMMON_INCLUDES
     ${CMAKE_SOURCE_DIR}/External/glm
     ${CMAKE_SOURCE_DIR}/External/nlohmann
     ${CMAKE_SOURCE_DIR}/External/stb
+    ${CMAKE_SOURCE_DIR}/External/ufbx
 )
 
-set(IMGUI_SOURCES
-    External/imgui/imgui.cpp
-    External/imgui/imgui_draw.cpp
-    External/imgui/imgui_tables.cpp
-    External/imgui/imgui_widgets.cpp
-    External/imgui/backends/imgui_impl_glfw.cpp
-    External/imgui/backends/imgui_impl_opengl3.cpp
-)
+# =========================
+# SANDBOX
+# =========================
 
 add_executable(Sandbox
     Sandbox/main.cpp
@@ -68,12 +82,22 @@ add_executable(Sandbox
     Game/Actors/PlayerActor.cpp
 )
 
-target_include_directories(Sandbox PRIVATE ${COMMON_INCLUDES})
+target_include_directories(Sandbox PRIVATE
+    ${COMMON_INCLUDES}
+)
 
 target_link_libraries(Sandbox PRIVATE
     glfw
     OpenGL::GL
 )
+
+target_compile_definitions(Sandbox PRIVATE
+    OKARI_ASSET_DIR="${CMAKE_SOURCE_DIR}/Assets"
+)
+
+# =========================
+# EDITOR
+# =========================
 
 add_executable(OkariEditor
     Editor/main.cpp
@@ -103,6 +127,10 @@ target_link_libraries(OkariEditor PRIVATE
 target_compile_definitions(OkariEditor PRIVATE
     OKARI_ASSET_DIR="${CMAKE_SOURCE_DIR}/Assets"
 )
+
+# =========================
+# COPY ASSETS
+# =========================
 
 add_custom_command(TARGET Sandbox POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory

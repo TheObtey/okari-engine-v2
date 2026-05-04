@@ -2,6 +2,7 @@
 #include "Actors/ActorFactory.h"
 #include "Actors/PlayerActor.h"
 #include "../External/nlohmann/json.hpp"
+#include "../../Engine/Resources/MeshManager.h"
 
 #include <fstream>
 #include <iostream>
@@ -79,6 +80,9 @@ namespace Okari
         WorldObject obj;
         obj.ID = m_NextID++;
         obj.Name = GenerateUniqueName(name);
+
+        if (!obj.Mesh.MeshPath.empty())
+            obj.Mesh.RuntimeMesh = MeshManager::Get().LoadMesh(obj.Mesh.MeshPath);
 
         m_Objects.push_back(obj);
         return m_Objects.back();
@@ -370,12 +374,23 @@ namespace Okari
     {
         for (auto& obj : m_Objects)
             if (obj.Mesh.Enabled)
-                renderer.DrawCube(obj.Transform, obj.Mesh.TexturePath, camera);
+            {
+                if (!obj.Mesh.RuntimeMesh && !obj.Mesh.MeshPath.empty())
+                    obj.Mesh.RuntimeMesh = MeshManager::Get().LoadMesh(obj.Mesh.MeshPath);
+
+                if (obj.Mesh.RuntimeMesh)
+                    renderer.DrawMesh(obj.Transform, obj.Mesh.RuntimeMesh, obj.Mesh.TexturePath, camera);
+                else
+                    renderer.DrawCube(obj.Transform, obj.Mesh.TexturePath, camera);
+            }
 
         if (selectedObjectID != 0)
         {
             if (WorldObject* selectedObject = GetObjectByID(selectedObjectID))
-                renderer.DrawCubeOutline(selectedObject->Transform, camera);
+                if (selectedObject->Mesh.RuntimeMesh)
+                    renderer.DrawMeshOutline(selectedObject->Transform, selectedObject->Mesh.RuntimeMesh, camera);
+                else
+                    renderer.DrawCubeOutline(selectedObject->Transform, camera);
         }
 
         if (m_IsPlaying && m_Player)

@@ -19,9 +19,11 @@ namespace Okari
 	private:
 		World* m_World;
 		uint64_t* m_SelectedID;
-
 		uint64_t m_LastSelectedID = -1;
+
 		char m_NameBuffer[256] = {};
+		char m_MeshPathBuffer[512] = {};
+		char m_TexturePathBuffer[512] = {};
 
 		std::function<void()> m_OnModified;
 	};

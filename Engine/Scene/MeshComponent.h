@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Rendering/Mesh.h"
+
 #include <string>
 
 namespace Okari
@@ -10,5 +12,7 @@ namespace Okari
 
 		std::string MeshPath;
 		std::string TexturePath;
+
+		Mesh* RuntimeMesh = nullptr;
 	};
 }
