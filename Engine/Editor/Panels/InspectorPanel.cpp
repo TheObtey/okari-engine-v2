@@ -2,6 +2,8 @@
 #include "../../../Game/Actors/ActorRegistry.h"
 
 #include <imgui.h>
+#include <filesystem>
+#include <string>
 
 namespace Okari
 {
@@ -99,6 +101,59 @@ namespace Okari
 
 		if (ImGui::DragFloat3("Scale", &obj->Transform.Scale.x, 0.1f, 0.0f, 100.0f))
 			if (m_OnModified) m_OnModified();
+
+		ImGui::Separator();
+
+		ImGui::Text("Mesh Component");
+
+		if (ImGui::Checkbox("Mesh Enabled", &obj->Mesh.Enabled))
+			if (m_OnModified) m_OnModified();
+
+		auto drawAssetField = [&](const char* label, std::string& path)
+			{
+				char buffer[512];
+				std::snprintf(buffer, sizeof(buffer), "%s", path.c_str());
+
+				ImGui::SetNextItemWidth(-80.0f);
+
+				if (ImGui::InputText(label, buffer, sizeof(buffer)))
+				{
+					path = buffer;
+					if (m_OnModified) m_OnModified();
+				}
+
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_BROWSER_ITEM"))
+					{
+						const char* droppedPath = static_cast<const char*>(payload->Data);
+
+						std::filesystem::path assetRoot = std::filesystem::absolute(OKARI_ASSET_DIR);
+						std::filesystem::path dropped = std::filesystem::absolute(droppedPath);
+
+						if (std::filesystem::is_regular_file(dropped))
+						{
+							std::filesystem::path relative = std::filesystem::relative(dropped, assetRoot);
+							path = "Assets/" + relative.generic_string();
+
+							if (m_OnModified) m_OnModified();
+						}
+					}
+
+					ImGui::EndDragDropTarget();
+				}
+
+				ImGui::SameLine();
+
+				if (ImGui::Button((std::string("Clear##") + label).c_str()))
+				{
+					path.clear();
+					if (m_OnModified) m_OnModified();
+				}
+			};
+
+		drawAssetField("Mesh", obj->Mesh.MeshPath);
+		drawAssetField("Texture", obj->Mesh.TexturePath);
 
 		ImGui::Separator();
 
