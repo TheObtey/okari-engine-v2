@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Scene/Transform.h"
+#include "Scene/MeshComponent.h"
 
 #include <../nlohmann/json.hpp>
 #include <string>
@@ -20,7 +21,7 @@ namespace Okari
 		
 		Transform Transform;
 		
-		std::string TexturePath;
+		MeshComponent Mesh;
 
 		nlohmann::json ActorData;
 	};

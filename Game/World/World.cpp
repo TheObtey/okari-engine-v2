@@ -291,7 +291,22 @@ namespace Okari
             worldObject.Transform.Position = ReadVec3(obj["position"]);
             worldObject.Transform.Rotation = ReadVec3(obj["rotation"]);
             worldObject.Transform.Scale = ReadVec3(obj["scale"]);
-            worldObject.TexturePath = obj["texture"].get<std::string>();
+            
+            if (obj.contains("meshComponent"))
+            {
+                const auto& mesh = obj["meshComponent"];
+
+                if (mesh.contains("enabled"))
+                    worldObject.Mesh.Enabled = mesh["enabled"].get<bool>();
+
+                if (mesh.contains("mesh"))
+                    worldObject.Mesh.MeshPath = mesh["mesh"].get<std::string>();
+
+                if (mesh.contains("texture"))
+                    worldObject.Mesh.TexturePath = mesh["texture"].get<std::string>();
+            }
+            else if (obj.contains("texture"))
+                worldObject.Mesh.TexturePath = obj["texture"].get<std::string>();
 
             if (obj.contains("actorData"))
                 worldObject.ActorData = obj["actorData"];
@@ -320,7 +335,11 @@ namespace Okari
             jsonObj["parentId"] = obj.ParentID;
             jsonObj["name"] = obj.Name;
             jsonObj["type"] = "Cube";
-            jsonObj["texture"] = obj.TexturePath;
+            jsonObj["meshComponent"] = {
+                { "enabled", obj.Mesh.Enabled },
+                { "mesh", obj.Mesh.MeshPath },
+                { "texture", obj.Mesh.TexturePath }
+            };
             jsonObj["position"] = WriteVec3(obj.Transform.Position);
             jsonObj["rotation"] = WriteVec3(obj.Transform.Rotation);
             jsonObj["scale"] = WriteVec3(obj.Transform.Scale);
@@ -350,7 +369,8 @@ namespace Okari
     void World::Render(Renderer& renderer, const Camera& camera, uint64_t selectedObjectID)
     {
         for (auto& obj : m_Objects)
-            renderer.DrawCube(obj.Transform, obj.TexturePath, camera);
+            if (obj.Mesh.Enabled)
+                renderer.DrawCube(obj.Transform, obj.Mesh.TexturePath, camera);
 
         if (selectedObjectID != 0)
         {
@@ -360,11 +380,13 @@ namespace Okari
 
         if (m_IsPlaying && m_Player)
         {
+            std::string playerTexture = "Assets/Textures/link.png";
+
             if (auto* player = dynamic_cast<PlayerActor*>(m_Player))
             {
                 renderer.DrawCube(
                     player->GetTransform(),
-                    std::string("Assets/Textures/link.png"),
+                    playerTexture,
                     camera
                 );
             }
