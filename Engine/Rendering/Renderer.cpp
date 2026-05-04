@@ -193,17 +193,39 @@ namespace Okari
         glm::mat4 model = transform.GetModelMatrix();
         glm::mat4 view = camera.GetViewMatrix();
         glm::mat4 projection = camera.GetProjectionMatrix();
-
         glm::mat4 mvp = projection * view * model;
 
         m_Shader->SetMat4("u_MVP", mvp);
         m_Shader->SetInt("u_Texture", 0);
 
-        Texture2D* texture = GetTexture(texturePath);
-        texture->Bind(0);
-
         mesh->Bind();
-        glDrawArrays(GL_TRIANGLES, 0, mesh->GetVertexCount());
+
+        const auto& subMeshes = mesh->GetSubMeshes();
+        const auto& materials = mesh->GetMaterials();
+
+        for (const SubMesh& subMesh : subMeshes)
+        {
+            std::string texturePath = texturePath;
+
+            if (subMesh.MaterialIndex < materials.size())
+            {
+                const std::string& materialTexture = materials[subMesh.MaterialIndex].DiffuseTexturePath;
+
+                if (!materialTexture.empty())
+                    texturePath = materialTexture;
+            }
+
+            Texture2D* texture = GetTexture(texturePath);
+            texture->Bind(0);
+
+            glDrawArrays(
+                GL_TRIANGLES,
+                subMesh.VertexOffset,
+                subMesh.VertexCount
+            );
+        }
+
+        glBindVertexArray(0);
     }
 
     void Renderer::DrawMeshOutline(const Transform& transform, Mesh* mesh, const Camera& camera)

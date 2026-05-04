@@ -1,10 +1,37 @@
 #include "Mesh.h"
 
+#include <cfloat>
+#include <algorithm>
+
 namespace Okari
 {
-	Mesh::Mesh(const std::vector<Vertex>& vertices)
+	Mesh::Mesh(
+		const std::vector<Vertex>& vertices,
+		const std::vector<SubMesh>& subMeshes,
+		const std::vector<Material>& materials
+	)
 	{
-		m_VertexCount = (uint32_t)vertices.size();
+		m_VertexCount = static_cast<uint32_t>(vertices.size());
+		m_SubMeshes = subMeshes;
+		m_Materials = materials;
+
+		if (m_Materials.empty())
+		{
+			Material defaultMaterial;
+			defaultMaterial.Name = "Default";
+
+			m_Materials.push_back(defaultMaterial);
+		}
+
+		if (m_SubMeshes.empty())
+		{
+			SubMesh defaultSubMesh;
+			defaultSubMesh.VertexOffset = 0;
+			defaultSubMesh.VertexCount = m_VertexCount;
+			defaultSubMesh.MaterialIndex = 0;
+
+			m_SubMeshes.push_back(defaultSubMesh);
+		}
 
 		glGenVertexArrays(1, &m_VAO);
 		glGenBuffers(1, &m_VBO);
@@ -28,7 +55,6 @@ namespace Okari
 		for (const auto& v : vertices)
 		{
 			glm::vec3 pos(v.Position[0], v.Position[1], v.Position[2]);
-
 			min = glm::min(min, pos);
 			max = glm::max(max, pos);
 		}

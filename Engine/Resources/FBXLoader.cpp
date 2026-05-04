@@ -1,8 +1,10 @@
 #include "Resources/FBXLoader.h"
 
 #include "ufbx.h"
+
 #include <vector>
 #include <iostream>
+#include <filesystem>
 
 namespace Okari
 {
@@ -32,6 +34,59 @@ namespace Okari
 		return vertex;
 	}
 
+	static std::string ResolveTexturePath(const std::string& fbxPath, const char* texturePath)
+	{
+		if (!texturePath || texturePath[0] == '\0')
+			return "";
+
+		std::filesystem::path original(texturePath);
+		std::string filename = original.filename().string();
+
+		std::filesystem::path fbxDir = std::filesystem::path(fbxPath).parent_path();
+		std::filesystem::path finalPath = fbxDir / filename;
+
+		if (!std::filesystem::exists(finalPath))
+		{
+			std::cout << "[FBXLoad] Texture not found locally, fallback to original path: " << texturePath << std::endl;
+			return texturePath;
+		}
+
+		return finalPath.generic_string();
+	}
+
+	static Material ExtractMaterial(const std::string& fbxPath, const ufbx_material* fbxMaterial)
+	{
+		Material material;
+
+		if (!fbxMaterial)
+		{
+			material.Name = "NullMaterial";
+			return material;
+		}
+
+		material.Name = fbxMaterial->name.data ? fbxMaterial->name.data : "UnnamedMaterial";
+
+		const ufbx_texture* diffuseTexture = nullptr;
+
+		if (fbxMaterial->fbx.diffuse_color.texture)
+			diffuseTexture = fbxMaterial->fbx.diffuse_color.texture;
+		else if (fbxMaterial->pbr.base_color.texture)
+			diffuseTexture = fbxMaterial->pbr.base_color.texture;
+
+		if (diffuseTexture)
+		{
+			if (diffuseTexture->relative_filename.data && diffuseTexture->relative_filename.length > 0)
+				material.DiffuseTexturePath = ResolveTexturePath(fbxPath, diffuseTexture->relative_filename.data);
+			else if (diffuseTexture->filename.data && diffuseTexture->filename.length > 0)
+				material.DiffuseTexturePath = ResolveTexturePath(fbxPath, diffuseTexture->filename.data);
+		}
+
+		std::cout << "[FBXLoader] Material: " << material.Name
+			<< " | Texture: " << material.DiffuseTexturePath << std::endl;
+
+		return material;
+	}
+
 	Mesh* FBXLoader::LoadMesh(const std::string& path)
 	{
 		ufbx_load_opts opts = {};
@@ -47,35 +102,73 @@ namespace Okari
 		}
 
 		std::vector<Vertex> vertices;
+		std::vector<SubMesh> subMeshes;
+		std::vector<Material> materials;
 
 		for (size_t meshIndex = 0; meshIndex < scene->meshes.count; meshIndex++)
 		{
 			ufbx_mesh* mesh = scene->meshes.data[meshIndex];
 
+			uint32_t materialBaseIndex = static_cast<uint32_t>(materials.size());
+
+			for (size_t materialIndex = 0; materialIndex < mesh->materials.count; materialIndex++)
+			{
+				ufbx_material* fbxMaterial = mesh->materials.data[materialIndex];
+				materials.push_back(ExtractMaterial(path, fbxMaterial));
+			}
+
+			if (mesh->materials.count == 0)
+			{
+				Material defaultMaterial;
+				defaultMaterial.Name = "Default";
+				materials.push_back(defaultMaterial);
+			}
+
 			std::vector<uint32_t> triIndices;
 			triIndices.resize(mesh->max_face_triangles * 3);
 
-			for (size_t faceIndex = 0; faceIndex < mesh->faces.count; faceIndex++)
+			for (size_t partIndex = 0; partIndex < mesh->material_parts.count; partIndex++)
 			{
-				ufbx_face face = mesh->faces.data[faceIndex];
+				ufbx_mesh_part* part = &mesh->material_parts.data[partIndex];
 
-				uint32_t numTriangles = ufbx_triangulate_face(
-					triIndices.data(),
-					triIndices.size(),
-					mesh,
-					face
-				);
+				if (part->num_triangles == 0)
+					continue;
 
-				for (uint32_t tri = 0; tri < numTriangles; tri++)
+				SubMesh subMesh;
+				subMesh.VertexOffset = static_cast<uint32_t>(vertices.size());
+
+				if (part->index < mesh->materials.count)
+					subMesh.MaterialIndex = materialBaseIndex + static_cast<uint32_t>(part->index);
+				else
+					subMesh.MaterialIndex = materialBaseIndex;
+
+				for (size_t faceListIndex = 0; faceListIndex < part->num_faces; faceListIndex++)
 				{
-					uint32_t i0 = triIndices[tri * 3 + 0];
-					uint32_t i1 = triIndices[tri * 3 + 1];
-					uint32_t i2 = triIndices[tri * 3 + 2];
+					ufbx_face face = mesh->faces.data[part->face_indices.data[faceListIndex]];
 
-					vertices.push_back(MakeVertex(mesh, i0));
-					vertices.push_back(MakeVertex(mesh, i1));
-					vertices.push_back(MakeVertex(mesh, i2));
+					uint32_t numTriangles = ufbx_triangulate_face(
+						triIndices.data(),
+						triIndices.size(),
+						mesh,
+						face
+					);
+
+					for (uint32_t tri = 0; tri < numTriangles; tri++)
+					{
+						uint32_t i0 = triIndices[tri * 3 + 0];
+						uint32_t i1 = triIndices[tri * 3 + 1];
+						uint32_t i2 = triIndices[tri * 3 + 2];
+
+						vertices.push_back(MakeVertex(mesh, i0));
+						vertices.push_back(MakeVertex(mesh, i1));
+						vertices.push_back(MakeVertex(mesh, i2));
+					}
 				}
+
+				subMesh.VertexCount = static_cast<uint32_t>(vertices.size()) - subMesh.VertexOffset;
+
+				if (subMesh.VertexCount > 0)
+					subMeshes.push_back(subMesh);
 			}
 		}
 
@@ -86,9 +179,13 @@ namespace Okari
 			return nullptr;
 		}
 
-		std::cout << "[FBXLoader] Loaded " << path << " with " << vertices.size() << " vertices." << std::endl;
+		std::cout << "[FBXLoader] Loaded " << path
+			<< " | Vertices: " << vertices.size()
+			<< " | SubMeshes: " << subMeshes.size()
+			<< " | Materials: " << materials.size()
+			<< std::endl;
 
-		Mesh* result = new Mesh(vertices);
+		Mesh* result = new Mesh(vertices, subMeshes, materials);
 
 		ufbx_free_scene(scene);
 
