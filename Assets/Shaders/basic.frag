@@ -8,6 +8,7 @@ uniform int u_UseAlphaCutout;
 
 uniform vec3 u_LightDirection;
 uniform vec3 u_LightColor;
+uniform float u_LightIntensity;
 uniform vec3 u_AmbiantColor;
 
 out vec4 FragColor;
@@ -24,7 +25,7 @@ void main()
 
     float diffuse = max(dot(normal, lightDir), 0.0);
 
-    vec3 lighting = u_AmbiantColor + (u_LightColor * diffuse);
+    vec3 lighting = u_AmbiantColor + (u_LightColor * u_LightIntensity * diffuse);
     vec3 finalColor = texColor.rgb * lighting;
 
     FragColor = vec4(finalColor, 1.0);

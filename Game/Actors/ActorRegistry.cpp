@@ -48,6 +48,7 @@ namespace Okari
 
 			def.Properties.push_back({ "direction", ActorPropertyType::Vec3 });
 			def.Properties.push_back({ "color", ActorPropertyType::Vec3 });
+			def.Properties.push_back({ "intensity", ActorPropertyType::Float });
 			def.Properties.push_back({ "ambiant", ActorPropertyType::Vec3 });
 
 			s_Definitions[def.TypeName] = def;

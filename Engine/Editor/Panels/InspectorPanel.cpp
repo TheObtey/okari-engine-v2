@@ -183,6 +183,9 @@ namespace Okari
 		}
 		else
 		{
+			if (!obj->ActorData.is_object())
+				obj->ActorData = nlohmann::json::object();
+
 			for (const auto& prop : def->Properties)
 			{
 				switch (prop.Type)

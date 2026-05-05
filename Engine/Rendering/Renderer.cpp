@@ -271,6 +271,7 @@ namespace Okari
 
         m_Shader->SetVec3("u_LightDirection", light.Direction);
         m_Shader->SetVec3("u_LightColor", light.Color);
+        m_Shader->SetFloat("u_LightIntensity", light.Intensity);
         m_Shader->SetVec3("u_AmbiantColor", light.Ambiant);
 
         m_Shader->SetInt("u_Texture", 0);

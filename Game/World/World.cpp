@@ -253,6 +253,9 @@ namespace Okari
             if (obj.ActorData.contains("color"))
                 light.Color = ReadVec3(obj.ActorData["color"]);
             
+            if (obj.ActorData.contains("intensity"))
+                light.Intensity = obj.ActorData["intensity"].get<float>();
+            
             if (obj.ActorData.contains("ambiant"))
                 light.Ambiant = ReadVec3(obj.ActorData["ambiant"]);
 

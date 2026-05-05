@@ -89,6 +89,19 @@ namespace Okari
         glUniform1ui(location, value);
     }
 
+    void Shader::SetFloat(const std::string& name, float value) const
+    {
+        int location = glGetUniformLocation(m_RendererID, name.c_str());
+
+        if (location == -1)
+        {
+            std::cerr << "Uniform not found: " << name << std::endl;
+            return;
+        }
+
+        glUniform1f(location, value);
+    }
+
     void Shader::SetVec3(const std::string& name, const glm::vec3& value) const
     {
         int location = glGetUniformLocation(m_RendererID, name.c_str());
