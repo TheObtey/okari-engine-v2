@@ -500,7 +500,7 @@ namespace Okari
             }
         );
 
-        NewScene();
+        //NewScene();
 
         m_Window = Application::Get().GetWindow().GetNativeWindow();
 

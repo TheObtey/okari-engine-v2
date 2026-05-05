@@ -63,6 +63,7 @@ namespace Okari
         };
 
         glEnable(GL_DEPTH_TEST);
+        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         glGenVertexArrays(1, &m_VAO);
         glGenBuffers(1, &m_VBO);
@@ -115,6 +116,76 @@ namespace Okari
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
+
+#pragma region GLENUM_HELPERS
+    static GLenum ToGLCullFace(CullMode mode)
+    {
+        switch (mode)
+        {
+        case CullMode::Front:
+            return GL_FRONT;
+
+        case CullMode::Back:
+        default:
+            return GL_BACK;
+        }
+    }
+
+    static GLenum ToGLDepthFunc(const std::string& func)
+    {
+        if (func == "less")
+            return GL_LESS;
+
+        if (func == "equal")
+            return GL_EQUAL;
+
+        if (func == "greater")
+            return GL_GREATER;
+
+        if (func == "gequal")
+            return GL_GEQUAL;
+
+        if (func == "always")
+            return GL_ALWAYS;
+
+        if (func == "never")
+            return GL_NEVER;
+
+        if (func == "nequal")
+            return GL_NOTEQUAL;
+
+        return GL_LEQUAL;
+    }
+
+    static GLenum ToGLBlendFactor(const std::string& factor)
+    {
+        if (factor == "zero")
+            return GL_ZERO;
+
+        if (factor == "one")
+            return GL_ONE;
+
+        if (factor == "src_color")
+            return GL_SRC_COLOR;
+
+        if (factor == "inv_src_color")
+            return GL_ONE_MINUS_SRC_COLOR;
+
+        if (factor == "src_alpha")
+            return GL_SRC_ALPHA;
+
+        if (factor == "inv_src_alpha")
+            return GL_ONE_MINUS_SRC_ALPHA;
+
+        if (factor == "dst_alpha")
+            return GL_DST_ALPHA;
+
+        if (factor == "inv_dst_alpha")
+            return GL_ONE_MINUS_DST_ALPHA;
+
+        return GL_ONE;
+    }
+#pragma endregion
 
     void Renderer::DrawCube(const Transform& transform, std::string& texturePath, const Camera& camera)
     {
@@ -183,7 +254,7 @@ namespace Okari
         glBindVertexArray(0);
     }
 
-    void Renderer::DrawMesh(const Transform& transform, Mesh* mesh, std::string& texturePath, const Camera& camera)
+    void Renderer::DrawMesh(const Transform& transform, Mesh* mesh, std::string& fallbackTexturePath, const Camera& camera)
     {
         if (!mesh)
             return;
@@ -205,17 +276,65 @@ namespace Okari
 
         for (const SubMesh& subMesh : subMeshes)
         {
-            std::string texturePath = texturePath;
+            std::string finalTexturePath = fallbackTexturePath;
+
+            AlphaMode alphaMode = AlphaMode::Opaque;
+            float alphaCutoff = 0.5f;
+
+            bool blendEnabled = false;
+            std::string blendSrc = "one";
+            std::string blendDst = "zero";
+
+            CullMode cullMode = CullMode::Back;
+
+            bool depthTest = true;
+            bool depthWrite = true;
+            std::string depthFunc = "lequal";
 
             if (subMesh.MaterialIndex < materials.size())
             {
-                const std::string& materialTexture = materials[subMesh.MaterialIndex].DiffuseTexturePath;
+                const Material& material = materials[subMesh.MaterialIndex];
 
-                if (!materialTexture.empty())
-                    texturePath = materialTexture;
+                if (!material.DiffuseTexturePath.empty())
+                    finalTexturePath = material.DiffuseTexturePath;
+
+                alphaMode = material.Alpha;
+                alphaCutoff = material.AlphaCutoff;
+
+                blendEnabled = material.BlendEnabled;
+                blendSrc = material.BlendSrc;
+                blendDst = material.BlendDst;
+
+                cullMode = material.Culling;
+
+                depthTest = material.DepthTest;
+                depthWrite = material.DepthWrite;
+                depthFunc = material.DepthFunc;
             }
 
-            Texture2D* texture = GetTexture(texturePath);
+            m_Shader->SetInt("u_UseAlphaCutout", alphaMode == AlphaMode::Cutout ? 1 : 0);
+
+            if (depthTest)
+                glEnable(GL_DEPTH_TEST);
+            else
+                glDisable(GL_DEPTH_TEST);
+
+            glDepthMask(depthWrite ? GL_TRUE : GL_FALSE);
+            glDepthFunc(ToGLDepthFunc(depthFunc));
+
+            if (cullMode == CullMode::None)
+            {
+                glDisable(GL_CULL_FACE);
+            }
+            else
+            {
+                glEnable(GL_CULL_FACE);
+                glCullFace(ToGLCullFace(cullMode));
+            }
+
+            glDisable(GL_BLEND);
+
+            Texture2D* texture = GetTexture(finalTexturePath);
             texture->Bind(0);
 
             glDrawArrays(
@@ -225,6 +344,12 @@ namespace Okari
             );
         }
 
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LEQUAL);
+        glDisable(GL_BLEND);
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
         glBindVertexArray(0);
     }
 

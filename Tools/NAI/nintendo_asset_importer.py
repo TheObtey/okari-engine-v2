@@ -9,7 +9,7 @@ from tkinter import filedialog, messagebox, ttk
 
 
 APP_TITLE = "(Okari) Nintendo Asset Importer"
-APP_VERSION = "v0.3.0"
+APP_VERSION = "v0.3.2"
 AUTHOR_NAME = "TheObtey"
 AUTHOR_URL = "https://github.com/TheObtey"
 CONFIG_PATH = Path(__file__).with_suffix(".config.json")
@@ -17,6 +17,570 @@ CONFIG_PATH = Path(__file__).with_suffix(".config.json")
 
 def u32(data, offset):
     return struct.unpack_from(">I", data, offset)[0]
+
+
+def u8(data, offset):
+    return data[offset]
+
+
+def u16(data, offset):
+    return struct.unpack_from(">H", data, offset)[0]
+
+
+def read_c_string(data, offset):
+    end = data.find(b"\0", offset)
+    if end == -1:
+        end = len(data)
+    return data[offset:end].decode("shift_jis", errors="replace")
+
+
+def read_j3d_string_table(data, base_offset):
+    if base_offset <= 0 or base_offset + 4 > len(data):
+        return []
+
+    count = u16(data, base_offset)
+    strings = []
+
+    for index in range(count):
+        entry_offset = base_offset + 4 + index * 4
+        if entry_offset + 4 > len(data):
+            break
+
+        string_offset = u16(data, entry_offset + 2)
+        strings.append(read_c_string(data, base_offset + string_offset))
+
+    return strings
+
+
+def iter_j3d_chunks(data):
+    if len(data) < 0x20:
+        return
+
+    chunk_count = u32(data, 0x0C)
+    offset = 0x20
+
+    for _ in range(chunk_count):
+        if offset + 8 > len(data):
+            return
+
+        tag = data[offset:offset + 4].decode("ascii", errors="replace")
+        size = u32(data, offset + 4)
+
+        if size <= 0 or offset + size > len(data):
+            return
+
+        yield tag, offset, size
+        offset += size
+
+
+def find_j3d_chunks(data):
+    return {tag: (offset, size) for tag, offset, size in iter_j3d_chunks(data)}
+
+
+def parse_tex1(data, tex1_offset):
+    texture_count = u16(data, tex1_offset + 0x08)
+    name_table_offset = u32(data, tex1_offset + 0x10)
+    names = read_j3d_string_table(data, tex1_offset + name_table_offset)
+
+    textures = []
+    for index in range(texture_count):
+        name = names[index] if index < len(names) else f"texture_{index}"
+        textures.append({
+            "index": index,
+            "name": name
+        })
+
+    return textures
+
+
+J3D_INVALID_INDEX = 0xFFFF
+MAT3_MATERIAL_INIT_SIZE = 0x14C
+MAT3_MAX_TEXTURE_SLOTS = 8
+
+
+def safe_u16(data, offset, default=J3D_INVALID_INDEX):
+    if offset < 0 or offset + 2 > len(data):
+        return default
+    return u16(data, offset)
+
+
+def safe_u32(data, offset, default=0):
+    if offset < 0 or offset + 4 > len(data):
+        return default
+    return u32(data, offset)
+
+
+def get_chunk_relative_offset(data, chunk_offset, header_field_offset):
+    value = safe_u32(data, chunk_offset + header_field_offset, 0)
+    if value == 0:
+        return None
+    return chunk_offset + value
+
+
+
+# Offsets inside J3DMaterialInitData (0x14C bytes) for J3D2 bmd3/bdl4.
+# Important: most indices near the end of the block are u16 table indices,
+# while cull / zCompLoc / dither are byte-sized indices.
+MAT3_KNOWN_TEXNO_INDEX_OFFSET = 0x28
+MAT3_KNOWN_TEV_ORDER_INDEX_OFFSET = 0xB4
+MAT3_KNOWN_ALPHA_COMPARE_INDEX_OFFSET = 0x144
+MAT3_KNOWN_BLEND_MODE_INDEX_OFFSET = 0x146
+MAT3_KNOWN_Z_MODE_INDEX_OFFSET = 0x148
+MAT3_KNOWN_CULL_MODE_INDEX_OFFSET = 0x01
+MAT3_KNOWN_Z_COMP_LOC_INDEX_OFFSET = 0x14A
+MAT3_KNOWN_DITHER_INDEX_OFFSET = 0x14B
+
+# MAT3 header table pointers for J3D2 bmd3/bdl4.
+MAT3_TABLE_FIELDS = {
+    "indirect": 0x18,
+    "cull_mode": 0x1C,
+    "material_color": 0x20,
+    "color_channel_count": 0x24,
+    "color_channel": 0x28,
+    "ambient_color": 0x2C,
+    "light": 0x30,
+    "tex_gen_count": 0x34,
+    "tex_coord": 0x38,
+    "tex_mtx": 0x3C,
+    "post_tex_gen_count": 0x40,
+    "post_tex_coord": 0x44,
+    "post_tex_mtx": 0x48,
+    "tex_no": 0x4C,
+    "tev_order": 0x50,
+    "tev_color": 0x54,
+    "tev_konst_color": 0x58,
+    "tev_stage_count": 0x5C,
+    "tev_stage": 0x60,
+    "tev_swap_mode": 0x64,
+    "tev_swap_mode_table": 0x68,
+    "fog": 0x68,
+    "alpha_compare": 0x6C,
+    "blend_mode": 0x70,
+    "z_mode": 0x74,
+    "z_comp_loc": 0x78,
+    "dither": 0x7C,
+    "nbt_scale": 0x80,
+}
+
+GX_COMPARE_FUNCS = {0: "never", 1: "less", 2: "equal", 3: "lequal", 4: "greater", 5: "nequal", 6: "gequal", 7: "always"}
+GX_ALPHA_OPS = {0: "and", 1: "or", 2: "xor", 3: "xnor"}
+GX_BLEND_TYPES = {0: "none", 1: "blend", 2: "logic", 3: "subtract"}
+GX_BLEND_FACTORS = {0: "zero", 1: "one", 2: "src_color", 3: "inv_src_color", 4: "src_alpha", 5: "inv_src_alpha", 6: "dst_alpha", 7: "inv_dst_alpha"}
+GX_LOGIC_OPS = {0: "clear", 1: "and", 2: "rev_and", 3: "copy", 4: "inv_and", 5: "noop", 6: "xor", 7: "or", 8: "nor", 9: "equiv", 10: "inv", 11: "rev_or", 12: "inv_copy", 13: "inv_or", 14: "nand", 15: "set"}
+GX_CULL_MODES = {0: "none", 1: "front", 2: "back", 3: "all"}
+
+
+def enum_name(table, value):
+    return table.get(value, f"unknown_{value}")
+
+
+def get_mat3_table_offset(data, mat3_offset, table_name):
+    field_offset = MAT3_TABLE_FIELDS.get(table_name)
+    if field_offset is None:
+        return None
+    return get_chunk_relative_offset(data, mat3_offset, field_offset)
+
+
+def read_u8_index(data, offset):
+    if offset < 0 or offset >= len(data):
+        return None
+    value = u8(data, offset)
+    if value == 0xFF:
+        return None
+    return value
+
+
+def read_u16_index(data, offset):
+    value = safe_u16(data, offset)
+    if value == J3D_INVALID_INDEX:
+        return None
+    return value
+
+
+def parse_cull_mode_value(data, table_offset, index):
+    if table_offset is None or index is None:
+        return {"index": index, "value": None, "name": "back", "raw": None}
+
+    raw_offset = table_offset + index * 4
+    if raw_offset + 4 <= len(data):
+        value = safe_u32(data, raw_offset)
+        if value in GX_CULL_MODES:
+            return {"index": index, "value": value, "name": enum_name(GX_CULL_MODES, value), "raw": f"{value:08X}"}
+
+    raw_offset = table_offset + index
+    if raw_offset < len(data):
+        value = u8(data, raw_offset)
+        return {"index": index, "value": value, "name": enum_name(GX_CULL_MODES, value), "raw": f"{value:02X}"}
+
+    return {"index": index, "value": None, "name": "back", "raw": None}
+
+
+def parse_alpha_compare_value(data, table_offset, index):
+    if table_offset is None or index is None:
+        return {"index": index, "comp0": "always", "ref0": 0, "op": "and", "comp1": "always", "ref1": 0, "raw": None}
+
+    raw_offset = table_offset + index * 8
+    raw = data[raw_offset:raw_offset + 8] if raw_offset + 8 <= len(data) else b""
+
+    if len(raw) < 5:
+        return {"index": index, "comp0": "always", "ref0": 0, "op": "and", "comp1": "always", "ref1": 0, "raw": raw.hex().upper()}
+
+    comp0, ref0, op, comp1, ref1 = raw[0], raw[1], raw[2], raw[3], raw[4]
+    return {
+        "index": index,
+        "comp0_value": comp0,
+        "comp0": enum_name(GX_COMPARE_FUNCS, comp0),
+        "ref0": ref0,
+        "op_value": op,
+        "op": enum_name(GX_ALPHA_OPS, op),
+        "comp1_value": comp1,
+        "comp1": enum_name(GX_COMPARE_FUNCS, comp1),
+        "ref1": ref1,
+        "raw": raw.hex().upper(),
+    }
+
+
+def parse_blend_mode_value(data, table_offset, index):
+    if table_offset is None or index is None:
+        return {"index": index, "type": "none", "src": "one", "dst": "zero", "logic": "noop", "raw": None}
+
+    raw_offset = table_offset + index * 4
+    raw = data[raw_offset:raw_offset + 4] if raw_offset + 4 <= len(data) else b""
+
+    if len(raw) < 4:
+        return {"index": index, "type": "none", "src": "one", "dst": "zero", "logic": "noop", "raw": raw.hex().upper()}
+
+    blend_type, src_factor, dst_factor, logic_op = raw[0], raw[1], raw[2], raw[3]
+    return {
+        "index": index,
+        "type_value": blend_type,
+        "type": enum_name(GX_BLEND_TYPES, blend_type),
+        "src_value": src_factor,
+        "src": enum_name(GX_BLEND_FACTORS, src_factor),
+        "dst_value": dst_factor,
+        "dst": enum_name(GX_BLEND_FACTORS, dst_factor),
+        "logic_value": logic_op,
+        "logic": enum_name(GX_LOGIC_OPS, logic_op),
+        "raw": raw.hex().upper(),
+    }
+
+
+def parse_z_mode_value(data, table_offset, index):
+    if table_offset is None or index is None:
+        return {"index": index, "test": True, "func": "lequal", "write": True, "raw": None}
+
+    raw_offset = table_offset + index * 4
+    raw = data[raw_offset:raw_offset + 4] if raw_offset + 4 <= len(data) else b""
+
+    if len(raw) < 3:
+        return {"index": index, "test": True, "func": "lequal", "write": True, "raw": raw.hex().upper()}
+
+    return {
+        "index": index,
+        "test": bool(raw[0]),
+        "func_value": raw[1],
+        "func": enum_name(GX_COMPARE_FUNCS, raw[1]),
+        "write": bool(raw[2]),
+        "raw": raw.hex().upper(),
+    }
+
+
+def parse_bool_table_value(data, table_offset, index, default=True):
+    if table_offset is None or index is None:
+        return {"index": index, "value": default, "raw": None}
+
+    raw_offset = table_offset + index
+    if raw_offset >= len(data):
+        return {"index": index, "value": default, "raw": None}
+
+    value = u8(data, raw_offset)
+    return {"index": index, "value": bool(value), "raw": f"{value:02X}"}
+
+
+def alpha_compare_requires_cutout(alpha_compare):
+    comp0 = alpha_compare.get("comp0")
+    comp1 = alpha_compare.get("comp1")
+    ref0 = alpha_compare.get("ref0", 0)
+    ref1 = alpha_compare.get("ref1", 0)
+    return not (comp0 == "always" and comp1 == "always" and ref0 == 0 and ref1 == 0)
+
+# GX blend is not the same thing as visual transparency.
+# J3D materials use blend as part of the TEV/GX pipeline
+# while still needing to be rendered as opaque.
+# 
+# Was Nintendo vibe coding??
+def derive_alpha_mode(alpha_compare, blend_mode):
+    if alpha_compare_requires_cutout(alpha_compare):
+        return "cutout"
+    
+    return "opaque"
+
+
+def resolve_textures_from_material_entry(data, material_entry_offset, mat3_offset, texture_names):
+    textures = []
+    tex_no_table_offset = get_mat3_table_offset(data, mat3_offset, "tex_no")
+
+    if tex_no_table_offset is None or material_entry_offset is None:
+        return textures
+
+    for slot in range(MAT3_MAX_TEXTURE_SLOTS):
+        tex_no_index = read_u16_index(data, material_entry_offset + MAT3_KNOWN_TEXNO_INDEX_OFFSET + slot * 2)
+        if tex_no_index is None:
+            continue
+
+        texture_index = safe_u16(data, tex_no_table_offset + tex_no_index * 2)
+        if texture_index == J3D_INVALID_INDEX or texture_index >= len(texture_names):
+            continue
+
+        textures.append({
+            "slot": slot,
+            "index": texture_index,
+            "name": texture_names[texture_index],
+            "j3d": {
+                "tex_no_index": tex_no_index,
+                "texno_index_offset": f"0x{MAT3_KNOWN_TEXNO_INDEX_OFFSET:02X}",
+                "tex_table_relative_offset": f"0x{tex_no_table_offset - mat3_offset:X}"
+            }
+        })
+
+    return textures
+
+
+def parse_tev_orders_from_material_entry(data, material_entry_offset, mat3_offset, texture_names):
+    tev_orders = []
+    tev_order_table_offset = get_mat3_table_offset(data, mat3_offset, "tev_order")
+
+    if tev_order_table_offset is None or material_entry_offset is None:
+        return tev_orders
+
+    for stage in range(16):
+        tev_order_index = read_u16_index(data, material_entry_offset + MAT3_KNOWN_TEV_ORDER_INDEX_OFFSET + stage * 2)
+        if tev_order_index is None:
+            continue
+
+        raw_offset = tev_order_table_offset + tev_order_index * 4
+        raw = data[raw_offset:raw_offset + 4] if raw_offset + 4 <= len(data) else b""
+
+        if len(raw) < 4:
+            continue
+
+        tex_coord = raw[0]
+        tex_map = raw[1]
+        color_chan = raw[2]
+        texture_name = texture_names[tex_map] if tex_map != 0xFF and tex_map < len(texture_names) else None
+
+        tev_orders.append({
+            "stage": stage,
+            "index": tev_order_index,
+            "tex_coord": tex_coord if tex_coord != 0xFF else None,
+            "tex_map": tex_map if tex_map != 0xFF else None,
+            "texture": texture_name,
+            "color_channel": color_chan if color_chan != 0xFF else None,
+            "raw": raw.hex().upper(),
+            "j3d": {
+                "tev_order_index_offset": f"0x{MAT3_KNOWN_TEV_ORDER_INDEX_OFFSET:02X}",
+                "tev_order_table_relative_offset": f"0x{tev_order_table_offset - mat3_offset:X}",
+            }
+        })
+
+    return tev_orders
+
+
+def parse_material_gx_state(data, mat3_offset, material_entry_offset):
+    alpha_compare_index = read_u16_index(data, material_entry_offset + MAT3_KNOWN_ALPHA_COMPARE_INDEX_OFFSET)
+    blend_mode_index = read_u16_index(data, material_entry_offset + MAT3_KNOWN_BLEND_MODE_INDEX_OFFSET)
+    z_mode_index = read_u16_index(data, material_entry_offset + MAT3_KNOWN_Z_MODE_INDEX_OFFSET)
+    cull_mode_index = read_u8_index(data, material_entry_offset + MAT3_KNOWN_CULL_MODE_INDEX_OFFSET)
+    z_comp_loc_index = read_u8_index(data, material_entry_offset + MAT3_KNOWN_Z_COMP_LOC_INDEX_OFFSET)
+    dither_index = read_u8_index(data, material_entry_offset + MAT3_KNOWN_DITHER_INDEX_OFFSET)
+
+    alpha_compare = parse_alpha_compare_value(data, get_mat3_table_offset(data, mat3_offset, "alpha_compare"), alpha_compare_index)
+    blend_mode = parse_blend_mode_value(data, get_mat3_table_offset(data, mat3_offset, "blend_mode"), blend_mode_index)
+    z_mode = parse_z_mode_value(data, get_mat3_table_offset(data, mat3_offset, "z_mode"), z_mode_index)
+    cull_mode = parse_cull_mode_value(data, get_mat3_table_offset(data, mat3_offset, "cull_mode"), cull_mode_index)
+    z_comp_loc = parse_bool_table_value(data, get_mat3_table_offset(data, mat3_offset, "z_comp_loc"), z_comp_loc_index, True)
+    dither = parse_bool_table_value(data, get_mat3_table_offset(data, mat3_offset, "dither"), dither_index, True)
+
+    return {
+        "indices": {
+            "cull_mode": cull_mode_index,
+            "alpha_compare": alpha_compare_index,
+            "blend_mode": blend_mode_index,
+            "z_mode": z_mode_index,
+            "z_comp_loc": z_comp_loc_index,
+            "dither": dither_index,
+        },
+        "cull_mode": cull_mode,
+        "alpha_compare": alpha_compare,
+        "blend_mode": blend_mode,
+        "z_mode": z_mode,
+        "z_comp_loc": z_comp_loc,
+        "dither": dither,
+    }
+
+
+
+def parse_mat3(data, mat3_offset, textures=None, mat3_size=None):
+    if textures is None:
+        textures = []
+
+    if mat3_size is None:
+        mat3_size = safe_u32(data, mat3_offset + 0x04, 0)
+
+    texture_names = [texture["name"] for texture in textures]
+
+    material_count = u16(data, mat3_offset + 0x08)
+    material_init_table = get_chunk_relative_offset(data, mat3_offset, 0x0C)
+    material_remap_table = get_chunk_relative_offset(data, mat3_offset, 0x10)
+    name_table_offset = u32(data, mat3_offset + 0x14)
+    names = read_j3d_string_table(data, mat3_offset + name_table_offset)
+
+    material_init_indices = []
+    material_entry_offsets = []
+
+    for index in range(material_count):
+        material_init_index = index
+
+        if material_remap_table is not None:
+            remapped_index = safe_u16(data, material_remap_table + index * 2, index)
+            if remapped_index != J3D_INVALID_INDEX:
+                material_init_index = remapped_index
+
+        material_init_indices.append(material_init_index)
+
+        if material_init_table is not None:
+            material_entry_offsets.append(material_init_table + material_init_index * MAT3_MATERIAL_INIT_SIZE)
+        else:
+            material_entry_offsets.append(None)
+
+
+    materials = []
+    for index in range(material_count):
+        material_init_index = material_init_indices[index]
+        material_entry_offset = material_entry_offsets[index]
+        name = names[index] if index < len(names) else f"material_{index}"
+
+        material_textures = []
+        tev_orders = []
+        gx_state = None
+
+        if material_entry_offset is not None:
+            material_textures = resolve_textures_from_material_entry(
+                data,
+                material_entry_offset,
+                mat3_offset,
+                texture_names
+            )
+
+            tev_orders = parse_tev_orders_from_material_entry(
+                data,
+                material_entry_offset,
+                mat3_offset,
+                texture_names
+            )
+
+            gx_state = parse_material_gx_state(
+                data,
+                mat3_offset,
+                material_entry_offset
+            )
+
+        if gx_state is None:
+            gx_state = {
+                "indices": {},
+                "cull_mode": {"name": "back"},
+                "alpha_compare": {"comp0": "always", "ref0": 0, "op": "and", "comp1": "always", "ref1": 0},
+                "blend_mode": {"type": "none", "src": "one", "dst": "zero"},
+                "z_mode": {"test": True, "func": "lequal", "write": True},
+                "z_comp_loc": {"value": True},
+                "dither": {"value": True},
+            }
+
+        alpha_mode = derive_alpha_mode(gx_state["alpha_compare"], gx_state["blend_mode"])
+        alpha_cutoff = gx_state["alpha_compare"].get("ref0", 0) / 255.0 if alpha_mode == "cutout" else 0.5
+        render_queue = "transparent" if alpha_mode == "blend" else ("cutout" if alpha_mode == "cutout" else "opaque")
+
+        materials.append({
+            "index": index,
+            "name": name,
+            "textures": material_textures,
+            "alpha_mode": alpha_mode,
+            "alpha_cutoff": alpha_cutoff,
+            "blend": {
+                "enabled": gx_state["blend_mode"].get("type") in ("blend", "subtract", "logic"),
+                "type": gx_state["blend_mode"].get("type"),
+                "src": gx_state["blend_mode"].get("src"),
+                "dst": gx_state["blend_mode"].get("dst"),
+                "logic": gx_state["blend_mode"].get("logic"),
+            },
+            "culling": gx_state["cull_mode"].get("name", "back"),
+            "depth": {
+                "test": gx_state["z_mode"].get("test", True),
+                "write": gx_state["z_mode"].get("write", True),
+                "func": gx_state["z_mode"].get("func", "lequal")
+            },
+            "render_queue": render_queue,
+            "j3d": {
+                "mat3_index": index,
+                "material_init_index": material_init_index,
+                "material_entry_offset": material_entry_offset - mat3_offset if material_entry_offset is not None else None,
+                "gx": gx_state,
+                "tev_orders": tev_orders
+            }
+        })
+
+    return materials, {
+        "material_count": material_count,
+        "texture_count": len(textures),
+        "material_init_table_relative_offset": f"0x{material_init_table - mat3_offset:X}" if material_init_table is not None else None,
+        "material_remap_table_relative_offset": f"0x{material_remap_table - mat3_offset:X}" if material_remap_table is not None else None,
+        "tex_no_table_relative_offset": f"0x{get_mat3_table_offset(data, mat3_offset, 'tex_no') - mat3_offset:X}" if get_mat3_table_offset(data, mat3_offset, "tex_no") is not None else None,
+        "tev_order_table_relative_offset": f"0x{get_mat3_table_offset(data, mat3_offset, 'tev_order') - mat3_offset:X}" if get_mat3_table_offset(data, mat3_offset, "tev_order") is not None else None,
+    }
+
+def build_okmat_document(model_path, data):
+    chunks = find_j3d_chunks(data)
+
+    if "MAT3" not in chunks:
+        raise ValueError("MAT3 chunk not found")
+
+    textures = []
+    if "TEX1" in chunks:
+        textures = parse_tex1(data, chunks["TEX1"][0])
+
+    materials, mat3_debug = parse_mat3(data, chunks["MAT3"][0], textures, chunks["MAT3"][1])
+
+    return {
+        "format": "okmat",
+        "version": 1,
+        "source": {
+            "file": model_path.name,
+            "type": data[:8].decode("ascii", errors="replace"),
+        },
+        "textures": textures,
+        "materials": materials,
+        "debug": {
+            "mat3": mat3_debug
+        }
+    }
+
+
+def convert_model_to_okmat(model_path, input_root, output_root, log):
+    relative = model_path.relative_to(input_root)
+    output_dir = output_root / relative.parent
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    raw = model_path.read_bytes()
+    data = yaz0_decompress(raw)
+    document = build_okmat_document(model_path, data)
+
+    output_path = output_dir / f"{model_path.stem}.okmat"
+    output_path.write_text(json.dumps(document, indent=4, ensure_ascii=False), encoding="utf-8")
+
+    material_count = len(document["materials"])
+    texture_count = len(document["textures"])
+    log(f"[OKMAT] {model_path} -> {output_path} ({material_count} materials, {texture_count} textures)")
+    return True
 
 
 def yaz0_decompress(data):
@@ -244,6 +808,7 @@ class TPAssetImporterGUI:
         self.superbmd_path = tk.StringVar(value="")
         self.fbx_dir = tk.StringVar(value="fbx")
         self.blender_path = tk.StringVar(value="")
+        self.okmat_dir = tk.StringVar(value="okmat")
 
         self.is_running = False
         self.action_buttons = []
@@ -391,6 +956,7 @@ class TPAssetImporterGUI:
         self.superbmd_path.set(config.get("superbmd_path", self.superbmd_path.get()))
         self.fbx_dir.set(config.get("fbx_dir", self.fbx_dir.get()))
         self.blender_path.set(config.get("blender_path", self.blender_path.get()))
+        self.okmat_dir.set(config.get("okmat_dir", self.okmat_dir.get()))
 
     def save_config(self):
         config = {
@@ -400,6 +966,7 @@ class TPAssetImporterGUI:
             "superbmd_path": self.superbmd_path.get(),
             "fbx_dir": self.fbx_dir.get(),
             "blender_path": self.blender_path.get(),
+            "okmat_dir": self.okmat_dir.get(),
         }
 
         try:
@@ -451,6 +1018,7 @@ class TPAssetImporterGUI:
 
         self.build_extract_tab()
         self.build_model_tab()
+        self.build_okmat_tab()
         self.build_fbx_tab()
         self.build_settings_tab()
         self.switch_tab("extract")
@@ -593,8 +1161,6 @@ class TPAssetImporterGUI:
             canvas.yview_scroll(delta, "units")
             return "break"
 
-        # Bind while the pointer is anywhere inside the tab, including labels,
-        # entries and buttons. This fixes wheel events being swallowed by children.
         def bind_wheel(_event=None):
             canvas.bind_all("<MouseWheel>", _on_mousewheel)
             canvas.bind_all("<Button-4>", _on_mousewheel)
@@ -698,6 +1264,46 @@ class TPAssetImporterGUI:
         ttk.Label(actions, text="Only converts .bmd and .bdl files.", style="SectionText.TLabel").pack(side="left", padx=(12, 0))
         self.action_buttons.append(self.convert_button)
 
+    def build_okmat_tab(self):
+        tab = self.register_tab("okmat", "Materials to OKMAT")
+        scroll_frame = self.make_scrollable(tab)
+
+        self.create_info_card(
+            scroll_frame,
+            "Extract Nintendo materials to OKMAT",
+            "Read MAT3 and TEX1 directly from extracted .bmd/.bdl files and generate clean .okmat files containing Nintendo material states: textures, TEV orders, alpha compare, blend, culling and depth."
+        )
+
+        self.create_path_row(
+            scroll_frame,
+            "Extracted assets input",
+            "Folder created by the Extract step. The parser will look inside models/ when available.",
+            self.extract_dir,
+            self.select_extract_folder,
+            1
+        )
+        self.create_path_row(
+            scroll_frame,
+            "OKMAT output",
+            "Destination folder for generated .okmat material files.",
+            self.okmat_dir,
+            self.select_okmat_folder,
+            2
+        )
+
+        actions = tk.Frame(scroll_frame, bg=self.colors["surface"])
+        actions.grid(row=3, column=0, sticky="ew", pady=(16, 0))
+        self.okmat_button = ttk.Button(
+            actions,
+            text="Generate OKMAT",
+            style="Primary.TButton",
+            command=self.run_okmat_convert
+        )
+        self.okmat_button.pack(side="left")
+        ttk.Label(actions, text="Reads .bmd/.bdl.", style="SectionText.TLabel").pack(side="left", padx=(12, 0))
+        self.action_buttons.append(self.okmat_button)
+
+
     def build_fbx_tab(self):
         tab = self.register_tab("fbx", "DAE to FBX")
         scroll_frame = self.make_scrollable(tab)
@@ -799,6 +1405,9 @@ class TPAssetImporterGUI:
 
     def select_fbx_folder(self):
         self.select_directory("Select FBX output folder", self.fbx_dir)
+
+    def select_okmat_folder(self):
+        self.select_directory("Select OKMAT output folder", self.okmat_dir)
 
     def select_directory(self, title, variable):
         path = filedialog.askdirectory(title=title)
@@ -1035,6 +1644,80 @@ class TPAssetImporterGUI:
 
         self.root.after(0, self.set_running, False)
         self.root.after(0, self.show_done_popup, "Model conversion complete", summary_lines)
+
+    def run_okmat_convert(self):
+        if self.is_running:
+            return
+
+        self.save_config()
+
+        input_root = self.validate_folder(self.extract_dir.get(), "Extracted assets folder")
+        if input_root is None:
+            return
+
+        output_root = Path(self.okmat_dir.get())
+        output_root.mkdir(parents=True, exist_ok=True)
+
+        thread = threading.Thread(
+            target=self.okmat_convert_worker,
+            args=(input_root, output_root),
+            daemon=True
+        )
+        thread.start()
+
+    def okmat_convert_worker(self, input_root, output_root):
+        self.root.after(0, self.set_running, True)
+
+        models_root = input_root / "models"
+        if models_root.exists():
+            models = list(models_root.rglob("*.bmd")) + list(models_root.rglob("*.bdl"))
+        else:
+            models = list(input_root.rglob("*.bmd")) + list(input_root.rglob("*.bdl"))
+        total_models = len(models)
+
+        success = 0
+        failed = 0
+
+        self.log(f"[INFO] Found {total_models} model files for OKMAT generation")
+        self.root.after(0, self.progress.configure, {"maximum": max(total_models, 1), "value": 0})
+
+        for index, model_path in enumerate(models, start=1):
+            self.log(f"[{index}/{total_models}] {model_path}")
+
+            try:
+                ok = convert_model_to_okmat(
+                    model_path,
+                    input_root,
+                    output_root,
+                    self.log
+                )
+
+                if ok:
+                    success += 1
+                else:
+                    failed += 1
+
+            except Exception as e:
+                failed += 1
+                self.log(f"[FAIL] {model_path} : {e}")
+
+            self.root.after(0, self.progress.configure, {"value": index})
+
+        self.log("")
+        self.log(f"[DONE] OKMAT generated: {success}")
+        self.log(f"[DONE] Failed: {failed}")
+
+        summary_lines = [
+            "OKMAT generation finished.",
+            "",
+            f"Models found: {total_models}",
+            f"OKMAT generated: {success}",
+            f"Failed: {failed}",
+        ]
+
+        self.root.after(0, self.set_running, False)
+        self.root.after(0, self.show_done_popup, "OKMAT generation complete", summary_lines)
+
 
     def run_fbx_convert(self):
         if self.is_running:

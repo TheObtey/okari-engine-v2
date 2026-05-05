@@ -4,5 +4,6 @@
     "dae_dir": "H:/C++/OkariEngine/TPRipPerfectlyLegal/TP_DAE",
     "superbmd_path": "E:/SUPERBMD/SuperBMD_2.5.0/SuperBMD.exe",
     "fbx_dir": "H:/C++/OkariEngine/TPRipPerfectlyLegal/TP_MODELS/fbx",
-    "blender_path": "A:/SteamLibrary/steamapps/common/Blender/blender.exe"
+    "blender_path": "A:/SteamLibrary/steamapps/common/Blender/blender.exe",
+    "okmat_dir": "H:/C++/OkariEngine/TPRipPerfectlyLegal/TP_OKMAT"
 }

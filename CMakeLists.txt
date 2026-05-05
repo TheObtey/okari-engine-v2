@@ -35,6 +35,7 @@ set(ENGINE_SOURCES
 
     Engine/Resources/MeshManager.cpp
     Engine/Resources/FBXLoader.cpp
+    Engine/Resources/OKMATLoader.cpp
 )
 
 set(EDITOR_SOURCES

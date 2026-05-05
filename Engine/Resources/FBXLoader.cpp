@@ -1,10 +1,13 @@
-#include "Resources/FBXLoader.h"
+#include "FBXLoader.h"
+#include "OKMATLoader.h"
 
 #include "ufbx.h"
 
 #include <vector>
 #include <iostream>
 #include <filesystem>
+#include <algorithm>
+#include <stb_image.h>
 
 namespace Okari
 {
@@ -54,6 +57,38 @@ namespace Okari
 		return finalPath.generic_string();
 	}
 
+	static bool TextureHasAlphaPixels(const std::string& texturePath)
+	{
+		if (texturePath.empty())
+			return false;
+
+		int width = 0;
+		int height = 0;
+		int channels = 0;
+
+		unsigned char* data = stbi_load(texturePath.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+
+		if (!data)
+			return false;
+
+		bool hasAlpha = false;
+		int pixelCount = width * height;
+
+		for (int i = 0; i < pixelCount; i++)
+		{
+			unsigned char alpha = data[i * 4 + 3];
+
+			if (alpha < 250)
+			{
+				hasAlpha = true;
+				break;
+			}
+		}
+
+		stbi_image_free(data);
+		return hasAlpha;
+	}
+
 	static Material ExtractMaterial(const std::string& fbxPath, const ufbx_material* fbxMaterial)
 	{
 		Material material;
@@ -80,6 +115,8 @@ namespace Okari
 			else if (diffuseTexture->filename.data && diffuseTexture->filename.length > 0)
 				material.DiffuseTexturePath = ResolveTexturePath(fbxPath, diffuseTexture->filename.data);
 		}
+
+		material.UseAlphaCutout = TextureHasAlphaPixels(material.DiffuseTexturePath);
 
 		std::cout << "[FBXLoader] Material: " << material.Name
 			<< " | Texture: " << material.DiffuseTexturePath << std::endl;
@@ -185,10 +222,21 @@ namespace Okari
 			<< " | Materials: " << materials.size()
 			<< std::endl;
 
-		Mesh* result = new Mesh(vertices, subMeshes, materials);
+		Mesh* mesh = new Mesh(vertices, subMeshes, materials);
 
 		ufbx_free_scene(scene);
 
-		return result;
+		{
+			std::filesystem::path fbxPath(path);
+			std::filesystem::path okmatPath = fbxPath;
+			
+			okmatPath.replace_extension(".okmat");
+
+			if (std::filesystem::exists(okmatPath))
+				OKMATLoader::ApplyToMesh(mesh, okmatPath.string());
+
+		}
+
+		return mesh;
 	}
 }

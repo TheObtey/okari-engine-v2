@@ -1,0 +1,1490 @@
+{
+    "format": "okmat",
+    "version": 1,
+    "source": {
+        "file": "files__res__Object__Zelda_000.bmd",
+        "type": "J3D2bmd3"
+    },
+    "textures": [
+        {
+            "index": 0,
+            "name": "zelda"
+        },
+        {
+            "index": 1,
+            "name": "zelda_eye.1"
+        },
+        {
+            "index": 2,
+            "name": "zelda_eye.2"
+        },
+        {
+            "index": 3,
+            "name": "zelda_eye.3"
+        },
+        {
+            "index": 4,
+            "name": "zelda_eye.4"
+        },
+        {
+            "index": 5,
+            "name": "zelda_eye.5"
+        },
+        {
+            "index": 6,
+            "name": "zelda_eye.6"
+        },
+        {
+            "index": 7,
+            "name": "zelda_eyeball"
+        },
+        {
+            "index": 8,
+            "name": "zelda_hair"
+        },
+        {
+            "index": 9,
+            "name": "zelda"
+        },
+        {
+            "index": 10,
+            "name": "zelda_hair_SPenv"
+        },
+        {
+            "index": 11,
+            "name": "zelda_hair"
+        },
+        {
+            "index": 12,
+            "name": "zelda_hair_SPmap"
+        },
+        {
+            "index": 13,
+            "name": "zelda_eyeball"
+        },
+        {
+            "index": 14,
+            "name": "zelda_eye_Hlight"
+        },
+        {
+            "index": 15,
+            "name": "zelda_eye_Shadow"
+        },
+        {
+            "index": 16,
+            "name": "zelda_eye.1"
+        }
+    ],
+    "materials": [
+        {
+            "index": 0,
+            "name": "SC_eye_L_v",
+            "textures": [
+                {
+                    "slot": 0,
+                    "index": 0,
+                    "name": "zelda",
+                    "j3d": {
+                        "tex_no_index": 0,
+                        "texno_index_offset": "0x28",
+                        "tex_table_relative_offset": "0x18FC"
+                    }
+                }
+            ],
+            "alpha_mode": "cutout",
+            "alpha_cutoff": 0.5019607843137255,
+            "blend": {
+                "enabled": false,
+                "type": "none",
+                "src": "one",
+                "dst": "zero",
+                "logic": "copy"
+            },
+            "culling": "back",
+            "depth": {
+                "test": true,
+                "write": true,
+                "func": "lequal"
+            },
+            "render_queue": "cutout",
+            "j3d": {
+                "mat3_index": 0,
+                "material_init_index": 0,
+                "material_entry_offset": 132,
+                "gx": {
+                    "indices": {
+                        "cull_mode": 0,
+                        "alpha_compare": 0,
+                        "blend_mode": 0,
+                        "z_mode": 0,
+                        "z_comp_loc": 0,
+                        "dither": 0
+                    },
+                    "cull_mode": {
+                        "index": 0,
+                        "value": 2,
+                        "name": "back",
+                        "raw": "00000002"
+                    },
+                    "alpha_compare": {
+                        "index": 0,
+                        "comp0_value": 6,
+                        "comp0": "gequal",
+                        "ref0": 128,
+                        "op_value": 0,
+                        "op": "and",
+                        "comp1_value": 3,
+                        "comp1": "lequal",
+                        "ref1": 255,
+                        "raw": "06800003FFFFFFFF"
+                    },
+                    "blend_mode": {
+                        "index": 0,
+                        "type_value": 0,
+                        "type": "none",
+                        "src_value": 1,
+                        "src": "one",
+                        "dst_value": 0,
+                        "dst": "zero",
+                        "logic_value": 3,
+                        "logic": "copy",
+                        "raw": "00010003"
+                    },
+                    "z_mode": {
+                        "index": 0,
+                        "test": true,
+                        "func_value": 3,
+                        "func": "lequal",
+                        "write": true,
+                        "raw": "010301FF"
+                    },
+                    "z_comp_loc": {
+                        "index": 0,
+                        "value": false,
+                        "raw": "00"
+                    },
+                    "dither": {
+                        "index": 0,
+                        "value": false,
+                        "raw": "00"
+                    }
+                },
+                "tev_orders": [
+                    {
+                        "stage": 0,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 1,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 2,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 3,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 4,
+                        "index": 0,
+                        "tex_coord": 0,
+                        "tex_map": 0,
+                        "texture": "zelda",
+                        "color_channel": 0,
+                        "raw": "00000000",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "index": 1,
+            "name": "SC_eye_R_v",
+            "textures": [
+                {
+                    "slot": 0,
+                    "index": 0,
+                    "name": "zelda",
+                    "j3d": {
+                        "tex_no_index": 0,
+                        "texno_index_offset": "0x28",
+                        "tex_table_relative_offset": "0x18FC"
+                    }
+                }
+            ],
+            "alpha_mode": "cutout",
+            "alpha_cutoff": 0.5019607843137255,
+            "blend": {
+                "enabled": false,
+                "type": "none",
+                "src": "one",
+                "dst": "zero",
+                "logic": "copy"
+            },
+            "culling": "back",
+            "depth": {
+                "test": true,
+                "write": true,
+                "func": "lequal"
+            },
+            "render_queue": "cutout",
+            "j3d": {
+                "mat3_index": 1,
+                "material_init_index": 1,
+                "material_entry_offset": 464,
+                "gx": {
+                    "indices": {
+                        "cull_mode": 0,
+                        "alpha_compare": 0,
+                        "blend_mode": 0,
+                        "z_mode": 0,
+                        "z_comp_loc": 0,
+                        "dither": 0
+                    },
+                    "cull_mode": {
+                        "index": 0,
+                        "value": 2,
+                        "name": "back",
+                        "raw": "00000002"
+                    },
+                    "alpha_compare": {
+                        "index": 0,
+                        "comp0_value": 6,
+                        "comp0": "gequal",
+                        "ref0": 128,
+                        "op_value": 0,
+                        "op": "and",
+                        "comp1_value": 3,
+                        "comp1": "lequal",
+                        "ref1": 255,
+                        "raw": "06800003FFFFFFFF"
+                    },
+                    "blend_mode": {
+                        "index": 0,
+                        "type_value": 0,
+                        "type": "none",
+                        "src_value": 1,
+                        "src": "one",
+                        "dst_value": 0,
+                        "dst": "zero",
+                        "logic_value": 3,
+                        "logic": "copy",
+                        "raw": "00010003"
+                    },
+                    "z_mode": {
+                        "index": 0,
+                        "test": true,
+                        "func_value": 3,
+                        "func": "lequal",
+                        "write": true,
+                        "raw": "010301FF"
+                    },
+                    "z_comp_loc": {
+                        "index": 0,
+                        "value": false,
+                        "raw": "00"
+                    },
+                    "dither": {
+                        "index": 0,
+                        "value": false,
+                        "raw": "00"
+                    }
+                },
+                "tev_orders": [
+                    {
+                        "stage": 0,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 1,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 2,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 3,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 4,
+                        "index": 0,
+                        "tex_coord": 0,
+                        "tex_map": 0,
+                        "texture": "zelda",
+                        "color_channel": 0,
+                        "raw": "00000000",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "index": 2,
+            "name": "zelda_body_m_v",
+            "textures": [
+                {
+                    "slot": 0,
+                    "index": 0,
+                    "name": "zelda",
+                    "j3d": {
+                        "tex_no_index": 0,
+                        "texno_index_offset": "0x28",
+                        "tex_table_relative_offset": "0x18FC"
+                    }
+                }
+            ],
+            "alpha_mode": "cutout",
+            "alpha_cutoff": 0.5019607843137255,
+            "blend": {
+                "enabled": false,
+                "type": "none",
+                "src": "one",
+                "dst": "zero",
+                "logic": "copy"
+            },
+            "culling": "back",
+            "depth": {
+                "test": true,
+                "write": true,
+                "func": "lequal"
+            },
+            "render_queue": "cutout",
+            "j3d": {
+                "mat3_index": 2,
+                "material_init_index": 2,
+                "material_entry_offset": 796,
+                "gx": {
+                    "indices": {
+                        "cull_mode": 0,
+                        "alpha_compare": 0,
+                        "blend_mode": 0,
+                        "z_mode": 0,
+                        "z_comp_loc": 0,
+                        "dither": 0
+                    },
+                    "cull_mode": {
+                        "index": 0,
+                        "value": 2,
+                        "name": "back",
+                        "raw": "00000002"
+                    },
+                    "alpha_compare": {
+                        "index": 0,
+                        "comp0_value": 6,
+                        "comp0": "gequal",
+                        "ref0": 128,
+                        "op_value": 0,
+                        "op": "and",
+                        "comp1_value": 3,
+                        "comp1": "lequal",
+                        "ref1": 255,
+                        "raw": "06800003FFFFFFFF"
+                    },
+                    "blend_mode": {
+                        "index": 0,
+                        "type_value": 0,
+                        "type": "none",
+                        "src_value": 1,
+                        "src": "one",
+                        "dst_value": 0,
+                        "dst": "zero",
+                        "logic_value": 3,
+                        "logic": "copy",
+                        "raw": "00010003"
+                    },
+                    "z_mode": {
+                        "index": 0,
+                        "test": true,
+                        "func_value": 3,
+                        "func": "lequal",
+                        "write": true,
+                        "raw": "010301FF"
+                    },
+                    "z_comp_loc": {
+                        "index": 0,
+                        "value": false,
+                        "raw": "00"
+                    },
+                    "dither": {
+                        "index": 0,
+                        "value": false,
+                        "raw": "00"
+                    }
+                },
+                "tev_orders": [
+                    {
+                        "stage": 0,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 1,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 2,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 3,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 4,
+                        "index": 0,
+                        "tex_coord": 0,
+                        "tex_map": 0,
+                        "texture": "zelda",
+                        "color_channel": 0,
+                        "raw": "00000000",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "index": 3,
+            "name": "zelda_doubleside_m_v",
+            "textures": [
+                {
+                    "slot": 0,
+                    "index": 0,
+                    "name": "zelda",
+                    "j3d": {
+                        "tex_no_index": 0,
+                        "texno_index_offset": "0x28",
+                        "tex_table_relative_offset": "0x18FC"
+                    }
+                }
+            ],
+            "alpha_mode": "cutout",
+            "alpha_cutoff": 0.5019607843137255,
+            "blend": {
+                "enabled": false,
+                "type": "none",
+                "src": "one",
+                "dst": "zero",
+                "logic": "copy"
+            },
+            "culling": "none",
+            "depth": {
+                "test": true,
+                "write": true,
+                "func": "lequal"
+            },
+            "render_queue": "cutout",
+            "j3d": {
+                "mat3_index": 3,
+                "material_init_index": 3,
+                "material_entry_offset": 1128,
+                "gx": {
+                    "indices": {
+                        "cull_mode": 2,
+                        "alpha_compare": 0,
+                        "blend_mode": 0,
+                        "z_mode": 0,
+                        "z_comp_loc": 0,
+                        "dither": 0
+                    },
+                    "cull_mode": {
+                        "index": 2,
+                        "value": 0,
+                        "name": "none",
+                        "raw": "00000000"
+                    },
+                    "alpha_compare": {
+                        "index": 0,
+                        "comp0_value": 6,
+                        "comp0": "gequal",
+                        "ref0": 128,
+                        "op_value": 0,
+                        "op": "and",
+                        "comp1_value": 3,
+                        "comp1": "lequal",
+                        "ref1": 255,
+                        "raw": "06800003FFFFFFFF"
+                    },
+                    "blend_mode": {
+                        "index": 0,
+                        "type_value": 0,
+                        "type": "none",
+                        "src_value": 1,
+                        "src": "one",
+                        "dst_value": 0,
+                        "dst": "zero",
+                        "logic_value": 3,
+                        "logic": "copy",
+                        "raw": "00010003"
+                    },
+                    "z_mode": {
+                        "index": 0,
+                        "test": true,
+                        "func_value": 3,
+                        "func": "lequal",
+                        "write": true,
+                        "raw": "010301FF"
+                    },
+                    "z_comp_loc": {
+                        "index": 0,
+                        "value": false,
+                        "raw": "00"
+                    },
+                    "dither": {
+                        "index": 0,
+                        "value": false,
+                        "raw": "00"
+                    }
+                },
+                "tev_orders": [
+                    {
+                        "stage": 0,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 1,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 2,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 3,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 4,
+                        "index": 0,
+                        "tex_coord": 0,
+                        "tex_map": 0,
+                        "texture": "zelda",
+                        "color_channel": 0,
+                        "raw": "00000000",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "index": 4,
+            "name": "zelda_eyeball_L_v",
+            "textures": [],
+            "alpha_mode": "cutout",
+            "alpha_cutoff": 0.5019607843137255,
+            "blend": {
+                "enabled": false,
+                "type": "none",
+                "src": "one",
+                "dst": "zero",
+                "logic": "copy"
+            },
+            "culling": "back",
+            "depth": {
+                "test": true,
+                "write": true,
+                "func": "lequal"
+            },
+            "render_queue": "cutout",
+            "j3d": {
+                "mat3_index": 4,
+                "material_init_index": 4,
+                "material_entry_offset": 1460,
+                "gx": {
+                    "indices": {
+                        "cull_mode": 0,
+                        "alpha_compare": 0,
+                        "blend_mode": 0,
+                        "z_mode": 0,
+                        "z_comp_loc": 0,
+                        "dither": 0
+                    },
+                    "cull_mode": {
+                        "index": 0,
+                        "value": 2,
+                        "name": "back",
+                        "raw": "00000002"
+                    },
+                    "alpha_compare": {
+                        "index": 0,
+                        "comp0_value": 6,
+                        "comp0": "gequal",
+                        "ref0": 128,
+                        "op_value": 0,
+                        "op": "and",
+                        "comp1_value": 3,
+                        "comp1": "lequal",
+                        "ref1": 255,
+                        "raw": "06800003FFFFFFFF"
+                    },
+                    "blend_mode": {
+                        "index": 0,
+                        "type_value": 0,
+                        "type": "none",
+                        "src_value": 1,
+                        "src": "one",
+                        "dst_value": 0,
+                        "dst": "zero",
+                        "logic_value": 3,
+                        "logic": "copy",
+                        "raw": "00010003"
+                    },
+                    "z_mode": {
+                        "index": 0,
+                        "test": true,
+                        "func_value": 3,
+                        "func": "lequal",
+                        "write": true,
+                        "raw": "010301FF"
+                    },
+                    "z_comp_loc": {
+                        "index": 0,
+                        "value": false,
+                        "raw": "00"
+                    },
+                    "dither": {
+                        "index": 0,
+                        "value": false,
+                        "raw": "00"
+                    }
+                },
+                "tev_orders": [
+                    {
+                        "stage": 0,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 1,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 2,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 3,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 4,
+                        "index": 1,
+                        "tex_coord": 0,
+                        "tex_map": 0,
+                        "texture": "zelda",
+                        "color_channel": 0,
+                        "raw": "000000FF",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 5,
+                        "index": 2,
+                        "tex_coord": 0,
+                        "tex_map": null,
+                        "texture": null,
+                        "color_channel": 0,
+                        "raw": "00FF00FF",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 6,
+                        "index": 3,
+                        "tex_coord": 0,
+                        "tex_map": null,
+                        "texture": null,
+                        "color_channel": 0,
+                        "raw": "00FF00FF",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "index": 5,
+            "name": "zelda_eyeball_R_v",
+            "textures": [],
+            "alpha_mode": "cutout",
+            "alpha_cutoff": 0.5019607843137255,
+            "blend": {
+                "enabled": false,
+                "type": "none",
+                "src": "one",
+                "dst": "zero",
+                "logic": "copy"
+            },
+            "culling": "back",
+            "depth": {
+                "test": true,
+                "write": true,
+                "func": "lequal"
+            },
+            "render_queue": "cutout",
+            "j3d": {
+                "mat3_index": 5,
+                "material_init_index": 5,
+                "material_entry_offset": 1792,
+                "gx": {
+                    "indices": {
+                        "cull_mode": 0,
+                        "alpha_compare": 0,
+                        "blend_mode": 0,
+                        "z_mode": 0,
+                        "z_comp_loc": 0,
+                        "dither": 0
+                    },
+                    "cull_mode": {
+                        "index": 0,
+                        "value": 2,
+                        "name": "back",
+                        "raw": "00000002"
+                    },
+                    "alpha_compare": {
+                        "index": 0,
+                        "comp0_value": 6,
+                        "comp0": "gequal",
+                        "ref0": 128,
+                        "op_value": 0,
+                        "op": "and",
+                        "comp1_value": 3,
+                        "comp1": "lequal",
+                        "ref1": 255,
+                        "raw": "06800003FFFFFFFF"
+                    },
+                    "blend_mode": {
+                        "index": 0,
+                        "type_value": 0,
+                        "type": "none",
+                        "src_value": 1,
+                        "src": "one",
+                        "dst_value": 0,
+                        "dst": "zero",
+                        "logic_value": 3,
+                        "logic": "copy",
+                        "raw": "00010003"
+                    },
+                    "z_mode": {
+                        "index": 0,
+                        "test": true,
+                        "func_value": 3,
+                        "func": "lequal",
+                        "write": true,
+                        "raw": "010301FF"
+                    },
+                    "z_comp_loc": {
+                        "index": 0,
+                        "value": false,
+                        "raw": "00"
+                    },
+                    "dither": {
+                        "index": 0,
+                        "value": false,
+                        "raw": "00"
+                    }
+                },
+                "tev_orders": [
+                    {
+                        "stage": 0,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 1,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 2,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 3,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 4,
+                        "index": 1,
+                        "tex_coord": 0,
+                        "tex_map": 0,
+                        "texture": "zelda",
+                        "color_channel": 0,
+                        "raw": "000000FF",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 5,
+                        "index": 2,
+                        "tex_coord": 0,
+                        "tex_map": null,
+                        "texture": null,
+                        "color_channel": 0,
+                        "raw": "00FF00FF",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 6,
+                        "index": 3,
+                        "tex_coord": 0,
+                        "tex_map": null,
+                        "texture": null,
+                        "color_channel": 0,
+                        "raw": "00FF00FF",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "index": 6,
+            "name": "zelda_hair_m_v",
+            "textures": [
+                {
+                    "slot": 0,
+                    "index": 0,
+                    "name": "zelda",
+                    "j3d": {
+                        "tex_no_index": 0,
+                        "texno_index_offset": "0x28",
+                        "tex_table_relative_offset": "0x18FC"
+                    }
+                },
+                {
+                    "slot": 1,
+                    "index": 0,
+                    "name": "zelda",
+                    "j3d": {
+                        "tex_no_index": 0,
+                        "texno_index_offset": "0x28",
+                        "tex_table_relative_offset": "0x18FC"
+                    }
+                },
+                {
+                    "slot": 2,
+                    "index": 0,
+                    "name": "zelda",
+                    "j3d": {
+                        "tex_no_index": 4,
+                        "texno_index_offset": "0x28",
+                        "tex_table_relative_offset": "0x18FC"
+                    }
+                }
+            ],
+            "alpha_mode": "cutout",
+            "alpha_cutoff": 0.5019607843137255,
+            "blend": {
+                "enabled": false,
+                "type": "none",
+                "src": "one",
+                "dst": "zero",
+                "logic": "copy"
+            },
+            "culling": "none",
+            "depth": {
+                "test": true,
+                "write": true,
+                "func": "lequal"
+            },
+            "render_queue": "cutout",
+            "j3d": {
+                "mat3_index": 6,
+                "material_init_index": 6,
+                "material_entry_offset": 2124,
+                "gx": {
+                    "indices": {
+                        "cull_mode": 2,
+                        "alpha_compare": 0,
+                        "blend_mode": 0,
+                        "z_mode": 0,
+                        "z_comp_loc": 0,
+                        "dither": 0
+                    },
+                    "cull_mode": {
+                        "index": 2,
+                        "value": 0,
+                        "name": "none",
+                        "raw": "00000000"
+                    },
+                    "alpha_compare": {
+                        "index": 0,
+                        "comp0_value": 6,
+                        "comp0": "gequal",
+                        "ref0": 128,
+                        "op_value": 0,
+                        "op": "and",
+                        "comp1_value": 3,
+                        "comp1": "lequal",
+                        "ref1": 255,
+                        "raw": "06800003FFFFFFFF"
+                    },
+                    "blend_mode": {
+                        "index": 0,
+                        "type_value": 0,
+                        "type": "none",
+                        "src_value": 1,
+                        "src": "one",
+                        "dst_value": 0,
+                        "dst": "zero",
+                        "logic_value": 3,
+                        "logic": "copy",
+                        "raw": "00010003"
+                    },
+                    "z_mode": {
+                        "index": 0,
+                        "test": true,
+                        "func_value": 3,
+                        "func": "lequal",
+                        "write": true,
+                        "raw": "010301FF"
+                    },
+                    "z_comp_loc": {
+                        "index": 0,
+                        "value": false,
+                        "raw": "00"
+                    },
+                    "dither": {
+                        "index": 0,
+                        "value": false,
+                        "raw": "00"
+                    }
+                },
+                "tev_orders": [
+                    {
+                        "stage": 0,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 1,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 2,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 3,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 4,
+                        "index": 4,
+                        "tex_coord": 0,
+                        "tex_map": 0,
+                        "texture": "zelda",
+                        "color_channel": 0,
+                        "raw": "00000000",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 5,
+                        "index": 5,
+                        "tex_coord": 0,
+                        "tex_map": 0,
+                        "texture": "zelda",
+                        "color_channel": 0,
+                        "raw": "00000000",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 6,
+                        "index": 6,
+                        "tex_coord": 0,
+                        "tex_map": 10,
+                        "texture": "zelda_hair_SPenv",
+                        "color_channel": 0,
+                        "raw": "000A000A",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 7,
+                        "index": 0,
+                        "tex_coord": 0,
+                        "tex_map": 0,
+                        "texture": "zelda",
+                        "color_channel": 0,
+                        "raw": "00000000",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "index": 7,
+            "name": "zelda_jewel_m_v",
+            "textures": [],
+            "alpha_mode": "cutout",
+            "alpha_cutoff": 0.5019607843137255,
+            "blend": {
+                "enabled": true,
+                "type": "blend",
+                "src": "inv_src_color",
+                "dst": "one",
+                "logic": "unknown_255"
+            },
+            "culling": "back",
+            "depth": {
+                "test": true,
+                "write": true,
+                "func": "lequal"
+            },
+            "render_queue": "cutout",
+            "j3d": {
+                "mat3_index": 7,
+                "material_init_index": 7,
+                "material_entry_offset": 2456,
+                "gx": {
+                    "indices": {
+                        "cull_mode": 0,
+                        "alpha_compare": 0,
+                        "blend_mode": 1,
+                        "z_mode": 0,
+                        "z_comp_loc": 0,
+                        "dither": 0
+                    },
+                    "cull_mode": {
+                        "index": 0,
+                        "value": 2,
+                        "name": "back",
+                        "raw": "00000002"
+                    },
+                    "alpha_compare": {
+                        "index": 0,
+                        "comp0_value": 6,
+                        "comp0": "gequal",
+                        "ref0": 128,
+                        "op_value": 0,
+                        "op": "and",
+                        "comp1_value": 3,
+                        "comp1": "lequal",
+                        "ref1": 255,
+                        "raw": "06800003FFFFFFFF"
+                    },
+                    "blend_mode": {
+                        "index": 1,
+                        "type_value": 1,
+                        "type": "blend",
+                        "src_value": 3,
+                        "src": "inv_src_color",
+                        "dst_value": 1,
+                        "dst": "one",
+                        "logic_value": 255,
+                        "logic": "unknown_255",
+                        "raw": "010301FF"
+                    },
+                    "z_mode": {
+                        "index": 0,
+                        "test": true,
+                        "func_value": 3,
+                        "func": "lequal",
+                        "write": true,
+                        "raw": "010301FF"
+                    },
+                    "z_comp_loc": {
+                        "index": 0,
+                        "value": false,
+                        "raw": "00"
+                    },
+                    "dither": {
+                        "index": 0,
+                        "value": false,
+                        "raw": "00"
+                    }
+                },
+                "tev_orders": [
+                    {
+                        "stage": 0,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 1,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 2,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 3,
+                        "index": 7196,
+                        "tex_coord": 148,
+                        "tex_map": 12,
+                        "texture": "zelda_hair_SPmap",
+                        "color_channel": 65,
+                        "raw": "940C41A4",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 4,
+                        "index": 2,
+                        "tex_coord": 0,
+                        "tex_map": null,
+                        "texture": null,
+                        "color_channel": 0,
+                        "raw": "00FF00FF",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 5,
+                        "index": 5,
+                        "tex_coord": 0,
+                        "tex_map": 0,
+                        "texture": "zelda",
+                        "color_channel": 0,
+                        "raw": "00000000",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    },
+                    {
+                        "stage": 6,
+                        "index": 4,
+                        "tex_coord": 0,
+                        "tex_map": 0,
+                        "texture": "zelda",
+                        "color_channel": 0,
+                        "raw": "00000000",
+                        "j3d": {
+                            "tev_order_index_offset": "0xB4",
+                            "tev_order_table_relative_offset": "0x1918"
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "debug": {
+        "mat3": {
+            "material_count": 8,
+            "texture_count": 17,
+            "material_init_table_relative_offset": "0x84",
+            "material_remap_table_relative_offset": "0xAE4",
+            "tex_no_table_relative_offset": "0x18FC",
+            "tev_order_table_relative_offset": "0x1918"
+        }
+    }
+}
