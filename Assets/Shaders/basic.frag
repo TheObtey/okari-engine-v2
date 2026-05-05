@@ -20,7 +20,7 @@ void main()
         discard;
 
     vec3 normal = normalize(v_Normal);
-    vec3 lightDir = normalize(-u_LightDirection);
+    vec3 lightDir = normalize(u_LightDirection);
 
     float diffuse = max(dot(normal, lightDir), 0.0);
 
