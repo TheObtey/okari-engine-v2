@@ -31,6 +31,7 @@ namespace Okari
 	{
 		float Position[3];
 		float UV[2];
+		float Normal[3];
 	};
 
 	struct MaterialTextureSlot

@@ -34,6 +34,21 @@ namespace Okari
 			vertex.UV[1] = 0.0f;
 		}
 
+		if (mesh->vertex_normal.exists)
+		{
+			ufbx_vec3 normal = ufbx_get_vertex_vec3(&mesh->vertex_normal, vertexIndex);
+
+			vertex.Normal[0] = (float)normal.x;
+			vertex.Normal[1] = (float)normal.y;
+			vertex.Normal[2] = (float)normal.z;
+		}
+		else
+		{
+			vertex.Normal[0] = 0.0f;
+			vertex.Normal[1] = 1.0f;
+			vertex.Normal[2] = 0.0f;
+		}
+
 		return vertex;
 	}
 

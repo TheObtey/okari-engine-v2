@@ -267,6 +267,12 @@ namespace Okari
         glm::mat4 mvp = projection * view * model;
 
         m_Shader->SetMat4("u_MVP", mvp);
+        m_Shader->SetMat4("u_Model", model);
+
+        m_Shader->SetVec3("u_LightDirection", glm::vec3(-0.4f, -1.0f, -0.3f));
+        m_Shader->SetVec3("u_LightColor", glm::vec3(1.0f, 0.95f, 0.85f));
+        m_Shader->SetVec3("u_AmbientColor", glm::vec3(0.25f, 0.25f, 0.30f));
+
         m_Shader->SetInt("u_Texture", 0);
 
         mesh->Bind();
