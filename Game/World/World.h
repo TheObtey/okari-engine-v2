@@ -4,6 +4,7 @@
 #include "Scene/WorldObject.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/Camera.h"
+#include "Rendering/DirectionalLight.h"
 
 #include <string>
 #include <vector>
@@ -50,6 +51,8 @@ namespace Okari
 		bool IsPlaying() const { return m_IsPlaying; }
 
 		Actor* GetPlayer() const { return m_Player; }
+
+		DirectionalLight GetMainDirectionalLight() const;
 
 	private:
 		std::vector<WorldObject> m_Objects;

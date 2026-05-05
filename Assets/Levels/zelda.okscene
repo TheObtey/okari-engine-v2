@@ -30,6 +30,52 @@
                 0.009999999776482582
             ],
             "type": "Cube"
+        },
+        {
+            "actorData": {
+                "ambiant": [
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "color": [
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "direction": [
+                    0.0,
+                    0.0,
+                    0.0
+                ]
+            },
+            "actorType": "DirectionalLight",
+            "enabled": true,
+            "fileType": "Okari.Scene",
+            "id": 2,
+            "meshComponent": {
+                "enabled": true,
+                "mesh": "",
+                "texture": ""
+            },
+            "name": "Light",
+            "parentId": 0,
+            "position": [
+                4.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "type": "Cube"
         }
     ]
 }

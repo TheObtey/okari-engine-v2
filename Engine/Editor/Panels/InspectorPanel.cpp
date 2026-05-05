@@ -226,6 +226,35 @@ namespace Okari
 					break;
 				}
 
+				case ActorPropertyType::Vec3:
+				{
+					glm::vec3 value(0.0f);
+
+					if (obj->ActorData.contains(prop.Name))
+					{
+						const auto& data = obj->ActorData[prop.Name];
+
+						if (data.is_array() && data.size() == 3)
+						{
+							value.x = data[0].get<float>();
+							value.y = data[1].get<float>();
+							value.z = data[2].get<float>();
+						}
+					}
+
+					if (ImGui::DragFloat3(prop.Name.c_str(), &value.x, 0.05f))
+					{
+						obj->ActorData[prop.Name] = {
+							value.x,
+							value.y,
+							value.z
+						};
+
+						if (m_OnModified) m_OnModified();
+					}
+					break;
+				}
+
 				default:
 					ImGui::Text("%s (unsupported)", prop.Name.c_str());
 					break;

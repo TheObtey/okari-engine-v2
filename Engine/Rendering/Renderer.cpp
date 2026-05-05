@@ -254,7 +254,7 @@ namespace Okari
         glBindVertexArray(0);
     }
 
-    void Renderer::DrawMesh(const Transform& transform, Mesh* mesh, std::string& fallbackTexturePath, const Camera& camera)
+    void Renderer::DrawMesh(const Transform& transform, Mesh* mesh, std::string& texturePath, const Camera& camera, const DirectionalLight& light)
     {
         if (!mesh)
             return;
@@ -269,9 +269,9 @@ namespace Okari
         m_Shader->SetMat4("u_MVP", mvp);
         m_Shader->SetMat4("u_Model", model);
 
-        m_Shader->SetVec3("u_LightDirection", glm::vec3(-0.4f, -1.0f, -0.3f));
-        m_Shader->SetVec3("u_LightColor", glm::vec3(1.0f, 0.95f, 0.85f));
-        m_Shader->SetVec3("u_AmbientColor", glm::vec3(0.25f, 0.25f, 0.30f));
+        m_Shader->SetVec3("u_LightDirection", light.Direction);
+        m_Shader->SetVec3("u_LightColor", light.Color);
+        m_Shader->SetVec3("u_AmbiantColor", light.Ambiant);
 
         m_Shader->SetInt("u_Texture", 0);
 
@@ -282,7 +282,7 @@ namespace Okari
 
         for (const SubMesh& subMesh : subMeshes)
         {
-            std::string finalTexturePath = fallbackTexturePath;
+            std::string finalTexturePath = texturePath;
 
             AlphaMode alphaMode = AlphaMode::Opaque;
             float alphaCutoff = 0.5f;

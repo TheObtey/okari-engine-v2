@@ -235,6 +235,33 @@ namespace Okari
         return result;
     }
 
+    DirectionalLight World::GetMainDirectionalLight() const
+    {
+        DirectionalLight light;
+
+        for (const WorldObject& obj : m_Objects)
+        {
+            if (!obj.Enabled)
+                continue;
+
+            if (obj.ActorType != "DirectionalLight")
+                continue;
+
+            if (obj.ActorData.contains("direction"))
+                light.Direction = ReadVec3(obj.ActorData["direction"]);
+
+            if (obj.ActorData.contains("color"))
+                light.Color = ReadVec3(obj.ActorData["color"]);
+            
+            if (obj.ActorData.contains("ambiant"))
+                light.Ambiant = ReadVec3(obj.ActorData["ambiant"]);
+
+            return light;
+        }
+
+        return light;
+    }
+
     bool World::LoadFromFile(const std::string& path, std::string* outSceneName)
     {
         DestroyRuntimeActors();
@@ -372,6 +399,8 @@ namespace Okari
 
     void World::Render(Renderer& renderer, const Camera& camera, uint64_t selectedObjectID)
     {
+        DirectionalLight light = GetMainDirectionalLight();
+
         for (auto& obj : m_Objects)
             if (obj.Mesh.Enabled)
             {
@@ -379,7 +408,7 @@ namespace Okari
                     obj.Mesh.RuntimeMesh = MeshManager::Get().LoadMesh(obj.Mesh.MeshPath);
 
                 if (obj.Mesh.RuntimeMesh)
-                    renderer.DrawMesh(obj.Transform, obj.Mesh.RuntimeMesh, obj.Mesh.TexturePath, camera);
+                    renderer.DrawMesh(obj.Transform, obj.Mesh.RuntimeMesh, obj.Mesh.TexturePath, camera, light);
                 else
                     renderer.DrawCube(obj.Transform, obj.Mesh.TexturePath, camera);
             }

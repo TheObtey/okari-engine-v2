@@ -4,8 +4,8 @@
 #include "Rendering/Texture2D.h"
 #include "Rendering/Camera.h"
 #include "Rendering/Mesh.h"
+#include "Rendering/DirectionalLight.h"
 #include "Scene/Transform.h"
-#include "Scene/WorldObject.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -25,7 +25,7 @@ namespace Okari
         void DrawCubeOutline(const Transform& transform, const Camera& camera);
         void DrawCubeID(const Transform& transform, uint32_t objectID, const Camera& camera);
         
-        void DrawMesh(const Transform& transform, Mesh* mesh, std::string& texturePath, const Camera& camera);
+        void DrawMesh(const Transform& transform, Mesh* mesh, std::string& texturePath, const Camera& camera, const DirectionalLight& light);
         void DrawMeshOutline(const Transform& transform, Mesh* mesh, const Camera& camera);
         
         void EndFrame();

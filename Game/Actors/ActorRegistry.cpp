@@ -41,6 +41,18 @@ namespace Okari
 			s_Definitions[def.TypeName] = def;
 			s_TypeNames.push_back(def.TypeName);
 		}
+
+		{ // DIRECTIONAL LIGHT
+			ActorDefinition def;
+			def.TypeName = "DirectionalLight";
+
+			def.Properties.push_back({ "direction", ActorPropertyType::Vec3 });
+			def.Properties.push_back({ "color", ActorPropertyType::Vec3 });
+			def.Properties.push_back({ "ambiant", ActorPropertyType::Vec3 });
+
+			s_Definitions[def.TypeName] = def;
+			s_TypeNames.push_back(def.TypeName);
+		}
 	}
 
 	const std::vector<std::string>& ActorRegistry::GetActorTypes()

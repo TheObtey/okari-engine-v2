@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../../Game/World/World.h"
+#include "World/World.h"
+
 #include <memory>
 
 namespace Okari
