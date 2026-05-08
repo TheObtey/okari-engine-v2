@@ -21,6 +21,9 @@ namespace Okari
         void Init();
         void BeginFrame();
 
+        void SetTevDebugMode(int mode) { m_TevDebugMode = mode; }
+        int GetTevDebugMode() const { return m_TevDebugMode; }
+
         void DrawCube(const Transform& transform, std::string& texturePath, const Camera& camera);
         void DrawCubeOutline(const Transform& transform, const Camera& camera);
         void DrawCubeID(const Transform& transform, uint32_t objectID, const Camera& camera);
@@ -40,5 +43,7 @@ namespace Okari
         std::unordered_map<std::string, std::unique_ptr<Texture2D>> m_TextureCache;
 
         Texture2D* GetTexture(const std::string& path);
+
+        int m_TevDebugMode = 0;
     };
 }

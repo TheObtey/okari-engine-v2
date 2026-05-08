@@ -275,6 +275,12 @@ namespace Okari
         m_Shader->SetVec3("u_AmbiantColor", light.Ambiant);
 
         m_Shader->SetInt("u_Texture", 0);
+        m_Shader->SetInt("u_Texture0", 0);
+        m_Shader->SetInt("u_Texture1", 1);
+        m_Shader->SetInt("u_Texture2", 2);
+        
+        m_Shader->SetInt("u_TevDebugMode", m_TevDebugMode);
+        m_Shader->SetInt("u_TextureSlotCount", 0);
 
         mesh->Bind();
 
@@ -317,9 +323,21 @@ namespace Okari
                 depthTest = material.DepthTest;
                 depthWrite = material.DepthWrite;
                 depthFunc = material.DepthFunc;
-            }
 
-            m_Shader->SetInt("u_UseAlphaCutout", alphaMode == AlphaMode::Cutout ? 1 : 0);
+                m_Shader->SetVec4("u_TevColor0", material.TevColor0);
+                m_Shader->SetVec4("u_TevColor1", material.TevColor1);
+                m_Shader->SetVec4("u_TevColor2", material.TevColor2);
+
+                m_Shader->SetVec4("u_KonstColor0", material.KonstColor0);
+                m_Shader->SetVec4("u_KonstColor1", material.KonstColor1);
+                m_Shader->SetVec4("u_KonstColor2", material.KonstColor2);
+                m_Shader->SetVec4("u_KonstColor3", material.KonstColor3);
+
+                m_Shader->SetInt("u_TextureSlotCount", static_cast<int>(material.TextureSlots.size()));
+
+                m_Shader->SetInt("u_UseAlphaCutout", material.UseAlphaCutout ? 1 : 0);
+                m_Shader->SetFloat("u_AlphaCutoff", material.AlphaCutoff);
+            }
 
             if (depthTest)
                 glEnable(GL_DEPTH_TEST);
@@ -341,8 +359,27 @@ namespace Okari
 
             glDisable(GL_BLEND);
 
-            Texture2D* texture = GetTexture(finalTexturePath);
-            texture->Bind(0);
+            if (subMesh.MaterialIndex < materials.size())
+            {
+                const Material& material = materials[subMesh.MaterialIndex];
+
+                for (const MaterialTextureSlot& textureSlot : material.TextureSlots)
+                {
+                    if (textureSlot.Path.empty())
+                        continue;
+
+                    if (textureSlot.Slot > 2)
+                        continue;
+
+                    Texture2D* texture = GetTexture(textureSlot.Path);
+                    texture->Bind(textureSlot.Slot);
+                }
+            }
+            else
+            {
+                Texture2D* texture = GetTexture(finalTexturePath);
+                texture->Bind(0);
+            }
 
             glDrawArrays(
                 GL_TRIANGLES,

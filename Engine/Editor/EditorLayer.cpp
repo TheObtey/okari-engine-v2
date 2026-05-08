@@ -459,6 +459,12 @@ namespace Okari
         editorCameraCtx->BindKey(GLFW_KEY_Q, "MoveDown");
         editorCameraCtx->BindKey(GLFW_KEY_LEFT_SHIFT, "SpeedUp");
 
+        editorCameraCtx->BindKey(GLFW_KEY_F1, "TevDebugMode0");
+        editorCameraCtx->BindKey(GLFW_KEY_F2, "TevDebugMode1");
+        editorCameraCtx->BindKey(GLFW_KEY_F3, "TevDebugMode2");
+        editorCameraCtx->BindKey(GLFW_KEY_F4, "TevDebugMode3");
+        editorCameraCtx->BindKey(GLFW_KEY_F5, "TevDebugMode7");
+
         InputManager::RegisterContext(editorCameraCtx);
         InputManager::PushContext("EditorCamera");
 
@@ -526,6 +532,21 @@ namespace Okari
 
         viewportFramebuffer.Bind();
         viewportFramebuffer.SetDrawAttachment(0);
+
+        if (InputManager::IsActionPressed("TevDebugMode0"))
+            renderer.SetTevDebugMode(0);
+
+        if (InputManager::IsActionPressed("TevDebugMode1"))
+            renderer.SetTevDebugMode(1);
+
+        if (InputManager::IsActionPressed("TevDebugMode2"))
+            renderer.SetTevDebugMode(2);
+
+        if (InputManager::IsActionPressed("TevDebugMode3"))
+            renderer.SetTevDebugMode(3);
+
+        if (InputManager::IsActionPressed("TevDebugMode7"))
+            renderer.SetTevDebugMode(7);
 
         renderer.BeginFrame();
 

@@ -114,6 +114,19 @@ namespace Okari
 
         glUniform3f(location, value.x, value.y, value.z);
     }
+    
+    void Shader::SetVec4(const std::string& name, const glm::vec4& value) const
+    {
+        int location = glGetUniformLocation(m_RendererID, name.c_str());
+
+        if (location == -1)
+        {
+            std::cerr << "Uniform not found: " << name << std::endl;
+            return;
+        }
+
+        glUniform4f(location, value.x, value.y, value.z, value.w);
+    }
 
     unsigned int Shader::CompileShader(unsigned int type, const std::string& source)
     {
