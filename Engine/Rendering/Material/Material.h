@@ -1,5 +1,8 @@
 #pragma once
 
+#include "GXTevStage.h"
+
+#include <glm.hpp>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -56,5 +59,16 @@ namespace Okari
 		uint32_t RenderQueue = 0;
 
 		bool UseAlphaCutout = false;
+
+		std::vector<GXTevStage> TevStages;
+
+		glm::vec4 TevColor0 = glm::vec4(1.0f);
+		glm::vec4 TevColor1 = glm::vec4(1.0f);
+		glm::vec4 TevColor2 = glm::vec4(1.0f);
+
+		glm::vec4 KonstColor0 = glm::vec4(1.0f);
+		glm::vec4 KonstColor1 = glm::vec4(1.0f);
+		glm::vec4 KonstColor2 = glm::vec4(1.0f);
+		glm::vec4 KonstColor3 = glm::vec4(1.0f);
 	};
 }
