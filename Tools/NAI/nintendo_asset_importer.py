@@ -119,18 +119,36 @@ def get_chunk_relative_offset(data, chunk_offset, header_field_offset):
 
 
 # Offsets inside J3DMaterialInitData (0x14C bytes) for J3D2 bmd3/bdl4.
-# Important: most indices near the end of the block are u16 table indices,
-# while cull / zCompLoc / dither are byte-sized indices.
-MAT3_KNOWN_TEXNO_INDEX_OFFSET = 0x28
-MAT3_KNOWN_TEV_ORDER_INDEX_OFFSET = 0xB4
-MAT3_KNOWN_ALPHA_COMPARE_INDEX_OFFSET = 0x144
-MAT3_KNOWN_BLEND_MODE_INDEX_OFFSET = 0x146
-MAT3_KNOWN_Z_MODE_INDEX_OFFSET = 0x148
+# Canonical layout (SuperBMD / J3D): many early state indices are u8,
+# while texture/TEV table references are u16 arrays.
+MAT3_KNOWN_FLAG_OFFSET = 0x00
 MAT3_KNOWN_CULL_MODE_INDEX_OFFSET = 0x01
-MAT3_KNOWN_Z_COMP_LOC_INDEX_OFFSET = 0x14A
-MAT3_KNOWN_DITHER_INDEX_OFFSET = 0x14B
+MAT3_KNOWN_NUM_COLOR_CHAN_INDEX_OFFSET = 0x02
+MAT3_KNOWN_NUM_TEX_GENS_INDEX_OFFSET = 0x03
+MAT3_KNOWN_TEV_STAGE_COUNT_INDEX_OFFSET = 0x04
+MAT3_KNOWN_Z_COMP_LOC_INDEX_OFFSET = 0x05
+MAT3_KNOWN_Z_MODE_INDEX_OFFSET = 0x06
+MAT3_KNOWN_DITHER_INDEX_OFFSET = 0x07
+MAT3_KNOWN_TEXNO_INDEX_OFFSET = 0x84
+MAT3_KNOWN_TEV_KONST_COLOR_INDEX_OFFSET = 0x94
+MAT3_KNOWN_TEV_KONST_COLOR_SEL_OFFSET = 0x9C
+MAT3_KNOWN_TEV_KONST_ALPHA_SEL_OFFSET = 0xAC
+MAT3_KNOWN_TEV_ORDER_INDEX_OFFSET = 0xBC
+MAT3_KNOWN_TEV_COLOR_INDEX_OFFSET = 0xDC
+MAT3_KNOWN_TEV_STAGE_INDEX_OFFSET = 0xE4
+MAT3_KNOWN_TEV_SWAP_MODE_INDEX_OFFSET = 0x104
+MAT3_KNOWN_TEV_SWAP_MODE_TABLE_INDEX_OFFSET = 0x124
+MAT3_KNOWN_FOG_INDEX_OFFSET = 0x144
+MAT3_KNOWN_ALPHA_COMPARE_INDEX_OFFSET = 0x146
+MAT3_KNOWN_BLEND_MODE_INDEX_OFFSET = 0x148
+MAT3_KNOWN_NBT_SCALE_INDEX_OFFSET = 0x14A
+
+# Real J3D TevStage struct is 20 bytes, byte-per-field, not a packed GX BP bitfield.
+MAT3_TEV_STAGE_ENTRY_SIZE = 0x14
+MAT3_TEV_ORDER_ENTRY_SIZE = 0x04
 
 # MAT3 header table pointers for J3D2 bmd3/bdl4.
+# Order matches canonical Mat3OffsetIndex.
 MAT3_TABLE_FIELDS = {
     "indirect": 0x18,
     "cull_mode": 0x1C,
@@ -141,18 +159,17 @@ MAT3_TABLE_FIELDS = {
     "light": 0x30,
     "tex_gen_count": 0x34,
     "tex_coord": 0x38,
-    "tex_mtx": 0x3C,
-    "post_tex_gen_count": 0x40,
-    "post_tex_coord": 0x44,
-    "post_tex_mtx": 0x48,
-    "tex_no": 0x4C,
-    "tev_order": 0x50,
-    "tev_color": 0x54,
-    "tev_konst_color": 0x58,
-    "tev_stage_count": 0x5C,
-    "tev_stage": 0x60,
-    "tev_swap_mode": 0x64,
-    "tev_swap_mode_table": 0x68,
+    "tex_coord2": 0x3C,
+    "tex_mtx": 0x40,
+    "tex_mtx2": 0x44,
+    "tex_no": 0x48,
+    "tev_order": 0x4C,
+    "tev_color": 0x50,
+    "tev_konst_color": 0x54,
+    "tev_stage_count": 0x58,
+    "tev_stage": 0x5C,
+    "tev_swap_mode": 0x60,
+    "tev_swap_mode_table": 0x64,
     "fog": 0x68,
     "alpha_compare": 0x6C,
     "blend_mode": 0x70,
@@ -168,6 +185,12 @@ GX_BLEND_TYPES = {0: "none", 1: "blend", 2: "logic", 3: "subtract"}
 GX_BLEND_FACTORS = {0: "zero", 1: "one", 2: "src_color", 3: "inv_src_color", 4: "src_alpha", 5: "inv_src_alpha", 6: "dst_alpha", 7: "inv_dst_alpha"}
 GX_LOGIC_OPS = {0: "clear", 1: "and", 2: "rev_and", 3: "copy", 4: "inv_and", 5: "noop", 6: "xor", 7: "or", 8: "nor", 9: "equiv", 10: "inv", 11: "rev_or", 12: "inv_copy", 13: "inv_or", 14: "nand", 15: "set"}
 GX_CULL_MODES = {0: "none", 1: "front", 2: "back", 3: "all"}
+GX_TEV_COLOR_ARGS = {0: "cprev", 1: "aprev", 2: "c0", 3: "a0", 4: "c1", 5: "a1", 6: "c2", 7: "a2", 8: "texc", 9: "texa", 10: "rasc", 11: "rasa", 12: "one", 13: "half", 14: "konst", 15: "zero"}
+GX_TEV_ALPHA_ARGS = {0: "aprev", 1: "a0", 2: "a1", 3: "a2", 4: "texa", 5: "rasa", 6: "konst", 7: "zero"}
+GX_TEV_OPS = {0: "add", 1: "sub", 8: "comp_r8_gt", 9: "comp_r8_eq", 10: "comp_gr16_gt", 11: "comp_gr16_eq", 12: "comp_bgr24_gt", 13: "comp_bgr24_eq", 14: "comp_rgb8_gt", 15: "comp_rgb8_eq"}
+GX_TEV_BIASES = {0: "zero", 1: "add_half", 2: "sub_half"}
+GX_TEV_SCALES = {0: "scale_1", 1: "scale_2", 2: "scale_4", 3: "divide_2"}
+GX_TEV_REGS = {0: "prev", 1: "reg0", 2: "reg1", 3: "reg2"}
 
 
 def enum_name(table, value):
@@ -179,6 +202,147 @@ def get_mat3_table_offset(data, mat3_offset, table_name):
     if field_offset is None:
         return None
     return get_chunk_relative_offset(data, mat3_offset, field_offset)
+
+
+def format_hex(value):
+    if value is None:
+        return None
+    return f"0x{value:X}"
+
+
+def validate_mat3_header_offsets(data, mat3_offset, mat3_size):
+    chunk_end = min(mat3_offset + mat3_size if mat3_size else len(data), len(data))
+    warnings = []
+    errors = []
+    tables = {}
+
+    if mat3_offset < 0 or mat3_offset + 8 > len(data):
+        return {
+            "ok": False,
+            "errors": ["MAT3 offset is outside file bounds."],
+            "warnings": warnings,
+            "tables": tables,
+        }
+
+    tag = data[mat3_offset:mat3_offset + 4].decode("ascii", errors="replace")
+    if tag != "MAT3":
+        errors.append(f"Expected MAT3 tag, got {tag!r}.")
+
+    if mat3_size <= 0:
+        errors.append("MAT3 chunk size is null or invalid.")
+    elif mat3_offset + mat3_size > len(data):
+        errors.append("MAT3 chunk end is outside file bounds.")
+
+    fields_by_header_offset = {}
+    for table_name, header_field_offset in MAT3_TABLE_FIELDS.items():
+        fields_by_header_offset.setdefault(header_field_offset, []).append(table_name)
+
+    for header_field_offset, table_names in sorted(fields_by_header_offset.items()):
+        if len(table_names) > 1:
+            warnings.append(
+                "MAT3_TABLE_FIELDS has multiple table names using the same "
+                f"header field 0x{header_field_offset:X}: {', '.join(table_names)}"
+            )
+
+    for table_name, header_field_offset in sorted(MAT3_TABLE_FIELDS.items(), key=lambda item: item[1]):
+        header_absolute_offset = mat3_offset + header_field_offset
+        table_info = {
+            "header_field_offset": format_hex(header_field_offset),
+            "header_absolute_offset": format_hex(header_absolute_offset),
+            "relative_offset": None,
+            "absolute_offset": None,
+            "status": "missing",
+        }
+
+        if header_absolute_offset + 4 > len(data):
+            table_info["status"] = "header_out_of_file"
+            errors.append(f"{table_name}: header field is outside file bounds.")
+            tables[table_name] = table_info
+            continue
+
+        relative_offset = safe_u32(data, header_absolute_offset, 0)
+        table_info["relative_offset"] = format_hex(relative_offset)
+
+        if relative_offset == 0:
+            tables[table_name] = table_info
+            continue
+
+        absolute_offset = mat3_offset + relative_offset
+        table_info["absolute_offset"] = format_hex(absolute_offset)
+
+        if relative_offset < 0x84:
+            table_info["status"] = "suspicious_header_area"
+            warnings.append(f"{table_name}: relative offset 0x{relative_offset:X} points inside the MAT3 header area.")
+        elif absolute_offset < mat3_offset or absolute_offset >= chunk_end:
+            table_info["status"] = "out_of_mat3_chunk"
+            errors.append(f"{table_name}: relative offset 0x{relative_offset:X} points outside the MAT3 chunk.")
+        else:
+            table_info["status"] = "ok"
+
+        tables[table_name] = table_info
+
+    offsets_to_tables = {}
+    for table_name, table_info in tables.items():
+        relative_offset = table_info.get("relative_offset")
+        if relative_offset is None or relative_offset == "0x0":
+            continue
+        offsets_to_tables.setdefault(relative_offset, []).append(table_name)
+
+    for relative_offset, table_names in sorted(offsets_to_tables.items()):
+        if len(table_names) > 1:
+            warnings.append(f"Multiple MAT3 tables resolve to {relative_offset}: {', '.join(table_names)}")
+
+    return {
+        "ok": len(errors) == 0,
+        "tag": tag,
+        "chunk_offset": format_hex(mat3_offset),
+        "chunk_size": format_hex(mat3_size),
+        "chunk_end": format_hex(chunk_end),
+        "errors": errors,
+        "warnings": warnings,
+        "tables": tables,
+    }
+
+
+def get_mat3_table_range(data, mat3_offset, mat3_size, table_name):
+    table_offset = get_mat3_table_offset(data, mat3_offset, table_name)
+    if table_offset is None:
+        return None, None
+
+    chunk_end = min(mat3_offset + mat3_size if mat3_size else len(data), len(data))
+    relative_offset = table_offset - mat3_offset
+    next_relative_offset = None
+
+    seen = set()
+    for other_name in MAT3_TABLE_FIELDS.keys():
+        other_offset = get_mat3_table_offset(data, mat3_offset, other_name)
+        if other_offset is None or other_offset in seen:
+            continue
+        seen.add(other_offset)
+        other_relative_offset = other_offset - mat3_offset
+        if other_relative_offset > relative_offset:
+            if next_relative_offset is None or other_relative_offset < next_relative_offset:
+                next_relative_offset = other_relative_offset
+
+    table_end = mat3_offset + next_relative_offset if next_relative_offset is not None else chunk_end
+    table_end = min(table_end, chunk_end, len(data))
+    return table_offset, table_end
+
+
+def get_mat3_table_entry_count(data, mat3_offset, mat3_size, table_name, entry_size):
+    table_offset, table_end = get_mat3_table_range(data, mat3_offset, mat3_size, table_name)
+    if table_offset is None or table_end is None or entry_size <= 0 or table_end <= table_offset:
+        return 0
+    return (table_end - table_offset) // entry_size
+
+
+def clamp_tev_stage_count(stage_count):
+    if stage_count is None:
+        return 1
+    try:
+        return max(0, min(int(stage_count), 16))
+    except (TypeError, ValueError):
+        return 1
 
 
 def read_u8_index(data, offset):
@@ -346,53 +510,366 @@ def resolve_textures_from_material_entry(data, material_entry_offset, mat3_offse
     return textures
 
 
-def parse_tev_orders_from_material_entry(data, material_entry_offset, mat3_offset, texture_names):
+def parse_tev_stage_count_from_material_entry(data, material_entry_offset, mat3_offset):
+    table_offset = get_mat3_table_offset(data, mat3_offset, "tev_stage_count")
+    fallback = {
+        "index": None,
+        "count": 1,
+        "raw": None,
+        "used_fallback": True,
+        "fallback_reason": "missing_or_invalid_stage_count",
+        "j3d": {
+            "tev_stage_count_index_offset": f"0x{MAT3_KNOWN_TEV_STAGE_COUNT_INDEX_OFFSET:02X}",
+            "tev_stage_count_table_relative_offset": f"0x{table_offset - mat3_offset:X}" if table_offset is not None else None,
+        },
+    }
+
+    if table_offset is None or material_entry_offset is None:
+        return fallback
+
+    index = read_u8_index(data, material_entry_offset + MAT3_KNOWN_TEV_STAGE_COUNT_INDEX_OFFSET)
+    if index is None:
+        return fallback
+
+    raw_offset = table_offset + index
+    if raw_offset < 0 or raw_offset >= len(data):
+        fallback["index"] = index
+        fallback["fallback_reason"] = "stage_count_raw_out_of_bounds"
+        return fallback
+
+    raw_count = u8(data, raw_offset)
+    if raw_count == 0xFF:
+        fallback.update({"index": index, "raw": "FF", "fallback_reason": "invalid_0xFF"})
+        return fallback
+
+    count = clamp_tev_stage_count(raw_count)
+    return {
+        "index": index,
+        "count": count,
+        "declared_count": raw_count,
+        "raw": f"{raw_count:02X}",
+        "used_fallback": False,
+        "j3d": {
+            "tev_stage_count_index_offset": f"0x{MAT3_KNOWN_TEV_STAGE_COUNT_INDEX_OFFSET:02X}",
+            "tev_stage_count_table_relative_offset": f"0x{table_offset - mat3_offset:X}",
+        },
+    }
+
+
+def parse_tev_orders_from_material_entry(data, material_entry_offset, mat3_offset, mat3_size, texture_names, stage_count, material_textures=None):
     tev_orders = []
-    tev_order_table_offset = get_mat3_table_offset(data, mat3_offset, "tev_order")
+    invalid_orders = []
+    table_offset, table_end = get_mat3_table_range(data, mat3_offset, mat3_size, "tev_order")
 
-    if tev_order_table_offset is None or material_entry_offset is None:
-        return tev_orders
+    if table_offset is None or material_entry_offset is None:
+        return tev_orders, invalid_orders
 
-    for stage in range(16):
-        tev_order_index = read_u16_index(data, material_entry_offset + MAT3_KNOWN_TEV_ORDER_INDEX_OFFSET + stage * 2)
+    max_order_count = max(0, (table_end - table_offset) // 4) if table_end is not None else 0
+    stage_count = clamp_tev_stage_count(stage_count)
+
+    for stage in range(stage_count):
+        index_offset = material_entry_offset + MAT3_KNOWN_TEV_ORDER_INDEX_OFFSET + stage * 2
+        tev_order_index = read_u16_index(data, index_offset)
         if tev_order_index is None:
+            invalid_orders.append({"stage": stage, "index": None, "reason": "invalid_index", "raw": data[index_offset:index_offset + 2].hex().upper() if index_offset + 2 <= len(data) else None})
+            continue
+        if tev_order_index >= max_order_count:
+            invalid_orders.append({"stage": stage, "index": tev_order_index, "reason": "out_of_tev_order_table", "max_valid_index": max_order_count - 1 if max_order_count > 0 else None})
             continue
 
-        raw_offset = tev_order_table_offset + tev_order_index * 4
+        raw_offset = table_offset + tev_order_index * 4
         raw = data[raw_offset:raw_offset + 4] if raw_offset + 4 <= len(data) else b""
-
         if len(raw) < 4:
+            invalid_orders.append({"stage": stage, "index": tev_order_index, "reason": "raw_out_of_bounds"})
             continue
 
         tex_coord = raw[0]
         tex_map = raw[1]
         color_chan = raw[2]
-        texture_name = texture_names[tex_map] if tex_map != 0xFF and tex_map < len(texture_names) else None
+
+        # tex_map is a per-material texture slot (0..7), not a direct TEX1 index.
+        # Resolve the human-readable name through material.textures[slot].
+        texture_name = None
+        texture_index = None
+        if tex_map != 0xFF and material_textures is not None:
+            for texture in material_textures:
+                if texture.get("slot") == tex_map:
+                    texture_name = texture.get("name")
+                    texture_index = texture.get("index")
+                    break
+        elif tex_map != 0xFF and tex_map < len(texture_names):
+            texture_name = texture_names[tex_map]
+            texture_index = tex_map
 
         tev_orders.append({
             "stage": stage,
             "index": tev_order_index,
             "tex_coord": tex_coord if tex_coord != 0xFF else None,
             "tex_map": tex_map if tex_map != 0xFF else None,
+            "texture_slot": tex_map if tex_map != 0xFF else None,
+            "texture_index": texture_index,
             "texture": texture_name,
             "color_channel": color_chan if color_chan != 0xFF else None,
             "raw": raw.hex().upper(),
             "j3d": {
                 "tev_order_index_offset": f"0x{MAT3_KNOWN_TEV_ORDER_INDEX_OFFSET:02X}",
-                "tev_order_table_relative_offset": f"0x{tev_order_table_offset - mat3_offset:X}",
-            }
+                "tev_order_table_relative_offset": f"0x{table_offset - mat3_offset:X}",
+                "tev_order_table_entry_count": max_order_count,
+            },
         })
 
-    return tev_orders
+    return tev_orders, invalid_orders
+
+
+def parse_tev_stage_value(raw, stage, tev_stage_index, raw_offset, mat3_offset):
+    raw = bytes(raw)
+    if len(raw) < MAT3_TEV_STAGE_ENTRY_SIZE:
+        return {"stage": stage, "index": tev_stage_index, "raw": raw.hex().upper(), "error": "raw_too_short"}
+
+    unknown0 = raw[0]
+    color_in_a, color_in_b, color_in_c, color_in_d = raw[1], raw[2], raw[3], raw[4]
+    color_op, color_bias, color_scale, color_clamp, color_reg = raw[5], raw[6], raw[7], raw[8], raw[9]
+    alpha_in_a, alpha_in_b, alpha_in_c, alpha_in_d = raw[10], raw[11], raw[12], raw[13]
+    alpha_op, alpha_bias, alpha_scale, alpha_clamp, alpha_reg = raw[14], raw[15], raw[16], raw[17], raw[18]
+    unknown1 = raw[19]
+
+    color = {
+        "a_value": color_in_a, "a": enum_name(GX_TEV_COLOR_ARGS, color_in_a),
+        "b_value": color_in_b, "b": enum_name(GX_TEV_COLOR_ARGS, color_in_b),
+        "c_value": color_in_c, "c": enum_name(GX_TEV_COLOR_ARGS, color_in_c),
+        "d_value": color_in_d, "d": enum_name(GX_TEV_COLOR_ARGS, color_in_d),
+        "op_value": color_op, "op": enum_name(GX_TEV_OPS, color_op),
+        "bias_value": color_bias, "bias": enum_name(GX_TEV_BIASES, color_bias),
+        "scale_value": color_scale, "scale": enum_name(GX_TEV_SCALES, color_scale),
+        "clamp_value": color_clamp, "clamp": bool(color_clamp),
+        "reg_value": color_reg, "reg": enum_name(GX_TEV_REGS, color_reg),
+    }
+    alpha = {
+        "a_value": alpha_in_a, "a": enum_name(GX_TEV_ALPHA_ARGS, alpha_in_a),
+        "b_value": alpha_in_b, "b": enum_name(GX_TEV_ALPHA_ARGS, alpha_in_b),
+        "c_value": alpha_in_c, "c": enum_name(GX_TEV_ALPHA_ARGS, alpha_in_c),
+        "d_value": alpha_in_d, "d": enum_name(GX_TEV_ALPHA_ARGS, alpha_in_d),
+        "op_value": alpha_op, "op": enum_name(GX_TEV_OPS, alpha_op),
+        "bias_value": alpha_bias, "bias": enum_name(GX_TEV_BIASES, alpha_bias),
+        "scale_value": alpha_scale, "scale": enum_name(GX_TEV_SCALES, alpha_scale),
+        "clamp_value": alpha_clamp, "clamp": bool(alpha_clamp),
+        "reg_value": alpha_reg, "reg": enum_name(GX_TEV_REGS, alpha_reg),
+    }
+    sanity = {
+        "unknown0": f"0x{unknown0:02X}",
+        "unknown1": f"0x{unknown1:02X}",
+        "unknown0_is_ff": unknown0 == 0xFF,
+        "unknown1_is_ff": unknown1 == 0xFF,
+        "color_in_in_range": all(v < 16 for v in (color_in_a, color_in_b, color_in_c, color_in_d)),
+        "alpha_in_in_range": all(v < 8 for v in (alpha_in_a, alpha_in_b, alpha_in_c, alpha_in_d)),
+        "color_reg_in_range": color_reg < 4,
+        "alpha_reg_in_range": alpha_reg < 4,
+        "color_clamp_is_bool": color_clamp in (0, 1),
+        "alpha_clamp_is_bool": alpha_clamp in (0, 1),
+    }
+    sanity["all_fields_plausible"] = all(v for v in sanity.values() if isinstance(v, bool))
+
+    return {
+        "stage": stage,
+        "index": tev_stage_index,
+        "raw": raw.hex().upper(),
+        "entry_size": MAT3_TEV_STAGE_ENTRY_SIZE,
+        "bytes": [f"{value:02X}" for value in raw],
+        "decode_status": "j3d_tev_stage_byte_per_field_layout",
+        "color": color,
+        "alpha": alpha,
+        "sanity": sanity,
+        "j3d": {
+            "tev_stage_index_offset": f"0x{MAT3_KNOWN_TEV_STAGE_INDEX_OFFSET:02X}",
+            "tev_stage_table_relative_offset": None,
+            "raw_relative_offset": f"0x{raw_offset - mat3_offset:X}",
+        },
+    }
+
+def parse_tev_stages_from_material_entry(data, material_entry_offset, mat3_offset, mat3_size, stage_count):
+    tev_stages = []
+    invalid_stages = []
+    table_offset, table_end = get_mat3_table_range(data, mat3_offset, mat3_size, "tev_stage")
+    if table_offset is None or material_entry_offset is None:
+        return tev_stages, invalid_stages
+
+    max_stage_count = max(0, (table_end - table_offset) // MAT3_TEV_STAGE_ENTRY_SIZE) if table_end is not None else 0
+    stage_count = clamp_tev_stage_count(stage_count)
+
+    for stage in range(stage_count):
+        index_offset = material_entry_offset + MAT3_KNOWN_TEV_STAGE_INDEX_OFFSET + stage * 2
+        tev_stage_index = read_u16_index(data, index_offset)
+        if tev_stage_index is None:
+            invalid_stages.append({"stage": stage, "index": None, "reason": "invalid_index", "raw": data[index_offset:index_offset + 2].hex().upper() if index_offset + 2 <= len(data) else None})
+            continue
+        if tev_stage_index >= max_stage_count:
+            invalid_stages.append({"stage": stage, "index": tev_stage_index, "reason": "out_of_tev_stage_table", "max_valid_index": max_stage_count - 1 if max_stage_count > 0 else None})
+            continue
+
+        raw_offset = table_offset + tev_stage_index * MAT3_TEV_STAGE_ENTRY_SIZE
+        raw = data[raw_offset:raw_offset + MAT3_TEV_STAGE_ENTRY_SIZE] if raw_offset + MAT3_TEV_STAGE_ENTRY_SIZE <= len(data) else b""
+        if len(raw) < MAT3_TEV_STAGE_ENTRY_SIZE:
+            invalid_stages.append({"stage": stage, "index": tev_stage_index, "reason": "raw_out_of_bounds"})
+            continue
+
+        parsed = parse_tev_stage_value(raw, stage, tev_stage_index, raw_offset, mat3_offset)
+        parsed["j3d"]["tev_stage_table_relative_offset"] = f"0x{table_offset - mat3_offset:X}"
+        parsed["j3d"]["tev_stage_table_entry_count"] = max_stage_count
+        tev_stages.append(parsed)
+
+    return tev_stages, invalid_stages
+
+
+
+
+
+def parse_color16_rgba(data, offset):
+    if offset < 0 or offset + 8 > len(data):
+        return None
+
+    r = safe_u16(data, offset)
+    g = safe_u16(data, offset + 2)
+    b = safe_u16(data, offset + 4)
+    a = safe_u16(data, offset + 6)
+
+    return {
+        "r": r,
+        "g": g,
+        "b": b,
+        "a": a,
+        "normalized": {
+            "r": round(r / 255.0, 6),
+            "g": round(g / 255.0, 6),
+            "b": round(b / 255.0, 6),
+            "a": round(a / 255.0, 6),
+        },
+        "raw": f"{r:04X}{g:04X}{b:04X}{a:04X}",
+        "storage": "rgba16",
+    }
+
+
+def parse_color8_rgba(data, offset):
+    if offset < 0 or offset + 4 > len(data):
+        return None
+
+    r = u8(data, offset)
+    g = u8(data, offset + 1)
+    b = u8(data, offset + 2)
+    a = u8(data, offset + 3)
+
+    return {
+        "r": r,
+        "g": g,
+        "b": b,
+        "a": a,
+        "normalized": {
+            "r": round(r / 255.0, 6),
+            "g": round(g / 255.0, 6),
+            "b": round(b / 255.0, 6),
+            "a": round(a / 255.0, 6),
+        },
+        "raw": f"{r:02X}{g:02X}{b:02X}{a:02X}",
+        "storage": "rgba8",
+    }
+
+
+def parse_tev_colors_from_material_entry(data, material_entry_offset, mat3_offset):
+    tev_colors = []
+    table_offset = get_mat3_table_offset(data, mat3_offset, "tev_color")
+
+    if table_offset is None or material_entry_offset is None:
+        return tev_colors
+
+    for i in range(4):
+        index = read_u16_index(
+            data,
+            material_entry_offset + MAT3_KNOWN_TEV_COLOR_INDEX_OFFSET + i * 2
+        )
+
+        if index is None:
+            tev_colors.append(None)
+            continue
+
+        raw_offset = table_offset + index * 8
+        color = parse_color16_rgba(data, raw_offset)
+
+        tev_colors.append({
+            "index": index,
+            "color": color,
+            "j3d": {
+                "tev_color_index_offset": f"0x{MAT3_KNOWN_TEV_COLOR_INDEX_OFFSET + i * 2:X}",
+                "tev_color_table_relative_offset": f"0x{table_offset - mat3_offset:X}",
+            },
+        })
+
+    return tev_colors
+
+
+def parse_tev_konst_colors_from_material_entry(data, material_entry_offset, mat3_offset):
+    konst_colors = []
+    table_offset = get_mat3_table_offset(data, mat3_offset, "tev_konst_color")
+
+    if table_offset is None or material_entry_offset is None:
+        return konst_colors
+
+    for i in range(4):
+        index = read_u16_index(
+            data,
+            material_entry_offset + MAT3_KNOWN_TEV_KONST_COLOR_INDEX_OFFSET + i * 2
+        )
+
+        if index is None:
+            konst_colors.append(None)
+            continue
+
+        # J3D TevKColor / konst color table stores GXColor as 4 bytes RGBA8,
+        # unlike tev_color/c0-c2 registers which use 8-byte RGBA16.
+        raw_offset = table_offset + index * 4
+        color = parse_color8_rgba(data, raw_offset)
+
+        konst_colors.append({
+            "index": index,
+            "color": color,
+            "j3d": {
+                "tev_konst_color_index_offset": f"0x{MAT3_KNOWN_TEV_KONST_COLOR_INDEX_OFFSET + i * 2:X}",
+                "tev_konst_color_table_relative_offset": f"0x{table_offset - mat3_offset:X}",
+                "tev_konst_color_entry_size": 4,
+            },
+        })
+
+    return konst_colors
+
+
+def parse_tev_konst_selectors_from_material_entry(data, material_entry_offset):
+    color_selectors = []
+    alpha_selectors = []
+
+    if material_entry_offset is None:
+        return {
+            "color": color_selectors,
+            "alpha": alpha_selectors,
+        }
+
+    for stage in range(16):
+        color_sel = u8(data, material_entry_offset + MAT3_KNOWN_TEV_KONST_COLOR_SEL_OFFSET + stage)
+        alpha_sel = u8(data, material_entry_offset + MAT3_KNOWN_TEV_KONST_ALPHA_SEL_OFFSET + stage)
+
+        color_selectors.append(color_sel if color_sel != 0xFF else None)
+        alpha_selectors.append(alpha_sel if alpha_sel != 0xFF else None)
+
+    return {
+        "color": color_selectors,
+        "alpha": alpha_selectors,
+    }
 
 
 def parse_material_gx_state(data, mat3_offset, material_entry_offset):
-    alpha_compare_index = read_u16_index(data, material_entry_offset + MAT3_KNOWN_ALPHA_COMPARE_INDEX_OFFSET)
-    blend_mode_index = read_u16_index(data, material_entry_offset + MAT3_KNOWN_BLEND_MODE_INDEX_OFFSET)
-    z_mode_index = read_u16_index(data, material_entry_offset + MAT3_KNOWN_Z_MODE_INDEX_OFFSET)
     cull_mode_index = read_u8_index(data, material_entry_offset + MAT3_KNOWN_CULL_MODE_INDEX_OFFSET)
     z_comp_loc_index = read_u8_index(data, material_entry_offset + MAT3_KNOWN_Z_COMP_LOC_INDEX_OFFSET)
+    z_mode_index = read_u8_index(data, material_entry_offset + MAT3_KNOWN_Z_MODE_INDEX_OFFSET)
     dither_index = read_u8_index(data, material_entry_offset + MAT3_KNOWN_DITHER_INDEX_OFFSET)
+    alpha_compare_index = read_u16_index(data, material_entry_offset + MAT3_KNOWN_ALPHA_COMPARE_INDEX_OFFSET)
+    blend_mode_index = read_u16_index(data, material_entry_offset + MAT3_KNOWN_BLEND_MODE_INDEX_OFFSET)
 
     alpha_compare = parse_alpha_compare_value(data, get_mat3_table_offset(data, mat3_offset, "alpha_compare"), alpha_compare_index)
     blend_mode = parse_blend_mode_value(data, get_mat3_table_offset(data, mat3_offset, "blend_mode"), blend_mode_index)
@@ -427,6 +904,7 @@ def parse_mat3(data, mat3_offset, textures=None, mat3_size=None):
     if mat3_size is None:
         mat3_size = safe_u32(data, mat3_offset + 0x04, 0)
 
+    mat3_header_validation = validate_mat3_header_offsets(data, mat3_offset, mat3_size)
     texture_names = [texture["name"] for texture in textures]
 
     material_count = u16(data, mat3_offset + 0x08)
@@ -440,19 +918,13 @@ def parse_mat3(data, mat3_offset, textures=None, mat3_size=None):
 
     for index in range(material_count):
         material_init_index = index
-
         if material_remap_table is not None:
             remapped_index = safe_u16(data, material_remap_table + index * 2, index)
             if remapped_index != J3D_INVALID_INDEX:
                 material_init_index = remapped_index
 
         material_init_indices.append(material_init_index)
-
-        if material_init_table is not None:
-            material_entry_offsets.append(material_init_table + material_init_index * MAT3_MATERIAL_INIT_SIZE)
-        else:
-            material_entry_offsets.append(None)
-
+        material_entry_offsets.append(material_init_table + material_init_index * MAT3_MATERIAL_INIT_SIZE if material_init_table is not None else None)
 
     materials = []
     for index in range(material_count):
@@ -461,29 +933,48 @@ def parse_mat3(data, mat3_offset, textures=None, mat3_size=None):
         name = names[index] if index < len(names) else f"material_{index}"
 
         material_textures = []
+        tev_stage_count = None
         tev_orders = []
+        invalid_tev_orders = []
+        tev_stages = []
+        invalid_tev_stages = []
+        tev_colors = []
+        tev_konst_colors = []
+        tev_konst_selectors = {}
         gx_state = None
 
         if material_entry_offset is not None:
-            material_textures = resolve_textures_from_material_entry(
-                data,
-                material_entry_offset,
-                mat3_offset,
-                texture_names
+            material_textures = resolve_textures_from_material_entry(data, material_entry_offset, mat3_offset, texture_names)
+            tev_stage_count = parse_tev_stage_count_from_material_entry(data, material_entry_offset, mat3_offset)
+            tev_orders, invalid_tev_orders = parse_tev_orders_from_material_entry(
+                data, material_entry_offset, mat3_offset, mat3_size, texture_names, tev_stage_count.get("count", 1), material_textures
+            )
+            effective_tev_stage_count = len(tev_orders)
+            if effective_tev_stage_count == 0 and tev_stage_count.get("count", 1) > 0:
+                effective_tev_stage_count = tev_stage_count.get("count", 1)
+            tev_stages, invalid_tev_stages = parse_tev_stages_from_material_entry(
+                data, material_entry_offset, mat3_offset, mat3_size, effective_tev_stage_count
             )
 
-            tev_orders = parse_tev_orders_from_material_entry(
-                data,
-                material_entry_offset,
-                mat3_offset,
-                texture_names
+            tev_colors = parse_tev_colors_from_material_entry(
+                data, material_entry_offset, mat3_offset
             )
 
-            gx_state = parse_material_gx_state(
-                data,
-                mat3_offset,
-                material_entry_offset
+            tev_konst_colors = parse_tev_konst_colors_from_material_entry(
+                data, material_entry_offset, mat3_offset
             )
+
+            tev_konst_selectors = parse_tev_konst_selectors_from_material_entry(
+                data, material_entry_offset
+            )
+            if invalid_tev_orders:
+                tev_stage_count["invalid_order_count"] = len(invalid_tev_orders)
+            if invalid_tev_stages:
+                tev_stage_count["invalid_stage_count"] = len(invalid_tev_stages)
+            gx_state = parse_material_gx_state(data, mat3_offset, material_entry_offset)
+
+        if tev_stage_count is None:
+            tev_stage_count = {"index": None, "count": 1, "raw": None, "used_fallback": True}
 
         if gx_state is None:
             gx_state = {
@@ -499,6 +990,10 @@ def parse_mat3(data, mat3_offset, textures=None, mat3_size=None):
         alpha_mode = derive_alpha_mode(gx_state["alpha_compare"], gx_state["blend_mode"])
         alpha_cutoff = gx_state["alpha_compare"].get("ref0", 0) / 255.0 if alpha_mode == "cutout" else 0.5
         render_queue = "transparent" if alpha_mode == "blend" else ("cutout" if alpha_mode == "cutout" else "opaque")
+        declared_stage_count = tev_stage_count.get("count", 1)
+        effective_stage_count = len(tev_orders)
+        if effective_stage_count == 0 and declared_stage_count > 0:
+            effective_stage_count = declared_stage_count
 
         materials.append({
             "index": index,
@@ -517,16 +1012,29 @@ def parse_mat3(data, mat3_offset, textures=None, mat3_size=None):
             "depth": {
                 "test": gx_state["z_mode"].get("test", True),
                 "write": gx_state["z_mode"].get("write", True),
-                "func": gx_state["z_mode"].get("func", "lequal")
+                "func": gx_state["z_mode"].get("func", "lequal"),
             },
             "render_queue": render_queue,
+            "tev": {
+                "stage_count": effective_stage_count,
+                "declared_stage_count": declared_stage_count,
+                "orders": tev_orders,
+                "stages": tev_stages,
+                "colors": tev_colors,
+                "konst_colors": tev_konst_colors,
+                "konst_selectors": tev_konst_selectors,
+            },
             "j3d": {
                 "mat3_index": index,
                 "material_init_index": material_init_index,
                 "material_entry_offset": material_entry_offset - mat3_offset if material_entry_offset is not None else None,
                 "gx": gx_state,
-                "tev_orders": tev_orders
-            }
+                "tev_stage_count": tev_stage_count,
+                "tev_orders": tev_orders,
+                "invalid_tev_orders": invalid_tev_orders,
+                "tev_stages": tev_stages,
+                "invalid_tev_stages": invalid_tev_stages,
+            },
         })
 
     return materials, {
@@ -536,6 +1044,13 @@ def parse_mat3(data, mat3_offset, textures=None, mat3_size=None):
         "material_remap_table_relative_offset": f"0x{material_remap_table - mat3_offset:X}" if material_remap_table is not None else None,
         "tex_no_table_relative_offset": f"0x{get_mat3_table_offset(data, mat3_offset, 'tex_no') - mat3_offset:X}" if get_mat3_table_offset(data, mat3_offset, "tex_no") is not None else None,
         "tev_order_table_relative_offset": f"0x{get_mat3_table_offset(data, mat3_offset, 'tev_order') - mat3_offset:X}" if get_mat3_table_offset(data, mat3_offset, "tev_order") is not None else None,
+        "tev_order_table_entry_count": get_mat3_table_entry_count(data, mat3_offset, mat3_size, "tev_order", 4),
+        "tev_stage_count_table_entry_count": get_mat3_table_entry_count(data, mat3_offset, mat3_size, "tev_stage_count", 1),
+        "tev_stage_table_relative_offset": f"0x{get_mat3_table_offset(data, mat3_offset, 'tev_stage') - mat3_offset:X}" if get_mat3_table_offset(data, mat3_offset, "tev_stage") is not None else None,
+        "tev_stage_table_entry_count": get_mat3_table_entry_count(data, mat3_offset, mat3_size, "tev_stage", MAT3_TEV_STAGE_ENTRY_SIZE),
+        "tev_stage_entry_size": f"0x{MAT3_TEV_STAGE_ENTRY_SIZE:X}",
+        "tev_stage_index_offset": f"0x{MAT3_KNOWN_TEV_STAGE_INDEX_OFFSET:X}",
+        "header_validation": mat3_header_validation,
     }
 
 def build_okmat_document(model_path, data):
