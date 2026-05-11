@@ -20,6 +20,11 @@ namespace Okari
 
 		GXTevOp Operation = GXTevOp::Add;
 
+		// GX bias: 0 = +0.0, 1 = +0.5, 2 = -0.5
+		int Bias = 0;
+		int Scale = 0;
+		bool Clamp = true;
+
 		GXTevRegister Output = GXTevRegister::Prev;
 	};
 
@@ -31,6 +36,11 @@ namespace Okari
 		GXTevColorArg D = GXTevColorArg::Zero;
 
 		GXTevOp Operation = GXTevOp::Add;
+
+		// GX bias: 0 = +0.0, 1 = +0.5, 2 = -0.5
+		int Bias = 0;
+		int Scale = 0;
+		bool Clamp = true;
 
 		GXTevRegister Output = GXTevRegister::Prev;
 	};

@@ -33,6 +33,8 @@ set(ENGINE_SOURCES
     Engine/Rendering/Framebuffer.cpp
     Engine/Rendering/Mesh.cpp
 
+    Engine/Rendering/GX/GXMaterialBinder.cpp
+
     Engine/Resources/MeshManager.cpp
     Engine/Resources/FBXLoader.cpp
     Engine/Resources/OKMATLoader.cpp

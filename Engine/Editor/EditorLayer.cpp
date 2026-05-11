@@ -463,7 +463,14 @@ namespace Okari
         editorCameraCtx->BindKey(GLFW_KEY_F2, "TevDebugMode1");
         editorCameraCtx->BindKey(GLFW_KEY_F3, "TevDebugMode2");
         editorCameraCtx->BindKey(GLFW_KEY_F4, "TevDebugMode3");
+        
         editorCameraCtx->BindKey(GLFW_KEY_F5, "TevDebugMode7");
+        editorCameraCtx->BindKey(GLFW_KEY_F6, "TevDebugMode12");
+        
+        editorCameraCtx->BindKey(GLFW_KEY_F8, "TevDebugMode20");
+        editorCameraCtx->BindKey(GLFW_KEY_F9, "TevDebugMode21");
+        editorCameraCtx->BindKey(GLFW_KEY_F10, "TevDebugMode22");
+        editorCameraCtx->BindKey(GLFW_KEY_F11, "TevDebugMode23");
 
         InputManager::RegisterContext(editorCameraCtx);
         InputManager::PushContext("EditorCamera");
@@ -506,8 +513,6 @@ namespace Okari
             }
         );
 
-        //NewScene();
-
         m_Window = Application::Get().GetWindow().GetNativeWindow();
 
         EditorUI::Init(m_Window);
@@ -547,6 +552,21 @@ namespace Okari
 
         if (InputManager::IsActionPressed("TevDebugMode7"))
             renderer.SetTevDebugMode(7);
+
+        if (InputManager::IsActionPressed("TevDebugMode12"))
+            renderer.SetTevDebugMode(12);
+
+        if (InputManager::IsActionPressed("TevDebugMode20"))
+            renderer.SetTevDebugMode(20);
+
+        if (InputManager::IsActionPressed("TevDebugMode21"))
+            renderer.SetTevDebugMode(21);
+
+        if (InputManager::IsActionPressed("TevDebugMode22"))
+            renderer.SetTevDebugMode(22);
+
+        if (InputManager::IsActionPressed("TevDebugMode23"))
+            renderer.SetTevDebugMode(23);
 
         renderer.BeginFrame();
 

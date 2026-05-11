@@ -1,4 +1,6 @@
 #include "Rendering/Renderer.h"
+#include "Rendering/GX/GXMaterialBinder.h"
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm.hpp>
@@ -324,14 +326,7 @@ namespace Okari
                 depthWrite = material.DepthWrite;
                 depthFunc = material.DepthFunc;
 
-                m_Shader->SetVec4("u_TevColor0", material.TevColor0);
-                m_Shader->SetVec4("u_TevColor1", material.TevColor1);
-                m_Shader->SetVec4("u_TevColor2", material.TevColor2);
-
-                m_Shader->SetVec4("u_KonstColor0", material.KonstColor0);
-                m_Shader->SetVec4("u_KonstColor1", material.KonstColor1);
-                m_Shader->SetVec4("u_KonstColor2", material.KonstColor2);
-                m_Shader->SetVec4("u_KonstColor3", material.KonstColor3);
+                GXMaterialBinder::BindMaterialUniforms(*m_Shader, material);
 
                 m_Shader->SetInt("u_TextureSlotCount", static_cast<int>(material.TextureSlots.size()));
 

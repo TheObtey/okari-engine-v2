@@ -32,15 +32,34 @@ namespace Okari
 
 	static glm::vec4 ParseVec4(const nlohmann::json& value)
 	{
-		if (!value.is_array() || value.size() < 4)
-			return glm::vec4(1.0f);
+		if (value.is_array() && value.size() >= 4)
+		{
+			return glm::vec4(
+				value[0].get<float>(),
+				value[1].get<float>(),
+				value[2].get<float>(),
+				value[3].get<float>()
+			);
+		}
 
-		return glm::vec4(
-			value[0].get<float>(),
-			value[1].get<float>(),
-			value[2].get<float>(),
-			value[3].get<float>()
-		);
+		if (value.contains("color"))
+		{
+			const auto& color = value["color"];
+
+			if (color.contains("normalized"))
+			{
+				const auto& n = color["normalized"];
+
+				return glm::vec4(
+					n.value("r", 1.0f),
+					n.value("g", 1.0f),
+					n.value("b", 1.0f),
+					n.value("a", 1.0f)
+				);
+			}
+		}
+
+		return glm::vec4(1.0f);
 	}
 
 	static GXTevRegister ParseTevRegister(const std::string& value)
@@ -70,30 +89,80 @@ namespace Okari
 		if (value == "ras_alpha" || value == "rasa")
 			return GXTevColorArg::RasAlpha;
 
-		if (value == "konst_color" || value == "konstc")
+		if (value == "konst" || value == "konst_color" || value == "konstc")
 			return GXTevColorArg::KonstColor;
 		if (value == "konst_alpha" || value == "konsta")
 			return GXTevColorArg::KonstAlpha;
 
-		if (value == "prev_color" || value == "prev")
+		if (value == "cprev" || value == "prev_color" || value == "prev")
 			return GXTevColorArg::PrevColor;
-		if (value == "prev_alpha")
+		if (value == "aprev" || value == "prev_alpha")
 			return GXTevColorArg::PrevAlpha;
 
-		if (value == "reg0_color")
+		if (value == "c0" || value == "reg0_color")
 			return GXTevColorArg::Reg0Color;
-		if (value == "reg0_alpha")
+		if (value == "a0" || value == "reg0_alpha")
 			return GXTevColorArg::Reg0Alpha;
 
-		if (value == "reg1_color")
+		if (value == "c1" || value == "reg1_color")
 			return GXTevColorArg::Reg1Color;
-		if (value == "reg1_alpha")
+		if (value == "a1" || value == "reg1_alpha")
 			return GXTevColorArg::Reg1Alpha;
 
-		if (value == "reg2_color")
+		if (value == "c2" || value == "reg2_color")
 			return GXTevColorArg::Reg2Color;
-		if (value == "reg2_alpha")
+		if (value == "a2" || value == "reg2_alpha")
 			return GXTevColorArg::Reg2Alpha;
+
+		return GXTevColorArg::Zero;
+	}
+
+	static GXTevColorArg ParseTevAlphaArg(const std::string& value)
+	{
+		if (value == "zero")
+			return GXTevColorArg::Zero;
+
+		if (value == "one")
+			return GXTevColorArg::One;
+
+		if (value == "texa" || value == "tex_alpha")
+			return GXTevColorArg::TexAlpha;
+
+		if (value == "texc" || value == "tex_color")
+			return GXTevColorArg::TexColor;
+
+		if (value == "rasa" || value == "ras_alpha")
+			return GXTevColorArg::RasAlpha;
+
+		if (value == "rasc" || value == "ras_color")
+			return GXTevColorArg::RasColor;
+
+		if (value == "konst" || value == "konsta" || value == "konst_alpha")
+			return GXTevColorArg::KonstAlpha;
+
+		if (value == "aprev" || value == "prev_alpha")
+			return GXTevColorArg::PrevAlpha;
+
+		if (value == "cprev" || value == "prev_color")
+			return GXTevColorArg::PrevColor;
+
+		if (value == "a0" || value == "reg0_alpha")
+			return GXTevColorArg::Reg0Alpha;
+
+		if (value == "c0" || value == "reg0_color")
+			return GXTevColorArg::Reg0Color;
+
+		if (value == "a1" || value == "reg1_alpha")
+			return GXTevColorArg::Reg1Alpha;
+
+		if (value == "c1" || value == "reg1_color")
+			return GXTevColorArg::Reg1Color;
+
+		if (value == "a2" || value == "reg2_alpha")
+			return GXTevColorArg::Reg2Alpha;
+
+		if (value == "c2" || value == "reg2_color")
+			return GXTevColorArg::Reg2Color;
 
 		return GXTevColorArg::Zero;
 	}
@@ -107,28 +176,6 @@ namespace Okari
 	}
 
 	static void ParseTevColorStage(const nlohmann::json& json, GXTevColorStage& stage)
-	{					
-		if (json.contains("a"))
-			stage.A = ParseTevArg(json["a"].get<std::string>());
-		if (json.contains("b"))
-			stage.B = ParseTevArg(json["b"].get<std::string>());
-		if (json.contains("c"))
-			stage.C = ParseTevArg(json["c"].get<std::string>());
-		if (json.contains("d"))
-			stage.D = ParseTevArg(json["d"].get<std::string>());
-
-		if (json.contains("op"))
-			stage.Operation = ParseTevOp(json["op"].get<std::string>());
-		if (json.contains("operation"))
-			stage.Operation = ParseTevOp(json["operation"].get<std::string>());
-
-		if (json.contains("output"))
-			stage.Output = ParseTevRegister(json["output"].get<std::string>());
-		if (json.contains("dest"))
-			stage.Output = ParseTevRegister(json["dest"].get<std::string>());
-	}
-
-	static void ParseTevAlphaStage(const nlohmann::json& json, GXTevAlphaStage& stage)
 	{
 		if (json.contains("a"))
 			stage.A = ParseTevArg(json["a"].get<std::string>());
@@ -143,6 +190,42 @@ namespace Okari
 			stage.Operation = ParseTevOp(json["op"].get<std::string>());
 		if (json.contains("operation"))
 			stage.Operation = ParseTevOp(json["operation"].get<std::string>());
+
+		if (json.contains("bias_value"))
+			stage.Bias = json["bias_value"].get<int>();
+		if (json.contains("scale_value"))
+			stage.Scale = json["scale_value"].get<int>();
+		if (json.contains("clamp_value"))
+			stage.Clamp = json["clamp_value"].get<int>() != 0;
+
+		if (json.contains("output"))
+			stage.Output = ParseTevRegister(json["output"].get<std::string>());
+		if (json.contains("dest"))
+			stage.Output = ParseTevRegister(json["dest"].get<std::string>());
+	}
+
+	static void ParseTevAlphaStage(const nlohmann::json& json, GXTevAlphaStage& stage)
+	{
+		if (json.contains("a"))
+			stage.A = ParseTevAlphaArg(json["a"].get<std::string>());
+		if (json.contains("b"))
+			stage.B = ParseTevAlphaArg(json["b"].get<std::string>());
+		if (json.contains("c"))
+			stage.C = ParseTevAlphaArg(json["c"].get<std::string>());
+		if (json.contains("d"))
+			stage.D = ParseTevAlphaArg(json["d"].get<std::string>());
+
+		if (json.contains("op"))
+			stage.Operation = ParseTevOp(json["op"].get<std::string>());
+		if (json.contains("operation"))
+			stage.Operation = ParseTevOp(json["operation"].get<std::string>());
+
+		if (json.contains("bias_value"))
+			stage.Bias = json["bias_value"].get<int>();
+		if (json.contains("scale_value"))
+			stage.Scale = json["scale_value"].get<int>();
+		if (json.contains("clamp_value"))
+			stage.Clamp = json["clamp_value"].get<int>() != 0;
 
 		if (json.contains("output"))
 			stage.Output = ParseTevRegister(json["output"].get<std::string>());
@@ -214,6 +297,147 @@ namespace Okari
 
 			if (stageJson.contains("konst_alpha_selector"))
 				stage.KonstAlphaSelector = stageJson["konst_alpha_selector"].get<int>();
+		}
+	}
+
+	static void ParseTevBlock(const nlohmann::json& tev, Material& material)
+	{
+		if (!tev.is_object())
+			return;
+
+		if (tev.contains("colors") && tev["colors"].is_array())
+		{
+			const auto& colors = tev["colors"];
+
+			if (colors.size() > 0) material.TevColor0 = ParseVec4(colors[0]);
+			if (colors.size() > 1) material.TevColor1 = ParseVec4(colors[1]);
+			if (colors.size() > 2) material.TevColor2 = ParseVec4(colors[2]);
+		}
+
+		if (tev.contains("konst_colors") && tev["konst_colors"].is_array())
+		{
+			const auto& colors = tev["konst_colors"];
+
+			if (colors.size() > 0) material.KonstColor0 = ParseVec4(colors[0]);
+			if (colors.size() > 1) material.KonstColor1 = ParseVec4(colors[1]);
+			if (colors.size() > 2) material.KonstColor2 = ParseVec4(colors[2]);
+			if (colors.size() > 3) material.KonstColor3 = ParseVec4(colors[3]);
+		}
+
+		if (tev.contains("konst_selectors"))
+		{
+			const auto& selectors = tev["konst_selectors"];
+
+			if (selectors.contains("color") && selectors["color"].is_array())
+			{
+				const auto& colorSelectors = selectors["color"];
+
+				for (size_t i = 0; i < material.TevStages.size() && i < colorSelectors.size(); i++)
+				{
+					if (!colorSelectors[i].is_null())
+						material.TevStages[i].KonstColorSelector = colorSelectors[i].get<int>();
+				}
+			}
+
+			if (selectors.contains("alpha") && selectors["alpha"].is_array())
+			{
+				const auto& alphaSelectors = selectors["alpha"];
+
+				for (size_t i = 0; i < material.TevStages.size() && i < alphaSelectors.size(); i++)
+				{
+					if (!alphaSelectors[i].is_null())
+						material.TevStages[i].KonstAlphaSelector = alphaSelectors[i].get<int>();
+				}
+			}
+		}
+	}
+
+	static const char* TevArgToString(GXTevColorArg arg)
+	{
+		switch (arg)
+		{
+		case GXTevColorArg::Zero: return "Zero";
+		case GXTevColorArg::One: return "One";
+		case GXTevColorArg::TexColor: return "TexColor";
+		case GXTevColorArg::TexAlpha: return "TexAlpha";
+		case GXTevColorArg::RasColor: return "RasColor";
+		case GXTevColorArg::RasAlpha: return "RasAlpha";
+		case GXTevColorArg::KonstColor: return "KonstColor";
+		case GXTevColorArg::KonstAlpha: return "KonstAlpha";
+		case GXTevColorArg::PrevColor: return "PrevColor";
+		case GXTevColorArg::PrevAlpha: return "PrevAlpha";
+		case GXTevColorArg::Reg0Color: return "Reg0Color";
+		case GXTevColorArg::Reg0Alpha: return "Reg0Alpha";
+		case GXTevColorArg::Reg1Color: return "Reg1Color";
+		case GXTevColorArg::Reg1Alpha: return "Reg1Alpha";
+		case GXTevColorArg::Reg2Color: return "Reg2Color";
+		case GXTevColorArg::Reg2Alpha: return "Reg2Alpha";
+		default: return "Unknown";
+		}
+	}
+
+	static const char* TevRegisterToString(GXTevRegister reg)
+	{
+		switch (reg)
+		{
+		case GXTevRegister::Prev: return "Prev";
+		case GXTevRegister::Reg0: return "Reg0";
+		case GXTevRegister::Reg1: return "Reg1";
+		case GXTevRegister::Reg2: return "Reg2";
+		default: return "Unknown";
+		}
+	}
+
+	static void DumpTevMaterial(const Material& material)
+	{
+		std::cout << "[TEV Dump] Material: " << material.Name << std::endl;
+
+		auto PrintVec4 = [](const char* name, const glm::vec4& v)
+			{
+				std::cout << "  " << name << " = "
+					<< v.r << ", "
+					<< v.g << ", "
+					<< v.b << ", "
+					<< v.a
+					<< std::endl;
+			};
+
+		PrintVec4("TevColor0", material.TevColor0);
+		PrintVec4("TevColor1", material.TevColor1);
+		PrintVec4("TevColor2", material.TevColor2);
+
+		PrintVec4("KonstColor0", material.KonstColor0);
+		PrintVec4("KonstColor1", material.KonstColor1);
+		PrintVec4("KonstColor2", material.KonstColor2);
+		PrintVec4("KonstColor3", material.KonstColor3);
+
+		for (size_t i = 0; i < material.TevStages.size(); i++)
+		{
+			const GXTevStage& stage = material.TevStages[i];
+
+			std::cout << "  Stage " << i
+				<< " | texMap=" << stage.Order.TexMap
+				<< " | texCoord=" << stage.Order.TexCoord
+				<< " | colorChannel=" << stage.Order.ColorChannel
+				<< " | kcSel=" << stage.KonstColorSelector
+				<< " | kaSel=" << stage.KonstAlphaSelector
+				<< std::endl;
+
+			std::cout << "    Color: "
+				<< TevArgToString(stage.ColorStage.A) << ", "
+				<< TevArgToString(stage.ColorStage.B) << ", "
+				<< TevArgToString(stage.ColorStage.C) << ", "
+				<< TevArgToString(stage.ColorStage.D)
+				<< " -> " << TevRegisterToString(stage.ColorStage.Output)
+				<< std::endl;
+
+			std::cout << "    Alpha: "
+				<< TevArgToString(stage.AlphaStage.A) << ", "
+				<< TevArgToString(stage.AlphaStage.B) << ", "
+				<< TevArgToString(stage.AlphaStage.C) << ", "
+				<< TevArgToString(stage.AlphaStage.D)
+				<< " -> " << TevRegisterToString(stage.AlphaStage.Output)
+				<< std::endl;
 		}
 	}
 
@@ -379,6 +603,9 @@ namespace Okari
 
 					if (j3d.contains("tev_stages"))
 						ParseTevStages(j3d["tev_stages"], material.TevStages);
+
+					if (okmatMaterial.contains("tev"))
+						ParseTevBlock(okmatMaterial["tev"], material);
 				}
 
 				if (okmatMaterial.contains("tev_orders"))
@@ -387,34 +614,17 @@ namespace Okari
 				if (okmatMaterial.contains("tev_stages"))
 					ParseTevStages(okmatMaterial["tev_stages"], material.TevStages);
 
-				if (okmatMaterial.contains("tev_colors") && okmatMaterial["tev_colors"].is_array())
-				{
-					const auto& colors = okmatMaterial["tev_colors"];
-
-					if (colors.size() > 0) material.TevColor0 = ParseVec4(colors[0]);
-					if (colors.size() > 1) material.TevColor1 = ParseVec4(colors[1]);
-					if (colors.size() > 2) material.TevColor2 = ParseVec4(colors[2]);
-				}
-
-				if (okmatMaterial.contains("konst_colors") && okmatMaterial["konst_colors"].is_array())
-				{
-					const auto& colors = okmatMaterial["konst_colors"];
-
-					if (colors.size() > 0) material.KonstColor0 = ParseVec4(colors[0]);
-					if (colors.size() > 1) material.KonstColor1 = ParseVec4(colors[1]);
-					if (colors.size() > 2) material.KonstColor2 = ParseVec4(colors[2]);
-					if (colors.size() > 3) material.KonstColor3 = ParseVec4(colors[3]);
-				}
-
 				material.DiffuseTexturePath = originalDiffuseTexturePath;
 
-				std::cout << "[OKMATLoader] Applied material: " << material.Name
-					<< " | alpha=" << static_cast<int>(material.Alpha)
-					<< " | blend=" << material.BlendEnabled
-					<< " | queue=" << material.RenderQueue
-					<< " | textures=" << material.TextureSlots.size()
-					<< " | tevStages=" << material.TevStages.size()
-					<< std::endl;
+				//std::cout << "[OKMATLoader] Applied material: " << material.Name
+				//	<< " | alpha=" << static_cast<int>(material.Alpha)
+				//	<< " | blend=" << material.BlendEnabled
+				//	<< " | queue=" << material.RenderQueue
+				//	<< " | textures=" << material.TextureSlots.size()
+				//	<< " | tevStages=" << material.TevStages.size()
+				//	<< std::endl;
+
+				//DumpTevMaterial(material);
 
 				break;
 			}
