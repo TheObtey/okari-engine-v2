@@ -1,10 +1,11 @@
 #pragma once
 
-#include "Actor/Actor.h"
-#include "Scene/WorldObject.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/Camera.h"
 #include "Rendering/DirectionalLight.h"
+#include "Collision/CollisionWorld.h"
+#include "Scene/WorldObject.h"
+#include "Actor/Actor.h"
 
 #include <string>
 #include <vector>
@@ -16,6 +17,8 @@ namespace Okari
 	public:
 		~World();
 
+		glm::mat4 GetWorldMatrix(uint64_t objectID) const;
+		
 		void AddObject(const WorldObject& object);
 
 		std::vector<WorldObject>& GetObjects();
@@ -48,6 +51,8 @@ namespace Okari
 		void EnterPlayMode();
 		void ExitPlayMode();
 
+		CollisionWorld& GetCollisionWorld() { return m_CollisionWorld; }
+
 		bool IsPlaying() const { return m_IsPlaying; }
 
 		Actor* GetPlayer() const { return m_Player; }
@@ -58,6 +63,8 @@ namespace Okari
 		std::vector<WorldObject> m_Objects;
 		std::vector<std::unique_ptr<Actor>> m_RuntimeActors;
 		uint64_t m_NextID = 1;
+
+		CollisionWorld m_CollisionWorld;
 
 		bool m_IsPlaying = false;
 

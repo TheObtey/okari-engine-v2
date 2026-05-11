@@ -31,6 +31,30 @@ namespace Okari
         return json::array({ value.x, value.y, value.z });
     }
 
+    glm::mat4 World::GetWorldMatrix(uint64_t objectID) const
+    {
+        const WorldObject* object = nullptr;
+
+        for (const auto& obj : m_Objects)
+        {
+            if (obj.ID == objectID)
+            {
+                object = &obj;
+                break;
+            }
+        }
+
+        if (!object)
+            return glm::mat4(1.0f);
+
+        glm::mat4 localMatrix = object->Transform.GetModelMatrix();
+
+        if (object->ParentID == 0)
+            return localMatrix;
+
+        return GetWorldMatrix(object->ParentID) * localMatrix;
+    }
+
     void World::AddObject(const WorldObject& object)
     {
         m_Objects.push_back(object);
@@ -407,22 +431,28 @@ namespace Okari
         for (auto& obj : m_Objects)
             if (obj.Mesh.Enabled)
             {
+                glm::mat4 modelMatrix = GetWorldMatrix(obj.ID);
+
                 if (!obj.Mesh.RuntimeMesh && !obj.Mesh.MeshPath.empty())
                     obj.Mesh.RuntimeMesh = MeshManager::Get().LoadMesh(obj.Mesh.MeshPath);
 
                 if (obj.Mesh.RuntimeMesh)
-                    renderer.DrawMesh(obj.Transform, obj.Mesh.RuntimeMesh, obj.Mesh.TexturePath, camera, light);
+                    renderer.DrawMesh(modelMatrix, obj.Mesh.RuntimeMesh, obj.Mesh.TexturePath, camera, light);
                 else
-                    renderer.DrawCube(obj.Transform, obj.Mesh.TexturePath, camera);
+                    renderer.DrawCube(modelMatrix, obj.Mesh.TexturePath, camera);
             }
 
         if (selectedObjectID != 0)
         {
             if (WorldObject* selectedObject = GetObjectByID(selectedObjectID))
+            {
+                glm::mat4 modelMatrix = GetWorldMatrix(selectedObject->ID);
+
                 if (selectedObject->Mesh.RuntimeMesh)
-                    renderer.DrawMeshOutline(selectedObject->Transform, selectedObject->Mesh.RuntimeMesh, camera);
+                    renderer.DrawMeshOutline(modelMatrix, selectedObject->Mesh.RuntimeMesh, camera);
                 else
-                    renderer.DrawCubeOutline(selectedObject->Transform, camera);
+                    renderer.DrawCubeOutline(modelMatrix, camera);
+            }
         }
 
         if (m_IsPlaying && m_Player)
@@ -445,6 +475,8 @@ namespace Okari
                 }
             }
         }
+        
+        m_CollisionWorld.DebugRender(renderer, camera);
     }
 
     void World::RenderPicking(Renderer& renderer, const Camera& camera)
@@ -452,7 +484,7 @@ namespace Okari
         for (auto& obj : m_Objects)
         {
             renderer.DrawCubeID(
-                obj.Transform,
+                GetWorldMatrix(obj.ID),
                 static_cast<uint32_t>(obj.ID),
                 camera
             );

@@ -35,6 +35,8 @@ set(ENGINE_SOURCES
 
     Engine/Rendering/GX/GXMaterialBinder.cpp
 
+    Engine/Collision/CollisionWorld.cpp
+
     Engine/Resources/MeshManager.cpp
     Engine/Resources/FBXLoader.cpp
     Engine/Resources/OKMATLoader.cpp

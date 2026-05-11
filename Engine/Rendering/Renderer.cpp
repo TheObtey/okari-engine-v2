@@ -210,6 +210,26 @@ namespace Okari
         glBindVertexArray(0);
     }
     
+    void Renderer::DrawCube(const glm::mat4& modelMatrix, std::string& texturePath, const Camera& camera)
+    {
+        m_Shader->Bind();
+
+        glm::mat4 view = camera.GetViewMatrix();
+        glm::mat4 projection = camera.GetProjectionMatrix();
+
+        glm::mat4 mvp = projection * view * modelMatrix;
+
+        m_Shader->SetMat4("u_MVP", mvp);
+        m_Shader->SetInt("u_Texture", 0);
+
+        Texture2D* texture = GetTexture(texturePath);
+        texture->Bind(0);
+
+        glBindVertexArray(m_VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+    }
+
     void Renderer::DrawCubeOutline(const Transform& transform, const Camera& camera)
     {
         m_OutlineShader->Bind();
@@ -222,6 +242,30 @@ namespace Okari
         glm::mat4 projection = camera.GetProjectionMatrix();
 
         glm::mat4 mvp = projection * view * model;
+
+        m_OutlineShader->SetMat4("u_MVP", mvp);
+        m_OutlineShader->SetVec3("u_Color", glm::vec3(1.0f, 0.85f, 0.05f));
+
+        glDisable(GL_CULL_FACE);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glLineWidth(3.0f);
+
+        glBindVertexArray(m_VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glLineWidth(1.0f);
+    }
+
+    void Renderer::DrawCubeOutline(const glm::mat4& modelMatrix, const Camera& camera)
+    {
+        m_OutlineShader->Bind();
+
+        glm::mat4 view = camera.GetViewMatrix();
+        glm::mat4 projection = camera.GetProjectionMatrix();
+
+        glm::mat4 mvp = projection * view * modelMatrix;
 
         m_OutlineShader->SetMat4("u_MVP", mvp);
         m_OutlineShader->SetVec3("u_Color", glm::vec3(1.0f, 0.85f, 0.05f));
@@ -256,14 +300,36 @@ namespace Okari
         glBindVertexArray(0);
     }
 
+    void Renderer::DrawCubeID(const glm::mat4& modelMatrix, uint32_t objectID, const Camera& camera)
+    {
+        m_PickingShader->Bind();
+
+        glm::mat4 view = camera.GetViewMatrix();
+        glm::mat4 projection = camera.GetProjectionMatrix();
+
+        glm::mat4 mvp = projection * view * modelMatrix;
+
+        m_PickingShader->SetMat4("u_MVP", mvp);
+        m_PickingShader->SetUInt("u_ObjectID", objectID);
+
+        glBindVertexArray(m_VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+    }
+
     void Renderer::DrawMesh(const Transform& transform, Mesh* mesh, std::string& texturePath, const Camera& camera, const DirectionalLight& light)
+    {
+        DrawMesh(transform.GetModelMatrix(), mesh, texturePath, camera, light);
+    }
+    
+    void Renderer::DrawMesh(const glm::mat4& modelMatrix, Mesh* mesh, std::string& texturePath, const Camera& camera, const DirectionalLight& light)
     {
         if (!mesh)
             return;
 
         m_Shader->Bind();
 
-        glm::mat4 model = transform.GetModelMatrix();
+        glm::mat4 model = modelMatrix;
         glm::mat4 view = camera.GetViewMatrix();
         glm::mat4 projection = camera.GetProjectionMatrix();
         glm::mat4 mvp = projection * view * model;
@@ -394,12 +460,17 @@ namespace Okari
 
     void Renderer::DrawMeshOutline(const Transform& transform, Mesh* mesh, const Camera& camera)
     {
+        DrawMeshOutline(transform.GetModelMatrix(), mesh, camera);
+    }
+
+    void Renderer::DrawMeshOutline(const glm::mat4& modelMatrix, Mesh* mesh, const Camera& camera)
+    {
         if (!mesh)
             return;
 
         m_OutlineShader->Bind();
-        
-        glm::mat4 model = transform.GetModelMatrix();
+
+        glm::mat4 model = modelMatrix;
         glm::mat4 view = camera.GetViewMatrix();
         glm::mat4 projection = camera.GetProjectionMatrix();
         glm::mat4 mvp = projection * view * model;
@@ -412,13 +483,80 @@ namespace Okari
         glLineWidth(3.0f);
 
         mesh->Bind();
-        
+
         glDrawArrays(GL_TRIANGLES, 0, mesh->GetVertexCount());
 
         glBindVertexArray(0);
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glLineWidth(1.0f);
+    }
+
+    void Renderer::DrawCollisionMesh(const CollisionMesh& collisionMesh, const Camera& camera)
+    {
+        if (!collisionMesh.IsValid())
+            return;
+
+        m_OutlineShader->Bind();
+
+        glm::mat4 mvp = camera.GetProjectionMatrix() * camera.GetViewMatrix() * glm::scale(glm::mat4(1.0f), glm::vec3(0.01f));
+
+        m_OutlineShader->SetMat4("u_MVP", mvp);
+        m_OutlineShader->SetVec3("u_Color", glm::vec3(0.0f, 1.0f, 0.25f));
+
+        std::vector<glm::vec3> lines;
+        lines.reserve(collisionMesh.Triangles.size() * 6);
+
+        const float debugScale = 0.01f;
+
+        for (const CollisionTriangle& tri : collisionMesh.Triangles)
+        {
+            glm::vec3 v0 = tri.V0 * debugScale;
+            glm::vec3 v1 = tri.V1 * debugScale;
+            glm::vec3 v2 = tri.V2 * debugScale;
+
+            lines.push_back(v0);
+            lines.push_back(v1);
+
+            lines.push_back(v1);
+            lines.push_back(v2);
+
+            lines.push_back(v2);
+            lines.push_back(v0);
+        }
+
+        GLuint vao = 0;
+        GLuint vbo = 0;
+
+        glGenVertexArrays(1, &vao);
+        glGenBuffers(1, &vbo);
+
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+        glBufferData(
+            GL_ARRAY_BUFFER,
+            lines.size() * sizeof(glm::vec3),
+            lines.data(),
+            GL_DYNAMIC_DRAW
+        );
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+
+        glDisable(GL_CULL_FACE);
+        glDisable(GL_DEPTH_TEST);
+        glLineWidth(1.0f);
+
+        glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(lines.size()));
+
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+
+        glBindVertexArray(0);
+
+        glDeleteBuffers(1, &vbo);
+        glDeleteVertexArrays(1, &vao);
     }
 
     Texture2D* Renderer::GetTexture(const std::string& path)

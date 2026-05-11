@@ -1,7 +1,8 @@
+#include "Editor/EditorLayer.h"
 #include "Core/Application.h"
 #include "Platform/Window.h"
-#include "Editor/EditorLayer.h"
 #include "Editor/EditorUI.h"
+#include "Resources/OKCOLLoader.h"
 #include "Input/InputContext.h"
 #include "Input/InputManager.h"
 #include "Actors/ActorRegistry.h"
@@ -222,6 +223,12 @@ namespace Okari
 
         m_OpenScenes.push_back(std::move(scene));
         SetActiveScene(static_cast<int>(m_OpenScenes.size()) - 1);
+
+        SceneDocument* activeScene = GetActiveScene();
+
+        activeScene->World->GetCollisionWorld().SetMesh(
+            OKCOLLoader::Load("Assets/Models/Stages/ToalFarm/room.okcol")
+        );
     }
 
     void EditorLayer::DrawLoadScenePopup()
