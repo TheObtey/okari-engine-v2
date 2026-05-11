@@ -1053,6 +1053,320 @@ def parse_mat3(data, mat3_offset, textures=None, mat3_size=None):
         "header_validation": mat3_header_validation,
     }
 
+# ---------------------------------------------------------------------------
+# KCL PARSER  (Nintendo GameCube / Twilight Princess collision format)
+# ---------------------------------------------------------------------------
+#
+# Twilight Princess GC KCL triangle entry layout (16 bytes, big-endian):
+#   bytes  0-3  : f32  length   (world-space triangle height scalar)
+#   bytes  4-5  : u16  vertex_index
+#   bytes  6-7  : u16  face_normal_index
+#   bytes  8-9  : u16  normal_a_index
+#   bytes 10-11 : u16  normal_b_index
+#   bytes 12-13 : u16  normal_c_index
+#   bytes 14-15 : u16  attribute  (surface material + behaviour flags)
+# ---------------------------------------------------------------------------
+
+KCL_HEADER_SIZE         = 0x40
+KCL_TRIANGLE_ENTRY_SIZE = 0x10
+KCL_VERTEX_ENTRY_SIZE   = 0x0C
+KCL_NORMAL_ENTRY_SIZE   = 0x0C
+
+KCL_SURFACE_TYPES = {
+    0x00: "default",
+    0x01: "stone",
+    0x02: "grass",
+    0x03: "sand",
+    0x04: "water",
+    0x05: "lava",
+    0x06: "snow",
+    0x07: "ice",
+    0x08: "dirt",
+    0x09: "wood",
+    0x0A: "metal",
+    0x0B: "climbable",
+    0x0C: "trigger",
+    0x0D: "void",
+    0x0E: "swamp",
+    0x0F: "shallow_water",
+    0x10: "carpet",
+    0x11: "bridge",
+    0x12: "fence",
+    0x13: "steep_slope",
+}
+
+KCL_ATTRIBUTE_FLAGS = {
+    0x0020: "death_barrier",
+    0x0040: "no_walk",
+    0x0080: "no_collision",
+    0x0100: "camera_through",
+    0x0200: "hookshot",
+    0x0400: "grabbable",
+    0x0800: "trigger",
+}
+
+
+def f32(data, offset):
+    return struct.unpack_from(">f", data, offset)[0]
+
+
+def read_kcl_vec3(data, offset):
+    if offset < 0 or offset + 12 > len(data):
+        return None
+    return (f32(data, offset), f32(data, offset + 4), f32(data, offset + 8))
+
+
+def vec3_add(a, b):
+    return (a[0] + b[0], a[1] + b[1], a[2] + b[2])
+
+
+def vec3_scale(v, s):
+    return (v[0] * s, v[1] * s, v[2] * s)
+
+
+def vec3_cross(a, b):
+    return (
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    )
+
+
+def vec3_dot(a, b):
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+
+
+def reconstruct_triangle_vertices(base_vertex, face_normal, normal_a, normal_b, normal_c, length):
+    try:
+        edge_a = vec3_cross(normal_a, face_normal)
+        edge_b = vec3_cross(normal_b, face_normal)
+        denom_a = vec3_dot(edge_a, normal_c)
+        denom_b = vec3_dot(edge_b, normal_c)
+        if abs(denom_a) < 1e-10 or abs(denom_b) < 1e-10:
+            return None
+        v0 = base_vertex
+        v1 = vec3_add(base_vertex, vec3_scale(edge_b, length / denom_b))
+        v2 = vec3_add(base_vertex, vec3_scale(edge_a, length / denom_a))
+        return (v0, v1, v2)
+    except Exception:
+        return None
+
+
+def decode_kcl_surface_attribute(attribute):
+    material_type = attribute & 0x001F
+    flags_raw     = attribute & 0xFFE0
+    flags = [name for mask, name in KCL_ATTRIBUTE_FLAGS.items() if flags_raw & mask]
+    return {
+        "raw":           attribute,
+        "raw_hex":       "0x{:04X}".format(attribute),
+        "material_type": material_type,
+        "material_name": KCL_SURFACE_TYPES.get(material_type, "unknown_0x{:02X}".format(material_type)),
+        "flags":         flags,
+        "passthrough":   bool(flags_raw & 0x0080),
+    }
+
+
+def parse_kcl(data):
+    errors   = []
+    warnings = []
+
+    if len(data) < KCL_HEADER_SIZE:
+        return None, ["File too small for KCL header: {} bytes".format(len(data))]
+
+    vtx_offset = u32(data, 0x00)
+    nrm_offset = u32(data, 0x04)
+    tri_offset = u32(data, 0x08)
+    oct_offset = u32(data, 0x0C)
+
+    if not (vtx_offset < nrm_offset < tri_offset):
+        warnings.append(
+            "Unexpected KCL section ordering: vtx=0x{:X} nrm=0x{:X} tri=0x{:X}".format(
+                vtx_offset, nrm_offset, tri_offset)
+        )
+
+    vtx_count = (nrm_offset - vtx_offset) // KCL_VERTEX_ENTRY_SIZE
+    vertices  = []
+    for i in range(vtx_count):
+        v = read_kcl_vec3(data, vtx_offset + i * KCL_VERTEX_ENTRY_SIZE)
+        if v is None:
+            warnings.append("Vertex {}: read out of bounds".format(i))
+            break
+        vertices.append(v)
+
+    nrm_count = (tri_offset - nrm_offset) // KCL_NORMAL_ENTRY_SIZE
+    normals   = []
+    for i in range(nrm_count):
+        n = read_kcl_vec3(data, nrm_offset + i * KCL_NORMAL_ENTRY_SIZE)
+        if n is None:
+            warnings.append("Normal {}: read out of bounds".format(i))
+            break
+        normals.append(n)
+
+    tri_pool_end    = oct_offset if oct_offset > tri_offset else len(data)
+    tri_entry_count = (tri_pool_end - tri_offset) // KCL_TRIANGLE_ENTRY_SIZE
+
+    triangles         = []
+    invalid_triangles = []
+
+    for i in range(1, tri_entry_count):
+        entry_off = tri_offset + i * KCL_TRIANGLE_ENTRY_SIZE
+        if entry_off + KCL_TRIANGLE_ENTRY_SIZE > len(data):
+            break
+
+        raw          = data[entry_off:entry_off + KCL_TRIANGLE_ENTRY_SIZE]
+        length_float = struct.unpack_from(">f", raw, 0)[0]
+        vtx_idx      = struct.unpack_from(">H", raw, 4)[0]
+        fnrm_idx     = struct.unpack_from(">H", raw, 6)[0]
+        nrm_a_idx    = struct.unpack_from(">H", raw, 8)[0]
+        nrm_b_idx    = struct.unpack_from(">H", raw, 10)[0]
+        nrm_c_idx    = struct.unpack_from(">H", raw, 12)[0]
+        attribute    = struct.unpack_from(">H", raw, 14)[0]
+
+        ok     = True
+        reason = None
+        if vtx_idx >= len(vertices):
+            ok = False
+            reason = "vtx_idx {} >= vtx_count {}".format(vtx_idx, len(vertices))
+        elif fnrm_idx >= len(normals):
+            ok = False
+            reason = "face_normal_idx {} >= nrm_count {}".format(fnrm_idx, len(normals))
+        elif nrm_a_idx >= len(normals):
+            ok = False
+            reason = "normal_a_idx {} >= nrm_count {}".format(nrm_a_idx, len(normals))
+        elif nrm_b_idx >= len(normals):
+            ok = False
+            reason = "normal_b_idx {} >= nrm_count {}".format(nrm_b_idx, len(normals))
+        elif nrm_c_idx >= len(normals):
+            ok = False
+            reason = "normal_c_idx {} >= nrm_count {}".format(nrm_c_idx, len(normals))
+
+        if not ok:
+            invalid_triangles.append({"index": i, "reason": reason, "raw": raw.hex().upper()})
+            continue
+
+        world_verts = reconstruct_triangle_vertices(
+            vertices[vtx_idx], normals[fnrm_idx],
+            normals[nrm_a_idx], normals[nrm_b_idx], normals[nrm_c_idx],
+            length_float
+        )
+
+        surface = decode_kcl_surface_attribute(attribute)
+
+        tri = {
+            "index":             i,
+            "vertex_index":      vtx_idx,
+            "face_normal_index": fnrm_idx,
+            "normal_a_index":    nrm_a_idx,
+            "normal_b_index":    nrm_b_idx,
+            "normal_c_index":    nrm_c_idx,
+            "length":            round(length_float, 6),
+            "attribute":         surface,
+            "raw":               raw.hex().upper(),
+            "kcl": {
+                "base_vertex": list(vertices[vtx_idx]),
+                "face_normal": list(normals[fnrm_idx]),
+            },
+        }
+
+        if world_verts is not None:
+            v0, v1, v2 = world_verts
+            tri["vertices"]          = [[round(c, 6) for c in vv] for vv in (v0, v1, v2)]
+            tri["face_normal_world"] = [round(c, 6) for c in normals[fnrm_idx]]
+        else:
+            tri["vertices"]      = None
+            tri["vertices_error"] = "reconstruction_failed"
+
+        triangles.append(tri)
+
+    surface_type_counts = {}
+    for tri in triangles:
+        k = tri["attribute"]["material_name"]
+        surface_type_counts[k] = surface_type_counts.get(k, 0) + 1
+
+    return {
+        "vertices":          [[round(c, 6) for c in v] for v in vertices],
+        "normals":           [[round(c, 6) for c in n] for n in normals],
+        "triangles":         triangles,
+        "invalid_triangles": invalid_triangles,
+        "stats": {
+            "vertex_count":           len(vertices),
+            "normal_count":           len(normals),
+            "triangle_count":         len(triangles),
+            "invalid_triangle_count": len(invalid_triangles),
+            "surface_types":          surface_type_counts,
+            "has_world_vertices":     sum(1 for t in triangles if t.get("vertices") is not None),
+        },
+        "header": {
+            "vertex_pool_offset":    "0x{:X}".format(vtx_offset),
+            "normal_pool_offset":    "0x{:X}".format(nrm_offset),
+            "triangle_array_offset": "0x{:X}".format(tri_offset),
+            "spatial_index_offset":  "0x{:X}".format(oct_offset),
+        },
+        "errors":   errors,
+        "warnings": warnings,
+    }, errors
+
+
+def build_okcol_document(kcl_path, data):
+    kcl_data, errors = parse_kcl(data)
+    if kcl_data is None:
+        raise ValueError("KCL parse failed: {}".format("; ".join(errors)))
+
+    triangles_flat = []
+    for tri in kcl_data["triangles"]:
+        entry = {
+            "index":         tri["index"],
+            "material":      tri["attribute"]["material_name"],
+            "material_type": tri["attribute"]["material_type"],
+            "attribute_raw": tri["attribute"]["raw_hex"],
+            "flags":         tri["attribute"]["flags"],
+            "passthrough":   tri["attribute"]["passthrough"],
+        }
+        if tri.get("vertices") is not None:
+            entry["v0"]     = tri["vertices"][0]
+            entry["v1"]     = tri["vertices"][1]
+            entry["v2"]     = tri["vertices"][2]
+            entry["normal"] = tri["face_normal_world"]
+        else:
+            entry["error"] = tri.get("vertices_error", "unknown")
+        triangles_flat.append(entry)
+
+    return {
+        "format":  "okcol",
+        "version": 1,
+        "source":  {"file": kcl_path.name, "type": "kcl", "size": len(data)},
+        "collision": {"triangles": triangles_flat},
+        "stats": kcl_data["stats"],
+        "debug": {
+            "header":            kcl_data["header"],
+            "warnings":          kcl_data["warnings"],
+            "errors":            kcl_data["errors"],
+            "invalid_triangles": kcl_data["invalid_triangles"],
+        },
+    }
+
+
+def convert_kcl_to_okcol(kcl_path, input_root, output_root, log):
+    relative   = kcl_path.relative_to(input_root)
+    output_dir = output_root / relative.parent
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    raw      = kcl_path.read_bytes()
+    data     = yaz0_decompress(raw)
+    document = build_okcol_document(kcl_path, data)
+
+    output_path = output_dir / (kcl_path.stem + ".okcol")
+    output_path.write_text(json.dumps(document, indent=4, ensure_ascii=False), encoding="utf-8")
+
+    s = document["stats"]
+    log("[OKCOL] {} -> {} ({} triangles, {} with vertices, {} invalid)".format(
+        kcl_path, output_path,
+        s["triangle_count"], s["has_world_vertices"], s["invalid_triangle_count"]))
+    return True
+
+
+
+
 def build_okmat_document(model_path, data):
     chunks = find_j3d_chunks(data)
 
@@ -1324,6 +1638,7 @@ class TPAssetImporterGUI:
         self.fbx_dir = tk.StringVar(value="fbx")
         self.blender_path = tk.StringVar(value="")
         self.okmat_dir = tk.StringVar(value="okmat")
+        self.okcol_dir = tk.StringVar(value="okcol")
 
         self.is_running = False
         self.action_buttons = []
@@ -1472,6 +1787,7 @@ class TPAssetImporterGUI:
         self.fbx_dir.set(config.get("fbx_dir", self.fbx_dir.get()))
         self.blender_path.set(config.get("blender_path", self.blender_path.get()))
         self.okmat_dir.set(config.get("okmat_dir", self.okmat_dir.get()))
+        self.okcol_dir.set(config.get("okcol_dir", self.okcol_dir.get()))
 
     def save_config(self):
         config = {
@@ -1482,6 +1798,7 @@ class TPAssetImporterGUI:
             "fbx_dir": self.fbx_dir.get(),
             "blender_path": self.blender_path.get(),
             "okmat_dir": self.okmat_dir.get(),
+            "okcol_dir": self.okcol_dir.get(),
         }
 
         try:
@@ -1534,6 +1851,7 @@ class TPAssetImporterGUI:
         self.build_extract_tab()
         self.build_model_tab()
         self.build_okmat_tab()
+        self.build_kcl_tab()
         self.build_fbx_tab()
         self.build_settings_tab()
         self.switch_tab("extract")
@@ -1819,6 +2137,52 @@ class TPAssetImporterGUI:
         self.action_buttons.append(self.okmat_button)
 
 
+    def build_kcl_tab(self):
+        tab = self.register_tab("kcl", "KCL to OKCOL")
+        scroll_frame = self.make_scrollable(tab)
+
+        self.create_info_card(
+            scroll_frame,
+            "Convert Nintendo collision meshes to OKCOL",
+            "Parse extracted .kcl files (Nintendo GameCube collision format) and generate .okcol JSON files. "
+            "Each .okcol contains reconstructed triangle vertices, face normals, surface material types and "
+            "behaviour flags. Use these files for debug rendering in Okari Engine to verify collision geometry "
+            "alignment against your .fbx visual meshes."
+        )
+
+        self.create_path_row(
+            scroll_frame,
+            "KCL input folder",
+            "Root folder containing extracted .kcl files. The converter searches all subfolders recursively.",
+            self.extract_dir,
+            self.select_extract_folder,
+            1
+        )
+        self.create_path_row(
+            scroll_frame,
+            "OKCOL output",
+            "Destination folder for generated .okcol collision files.",
+            self.okcol_dir,
+            self.select_okcol_folder,
+            2
+        )
+
+        actions = tk.Frame(scroll_frame, bg=self.colors["surface"])
+        actions.grid(row=3, column=0, sticky="ew", pady=(16, 0))
+        self.kcl_button = ttk.Button(
+            actions,
+            text="Generate OKCOL",
+            style="Primary.TButton",
+            command=self.run_kcl_convert
+        )
+        self.kcl_button.pack(side="left")
+        ttk.Label(
+            actions,
+            text="Reads .kcl files. Outputs runtime-ready collision triangles for Okari Engine.",
+            style="SectionText.TLabel"
+        ).pack(side="left", padx=(12, 0))
+        self.action_buttons.append(self.kcl_button)
+
     def build_fbx_tab(self):
         tab = self.register_tab("fbx", "DAE to FBX")
         scroll_frame = self.make_scrollable(tab)
@@ -1923,6 +2287,10 @@ class TPAssetImporterGUI:
 
     def select_okmat_folder(self):
         self.select_directory("Select OKMAT output folder", self.okmat_dir)
+
+    def select_okcol_folder(self):
+        self.select_directory("Select OKCOL output folder", self.okcol_dir)
+
 
     def select_directory(self, title, variable):
         path = filedialog.askdirectory(title=title)
@@ -2233,6 +2601,63 @@ class TPAssetImporterGUI:
         self.root.after(0, self.set_running, False)
         self.root.after(0, self.show_done_popup, "OKMAT generation complete", summary_lines)
 
+
+    def run_kcl_convert(self):
+        if self.is_running:
+            return
+
+        self.save_config()
+
+        input_root = self.validate_folder(self.extract_dir.get(), "KCL input folder")
+        if input_root is None:
+            return
+
+        output_root = Path(self.okcol_dir.get())
+        output_root.mkdir(parents=True, exist_ok=True)
+
+        thread = threading.Thread(
+            target=self.kcl_convert_worker,
+            args=(input_root, output_root),
+            daemon=True
+        )
+        thread.start()
+
+    def kcl_convert_worker(self, input_root, output_root):
+        self.root.after(0, self.set_running, True)
+
+        kcl_files = list(input_root.rglob("*.kcl"))
+        total     = len(kcl_files)
+        success   = 0
+        failed    = 0
+
+        self.log("[INFO] Found {} .kcl files".format(total))
+        self.root.after(0, self.progress.configure, {"maximum": max(total, 1), "value": 0})
+
+        for index, kcl_path in enumerate(kcl_files, start=1):
+            self.log("[{}/{}] {}".format(index, total, kcl_path))
+            try:
+                ok = convert_kcl_to_okcol(kcl_path, input_root, output_root, self.log)
+                if ok:
+                    success += 1
+                else:
+                    failed += 1
+            except Exception as e:
+                failed += 1
+                self.log("[FAIL] {} : {}".format(kcl_path, e))
+            self.root.after(0, self.progress.configure, {"value": index})
+
+        self.log("")
+        self.log("[DONE] OKCOL generated: {}".format(success))
+        self.log("[DONE] Failed: {}".format(failed))
+
+        self.root.after(0, self.set_running, False)
+        self.root.after(0, self.show_done_popup, "OKCOL generation complete", [
+            "KCL conversion finished.",
+            "",
+            "KCL files found: {}".format(total),
+            "OKCOL generated: {}".format(success),
+            "Failed: {}".format(failed),
+        ])
 
     def run_fbx_convert(self):
         if self.is_running:

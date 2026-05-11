@@ -1,9 +1,10 @@
 {
     "dump_dir": "H:/C++/OkariEngine/TPRipPerfectlyLegal/GCM_DUMP",
-    "extract_dir": "H:/C++/OkariEngine/TPRipPerfectlyLegal/TP_BMD",
-    "dae_dir": "H:/C++/OkariEngine/TPRipPerfectlyLegal/TP_DAE",
+    "extract_dir": "C:/Users/theobtey/Downloads/toal_farm",
+    "dae_dir": "C:/Users/theobtey/Downloads/toal_farm/dae",
     "superbmd_path": "E:/SUPERBMD/SuperBMD_2.5.0/SuperBMD.exe",
-    "fbx_dir": "H:/C++/OkariEngine/TPRipPerfectlyLegal/TP_MODELS/fbx",
+    "fbx_dir": "C:/Users/theobtey/Downloads/toal_farm/fbx",
     "blender_path": "A:/SteamLibrary/steamapps/common/Blender/blender.exe",
-    "okmat_dir": "H:/C++/OkariEngine/TPRipPerfectlyLegal/TP_OKMAT"
+    "okmat_dir": "H:/C++/OkariEngine/TPRipPerfectlyLegal/TP_OKMAT",
+    "okcol_dir": "H:/C++/OkariEngine/TPRipPerfectlyLegal/TP_OKCOL"
 }
