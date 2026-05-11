@@ -1,7 +1,7 @@
 #include "Core/Application.h"
+#include "Platform/Window.h"
 #include "Editor/EditorLayer.h"
 #include "Editor/EditorUI.h"
-#include "Platform/Window.h"
 #include "Input/InputContext.h"
 #include "Input/InputManager.h"
 #include "Actors/ActorRegistry.h"
