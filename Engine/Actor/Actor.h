@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Scene/WorldObject.h"
+#include "Scene/WorldObject.h"
 
 namespace Okari
 {

@@ -20,8 +20,15 @@ namespace Okari
 		Transform& GetTransform() { return m_Transform; }
 		const Transform& GetTransform() const { return m_Transform; }
 
+		Mesh* GetMesh() const { return m_Mesh; }
+		const std::string& GetTexturePath() const { return m_TexturePath; }
+
 	private:
 		Transform m_Transform;
 		float m_MoveSpeed = 2.5f;
+
+		Mesh* m_Mesh = nullptr;
+		std::string m_MeshPath = "Assets/Models/Link/Demo01_00_002.fbx";
+		std::string m_TexturePath = "";
 	};
 }

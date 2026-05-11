@@ -43,7 +43,7 @@ namespace Okari
 
 		void BuildRuntimeActors();
 		void DestroyRuntimeActors();
-		void UpdateActors(float deltaTime, const Camera& camera);
+		void UpdateActors(float deltaTime, Camera& camera);
 
 		void EnterPlayMode();
 		void ExitPlayMode();

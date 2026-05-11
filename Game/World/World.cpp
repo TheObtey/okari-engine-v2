@@ -1,9 +1,9 @@
 #include "World.h"
 #include "Actors/ActorFactory.h"
 #include "Actors/PlayerActor.h"
-#include "../External/nlohmann/json.hpp"
-#include "../../Engine/Resources/MeshManager.h"
+#include "Resources/MeshManager.h"
 
+#include "json.hpp"
 #include <fstream>
 #include <iostream>
 #include <algorithm>
@@ -431,11 +431,18 @@ namespace Okari
 
             if (auto* player = dynamic_cast<PlayerActor*>(m_Player))
             {
-                renderer.DrawCube(
-                    player->GetTransform(),
-                    playerTexture,
-                    camera
-                );
+                if (player->GetMesh())
+                {
+                    playerTexture = player->GetTexturePath();
+
+                    renderer.DrawMesh(
+                        player->GetTransform(),
+                        player->GetMesh(),
+                        playerTexture,
+                        camera,
+                        light
+                    );
+                }
             }
         }
     }
@@ -495,7 +502,7 @@ namespace Okari
         m_RuntimeActors.clear();
     }
 
-    void World::UpdateActors(float deltaTime, const Camera& camera)
+    void World::UpdateActors(float deltaTime, Camera& camera)
     {
         if (!m_IsPlaying)
             return;
@@ -510,10 +517,11 @@ namespace Okari
         {
             player->UpdateMovement(deltaTime, camera);
             
-            //const glm::vec3 playerPos = player->GetTransform().Position;
+            const glm::vec3 playerPos = player->GetTransform().Position;
+            const glm::vec3 cameraOffset = glm::vec3(0.0f, 2.5f, 6.0f);
 
-            //camera.SetPosition(playerPos + glm::vec3(0.0f, 3.0f, 0.0f));
-            //camera.SetTarget(playerPos);
+            camera.SetPosition(playerPos + cameraOffset);
+            camera.SetTarget(playerPos);
         }
     }
 

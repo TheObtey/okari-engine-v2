@@ -1,0 +1,82 @@
+{
+    "name": "link",
+    "objects": [
+        {
+            "actorData": null,
+            "actorType": "None",
+            "enabled": true,
+            "fileType": "Okari.Scene",
+            "id": 1,
+            "meshComponent": {
+                "enabled": true,
+                "mesh": "Assets/Models/Link/Demo01_00_002.fbx",
+                "texture": ""
+            },
+            "name": "Link",
+            "parentId": 0,
+            "position": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.10000000149011612,
+                0.10000000149011612,
+                0.10000000149011612
+            ],
+            "type": "Cube"
+        },
+        {
+            "actorData": {
+                "ambiant": [
+                    0.15000000596046448,
+                    0.15000000596046448,
+                    0.20000000298023224
+                ],
+                "color": [
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "direction": [
+                    0.0,
+                    1.0,
+                    0.0
+                ],
+                "intensity": 0.25
+            },
+            "actorType": "DirectionalLight",
+            "enabled": true,
+            "fileType": "Okari.Scene",
+            "id": 2,
+            "meshComponent": {
+                "enabled": true,
+                "mesh": "",
+                "texture": ""
+            },
+            "name": "Light",
+            "parentId": 0,
+            "position": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "type": "Cube"
+        }
+    ]
+}

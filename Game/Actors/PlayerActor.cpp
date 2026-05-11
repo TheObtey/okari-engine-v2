@@ -1,5 +1,6 @@
 #include "PlayerActor.h"
 #include "Input/InputManager.h"
+#include "Resources/MeshManager.h"
 
 #include <iostream>
 
@@ -15,6 +16,10 @@ namespace Okari
 			m_Transform = m_Object->Transform;
 		else
 			m_Transform.Position = glm::vec3(0.0f, 1.0f, 0.0f);
+
+		m_Transform.Scale = glm::vec3(0.01f);
+
+		m_Mesh = MeshManager::Get().LoadMesh(m_MeshPath);
 
 		std::cout << "[PlayerActor] Created" << std::endl;
 	}
