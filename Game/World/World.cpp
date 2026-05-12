@@ -2,6 +2,7 @@
 #include "Actors/ActorFactory.h"
 #include "Actors/PlayerActor.h"
 #include "Resources/MeshManager.h"
+#include "Resources/OKCOLLoader.h"
 
 #include "json.hpp"
 #include <fstream>
@@ -369,6 +370,26 @@ namespace Okari
             if (obj.contains("actorData"))
                 worldObject.ActorData = obj["actorData"];
 
+            if (obj.contains("collisionComponent"))
+            {
+                const auto& col = obj["collisionComponent"];
+
+                if (col.contains("enabled"))
+                    worldObject.Collision.Enabled = col["enabled"].get<bool>();
+
+                if (col.contains("collision"))
+                    worldObject.Collision.CollisionPath = col["collision"].get<std::string>();
+
+                if (col.contains("position"))
+                    worldObject.Collision.CollisionOffset.Position = ReadVec3(col["position"]);
+
+                if (col.contains("rotation"))
+                    worldObject.Collision.CollisionOffset.Rotation = ReadVec3(col["rotation"]);
+
+                if (col.contains("scale"))
+                    worldObject.Collision.CollisionOffset.Scale = ReadVec3(col["scale"]);
+            }
+
             m_Objects.push_back(worldObject);
         }
 
@@ -402,6 +423,14 @@ namespace Okari
             jsonObj["rotation"] = WriteVec3(obj.Transform.Rotation);
             jsonObj["scale"] = WriteVec3(obj.Transform.Scale);
             jsonObj["actorData"] = obj.ActorData;
+
+            jsonObj["collisionComponent"] = {
+                { "enabled",  obj.Collision.Enabled },
+                { "collision", obj.Collision.CollisionPath },
+                { "position", WriteVec3(obj.Collision.CollisionOffset.Position) },
+                { "rotation", WriteVec3(obj.Collision.CollisionOffset.Rotation) },
+                { "scale",    WriteVec3(obj.Collision.CollisionOffset.Scale) }
+            };
 
             data["objects"].push_back(jsonObj);
         }
@@ -554,6 +583,34 @@ namespace Okari
 
             camera.SetPosition(playerPos + cameraOffset);
             camera.SetTarget(playerPos);
+        }
+    }
+
+    void World::BuildCollisionWorld()
+    {
+        m_CollisionWorld.Clear();
+
+        for (WorldObject& obj : m_Objects)
+        {
+            if (!obj.Enabled)
+                continue;
+
+            CollisionComponent& col = obj.Collision;
+
+            if (!col.Enabled || col.CollisionPath.empty())
+                continue;
+
+            // Load the runtime mesh if not already cached.
+            if (!col.RuntimeMesh.IsValid())
+                col.RuntimeMesh = OKCOLLoader::Load(col.CollisionPath);
+
+            if (!col.RuntimeMesh.IsValid())
+                continue;
+
+            // Final world matrix = object world matrix * collision offset matrix.
+            glm::mat4 worldMatrix = GetWorldMatrix(obj.ID) * col.CollisionOffset.GetModelMatrix();
+
+            m_CollisionWorld.AddMesh(col.RuntimeMesh, worldMatrix);
         }
     }
 

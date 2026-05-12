@@ -559,6 +559,67 @@ namespace Okari
         glDeleteVertexArrays(1, &vao);
     }
 
+    void Renderer::DrawCollisionMesh(const CollisionMesh& collisionMesh, const Camera& camera, const glm::mat4& modelMatrix)
+    {
+        if (!collisionMesh.IsValid())
+            return;
+
+        m_OutlineShader->Bind();
+
+        glm::mat4 mvp = camera.GetProjectionMatrix() * camera.GetViewMatrix() * modelMatrix;
+
+        m_OutlineShader->SetMat4("u_MVP", mvp);
+        m_OutlineShader->SetVec3("u_Color", glm::vec3(0.0f, 1.0f, 0.25f));
+
+        std::vector<glm::vec3> lines;
+        lines.reserve(collisionMesh.Triangles.size() * 6);
+
+        for (const CollisionTriangle& tri : collisionMesh.Triangles)
+        {
+            lines.push_back(tri.V0);
+            lines.push_back(tri.V1);
+
+            lines.push_back(tri.V1);
+            lines.push_back(tri.V2);
+
+            lines.push_back(tri.V2);
+            lines.push_back(tri.V0);
+        }
+
+        GLuint vao = 0;
+        GLuint vbo = 0;
+
+        glGenVertexArrays(1, &vao);
+        glGenBuffers(1, &vbo);
+
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+        glBufferData(
+            GL_ARRAY_BUFFER,
+            lines.size() * sizeof(glm::vec3),
+            lines.data(),
+            GL_DYNAMIC_DRAW
+        );
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+
+        glDisable(GL_CULL_FACE);
+        glDisable(GL_DEPTH_TEST);
+        glLineWidth(1.0f);
+
+        glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(lines.size()));
+
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+
+        glBindVertexArray(0);
+
+        glDeleteBuffers(1, &vbo);
+        glDeleteVertexArrays(1, &vao);
+    }
+
     Texture2D* Renderer::GetTexture(const std::string& path)
     {
         auto it = m_TextureCache.find(path);

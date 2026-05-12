@@ -3,7 +3,75 @@
     "objects": [
         {
             "actorData": null,
+            "actorType": "None",
+            "collisionComponent": {
+                "collision": "",
+                "enabled": true,
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "enabled": true,
+            "fileType": "Okari.Scene",
+            "id": 3,
+            "meshComponent": {
+                "enabled": false,
+                "mesh": "",
+                "texture": ""
+            },
+            "name": "root",
+            "parentId": 0,
+            "position": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "type": "Cube"
+        },
+        {
+            "actorData": null,
             "actorType": "NPC",
+            "collisionComponent": {
+                "collision": "",
+                "enabled": true,
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
             "enabled": true,
             "fileType": "Okari.Scene",
             "id": 1,
@@ -51,6 +119,25 @@
                 "intensity": 0.25
             },
             "actorType": "DirectionalLight",
+            "collisionComponent": {
+                "collision": "",
+                "enabled": true,
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
             "enabled": true,
             "fileType": "Okari.Scene",
             "id": 2,
@@ -75,6 +162,55 @@
                 1.0,
                 1.0,
                 1.0
+            ],
+            "type": "Cube"
+        },
+        {
+            "actorData": null,
+            "actorType": "None",
+            "collisionComponent": {
+                "collision": "Assets/Models/Stages/ToalFarm/room.okcol",
+                "enabled": true,
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "enabled": true,
+            "fileType": "Okari.Scene",
+            "id": 4,
+            "meshComponent": {
+                "enabled": true,
+                "mesh": "Assets/Models/Stages/ToalFarm/F_SP00__R00_00_000.fbx",
+                "texture": ""
+            },
+            "name": "World",
+            "parentId": 3,
+            "position": [
+                45.0,
+                -75.0,
+                100.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.004999999888241291,
+                0.004999999888241291,
+                0.004999999888241291
             ],
             "type": "Cube"
         }

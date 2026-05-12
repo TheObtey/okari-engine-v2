@@ -1,5 +1,6 @@
 #include "Editor/Panels/InspectorPanel.h"
-#include "../../../Game/Actors/ActorRegistry.h"
+#include "Actors/ActorRegistry.h"
+#include "Scene/CollisionComponent.h"
 
 #include <imgui.h>
 #include <filesystem>
@@ -42,6 +43,7 @@ namespace Okari
 			std::snprintf(m_NameBuffer, sizeof(m_NameBuffer), "%s", obj->Name.c_str());
 			std::snprintf(m_MeshPathBuffer, sizeof(m_MeshPathBuffer), "%s", obj->Mesh.MeshPath.c_str());
 			std::snprintf(m_TexturePathBuffer, sizeof(m_TexturePathBuffer), "%s", obj->Mesh.TexturePath.c_str());
+			std::snprintf(m_CollisionPathBuffer, sizeof(m_CollisionPathBuffer), "%s", obj->Collision.CollisionPath.c_str());
 		}
 
 		if (!obj)
@@ -170,6 +172,73 @@ namespace Okari
 
 		drawAssetField("Mesh", obj->Mesh.MeshPath, m_MeshPathBuffer, sizeof(m_MeshPathBuffer), true);
 		drawAssetField("Texture", obj->Mesh.TexturePath, m_TexturePathBuffer, sizeof(m_TexturePathBuffer), true);
+
+		ImGui::Separator();
+
+		ImGui::Text("Collision Component");
+
+		if (ImGui::Checkbox("Collision Enabled", &obj->Collision.Enabled))
+			if (m_OnModified) m_OnModified();
+
+		{
+			ImGui::SetNextItemWidth(-80.0f);
+			ImGui::InputText("Collision", m_CollisionPathBuffer, sizeof(m_CollisionPathBuffer));
+
+			if (ImGui::IsItemDeactivatedAfterEdit())
+			{
+				obj->Collision.CollisionPath = m_CollisionPathBuffer;
+				obj->Collision.RuntimeMesh = CollisionMesh{};
+				if (m_OnModified) m_OnModified();
+			}
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_BROWSER_ITEM"))
+				{
+					const char* droppedPath = static_cast<const char*>(payload->Data);
+
+					std::filesystem::path assetRoot = std::filesystem::absolute(OKARI_ASSET_DIR);
+					std::filesystem::path dropped = std::filesystem::absolute(droppedPath);
+
+					if (std::filesystem::is_regular_file(dropped))
+					{
+						std::filesystem::path relative = std::filesystem::relative(dropped, assetRoot);
+						obj->Collision.CollisionPath = "Assets/" + relative.generic_string();
+
+						std::snprintf(m_CollisionPathBuffer, sizeof(m_CollisionPathBuffer),
+							"%s", obj->Collision.CollisionPath.c_str());
+
+						obj->Collision.RuntimeMesh = CollisionMesh{};
+
+						if (m_OnModified) m_OnModified();
+					}
+				}
+
+				ImGui::EndDragDropTarget();
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Clear##Collision"))
+			{
+				obj->Collision.CollisionPath.clear();
+				m_CollisionPathBuffer[0] = '\0';
+				obj->Collision.RuntimeMesh = CollisionMesh{};
+				if (m_OnModified) m_OnModified();
+			}
+		}
+
+		ImGui::Spacing();
+		ImGui::Text("Collision Offset");
+
+		if (ImGui::DragFloat3("Col Position", &obj->Collision.CollisionOffset.Position.x, 0.1f))
+			if (m_OnModified) m_OnModified();
+
+		if (ImGui::DragFloat3("Col Rotation", &obj->Collision.CollisionOffset.Rotation.x, 0.5f))
+			if (m_OnModified) m_OnModified();
+
+		if (ImGui::DragFloat3("Col Scale", &obj->Collision.CollisionOffset.Scale.x, 0.1f, 0.0f, 100.0f))
+			if (m_OnModified) m_OnModified();
 
 		ImGui::Separator();
 

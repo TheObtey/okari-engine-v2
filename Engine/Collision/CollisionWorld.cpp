@@ -3,22 +3,22 @@
 
 namespace Okari
 {
-	void CollisionWorld::SetMesh(const CollisionMesh& mesh)
+	void CollisionWorld::AddMesh(const CollisionMesh& mesh, const glm::mat4& worldMatrix)
 	{
-		m_Mesh = mesh;
+		CollisionEntry entry;
+		entry.Mesh = mesh;
+		entry.WorldMatrix = worldMatrix;
+		m_Entries.push_back(std::move(entry));
 	}
 
 	void CollisionWorld::Clear()
 	{
-		m_Mesh.Triangles.clear();
-		m_Mesh.SourceFile.clear();
+		m_Entries.clear();
 	}
 
 	void CollisionWorld::DebugRender(Renderer& renderer, const Camera& camera)
 	{
-		if (!HasMesh())
-			return;
-
-		renderer.DrawCollisionMesh(m_Mesh, camera);
+		for (const CollisionEntry& entry : m_Entries)
+			renderer.DrawCollisionMesh(entry.Mesh, camera, entry.WorldMatrix);
 	}
 }

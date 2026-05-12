@@ -24,6 +24,7 @@ namespace Okari
 		char m_NameBuffer[256] = {};
 		char m_MeshPathBuffer[512] = {};
 		char m_TexturePathBuffer[512] = {};
+		char m_CollisionPathBuffer[512] = {};
 
 		std::function<void()> m_OnModified;
 	};

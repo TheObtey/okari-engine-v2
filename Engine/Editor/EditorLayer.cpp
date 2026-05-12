@@ -2,7 +2,6 @@
 #include "Core/Application.h"
 #include "Platform/Window.h"
 #include "Editor/EditorUI.h"
-#include "Resources/OKCOLLoader.h"
 #include "Input/InputContext.h"
 #include "Input/InputManager.h"
 #include "Actors/ActorRegistry.h"
@@ -226,9 +225,7 @@ namespace Okari
 
         SceneDocument* activeScene = GetActiveScene();
 
-        activeScene->World->GetCollisionWorld().SetMesh(
-            OKCOLLoader::Load("Assets/Models/Stages/ToalFarm/room.okcol")
-        );
+        activeScene->World->BuildCollisionWorld();
     }
 
     void EditorLayer::DrawLoadScenePopup()

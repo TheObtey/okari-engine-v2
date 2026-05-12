@@ -48,6 +48,8 @@ namespace Okari
 		void DestroyRuntimeActors();
 		void UpdateActors(float deltaTime, Camera& camera);
 
+		void BuildCollisionWorld();
+
 		void EnterPlayMode();
 		void ExitPlayMode();
 

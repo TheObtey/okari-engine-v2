@@ -4,6 +4,25 @@
         {
             "actorData": null,
             "actorType": "None",
+            "collisionComponent": {
+                "collision": "",
+                "enabled": true,
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
             "enabled": true,
             "fileType": "Okari.Scene",
             "id": 1,
@@ -34,6 +53,25 @@
         {
             "actorData": null,
             "actorType": "NPC",
+            "collisionComponent": {
+                "collision": "",
+                "enabled": true,
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
             "enabled": true,
             "fileType": "Okari.Scene",
             "id": 2,
@@ -64,6 +102,25 @@
         {
             "actorData": null,
             "actorType": "Door",
+            "collisionComponent": {
+                "collision": "",
+                "enabled": true,
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
             "enabled": true,
             "fileType": "Okari.Scene",
             "id": 3,
@@ -94,9 +151,9 @@
         {
             "actorData": {
                 "ambiant": [
-                    0.15000000596046448,
-                    0.15000000596046448,
-                    0.20000000298023224
+                    1.0,
+                    1.0,
+                    1.0
                 ],
                 "color": [
                     1.0,
@@ -108,9 +165,28 @@
                     1.0,
                     0.0
                 ],
-                "intensity": 0.25
+                "intensity": 1.0
             },
             "actorType": "DirectionalLight",
+            "collisionComponent": {
+                "collision": "",
+                "enabled": true,
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
             "enabled": true,
             "fileType": "Okari.Scene",
             "id": 4,
