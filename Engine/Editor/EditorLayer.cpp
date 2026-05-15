@@ -462,6 +462,7 @@ namespace Okari
         editorCameraCtx->BindKey(GLFW_KEY_E, "MoveUp");
         editorCameraCtx->BindKey(GLFW_KEY_Q, "MoveDown");
         editorCameraCtx->BindKey(GLFW_KEY_LEFT_SHIFT, "SpeedUp");
+        editorCameraCtx->BindKey(GLFW_KEY_F, "FocusSelected");
 
         editorCameraCtx->BindKey(GLFW_KEY_F1, "TevDebugMode0");
         editorCameraCtx->BindKey(GLFW_KEY_F2, "TevDebugMode1");
@@ -598,6 +599,19 @@ namespace Okari
 
         if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_S))
             RequestSaveActiveScene();
+
+        if (InputManager::IsActionPressed("FocusSelected") && m_EditorCamera)
+        {
+            SceneDocument* focusScene = GetActiveScene();
+
+            if (focusScene && focusScene->World && focusScene->SelectedObjectID != 0)
+            {
+                WorldObject* selectedObj = focusScene->World->GetObjectByID(focusScene->SelectedObjectID);
+
+                if (selectedObj)
+                    m_EditorCameraController.FocusOn(*m_EditorCamera, selectedObj->Transform.Position);
+            }
+        }
 
         ImGuiWindowFlags windowFlags =
             ImGuiWindowFlags_MenuBar |

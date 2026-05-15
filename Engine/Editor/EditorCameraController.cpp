@@ -96,4 +96,18 @@ namespace Okari
 		camera.SetPosition(position);
 		camera.SetTarget(position + forward);
 	}
+
+	void EditorCameraController::FocusOn(Camera& camera, const glm::vec3& targetPos, float distance)
+	{
+		glm::vec3 forward;
+		forward.x = cos(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
+		forward.y = sin(glm::radians(m_Pitch));
+		forward.z = sin(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
+		forward = glm::normalize(forward);
+
+		glm::vec3 newPosition = targetPos - forward * distance;
+
+		camera.SetPosition(newPosition);
+		camera.SetTarget(targetPos);
+	}
 }

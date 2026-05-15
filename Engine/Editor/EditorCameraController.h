@@ -11,6 +11,7 @@ namespace Okari
 	{
 	public:
 		void Update(float deltaTime, Camera& camera, GLFWwindow* window, bool viewportHovered, const glm::vec2& viewportCenter);
+		void FocusOn(Camera& camera, const glm::vec3& targetPos, float distance = 5.0f);
 
 	private:
 		bool m_IsControlling = false;
