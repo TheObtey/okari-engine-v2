@@ -14,6 +14,9 @@ namespace Okari
     {
         m_World = world;
         m_SelectedID = selectedID;
+        m_RenamingID = 0;      // Annule tout renommage en cours sur l'ancienne scène
+        m_PendingDeleteID = 0; // Annule toute suppression en attente sur l'ancienne scène
+        m_RenameJustStarted = false;
     }
 
     void HierarchyPanel::SetOnModifedCallback(const std::function<void()>& callback)

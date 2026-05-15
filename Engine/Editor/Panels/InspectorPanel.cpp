@@ -16,6 +16,7 @@ namespace Okari
 	{
 		m_World = world;
 		m_SelectedID = selectedID;
+		m_LastSelectedID = 0; // Force le refresh des buffers au prochain frame
 	}
 
 	void InspectorPanel::SetOnModifedCallback(const std::function<void()>& callback)
@@ -36,6 +37,13 @@ namespace Okari
 
 		WorldObject* obj = m_World->GetObjectByID(*m_SelectedID);
 
+		if (!obj)
+		{
+			ImGui::Text("No object selected");
+			ImGui::End();
+			return;
+		}
+
 		if (*m_SelectedID != m_LastSelectedID)
 		{
 			m_LastSelectedID = *m_SelectedID;
@@ -44,13 +52,6 @@ namespace Okari
 			std::snprintf(m_MeshPathBuffer, sizeof(m_MeshPathBuffer), "%s", obj->Mesh.MeshPath.c_str());
 			std::snprintf(m_TexturePathBuffer, sizeof(m_TexturePathBuffer), "%s", obj->Mesh.TexturePath.c_str());
 			std::snprintf(m_CollisionPathBuffer, sizeof(m_CollisionPathBuffer), "%s", obj->Collision.CollisionPath.c_str());
-		}
-
-		if (!obj)
-		{
-			ImGui::Text("No object selected");
-			ImGui::End();
-			return;
 		}
 
 		if (ImGui::Checkbox("##Enabled", &obj->Enabled))
