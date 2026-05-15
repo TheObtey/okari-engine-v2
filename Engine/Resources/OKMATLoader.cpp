@@ -465,12 +465,39 @@ namespace Okari
 		);
 	}
 
+	static std::string StripBlenderSuffix(const std::string& name)
+	{
+		const size_t dot = name.rfind('.');
+
+		if (dot == std::string::npos)
+			return name;
+
+		const std::string suffix = name.substr(dot + 1);
+
+		if (suffix.empty() || suffix.size() > 3)
+			return name;
+
+		for (char c : suffix)
+			if (c < '0' || c > '9')
+				return name;
+
+		return name.substr(0, dot);
+	}
+
 	static bool MaterialNameMatches(const std::string& meshName, const std::string& okmatName)
 	{
 		if (meshName == okmatName)
 			return true;
 
-		return EndsWith(meshName, okmatName);
+		if (EndsWith(meshName, okmatName))
+			return true;
+
+		const std::string strippedMesh = StripBlenderSuffix(meshName);
+
+		if (strippedMesh == okmatName)
+			return true;
+
+		return EndsWith(strippedMesh, okmatName);
 	}
 
 	bool OKMATLoader::ApplyToMesh(Mesh* mesh, const std::string& okmatPath)
