@@ -3,6 +3,8 @@
 #include "Actor/Actor.h"
 #include "Scene/Transform.h"
 #include "Rendering/Camera.h"
+#include "Physics/PhysicsComponent.h"
+#include "Collision/CollisionWorld.h"
 
 namespace Okari
 {
@@ -15,7 +17,7 @@ namespace Okari
 		void OnUpdate(float deltaTime) override;
 		void OnDestroy() override;
 
-		void UpdateMovement(float deltaTime, const Camera& camera);
+		void UpdateMovement(float deltaTime, const Camera& camera, const CollisionWorld& collisionWorld);
 
 		Transform& GetTransform() { return m_Transform; }
 		const Transform& GetTransform() const { return m_Transform; }
@@ -23,8 +25,13 @@ namespace Okari
 		Mesh* GetMesh() const { return m_Mesh; }
 		const std::string& GetTexturePath() const { return m_TexturePath; }
 
+		PhysicsComponent& GetPhysics() { return m_Physics; }
+		const PhysicsComponent& GetPhysics() const { return m_Physics; }
+
 	private:
 		Transform m_Transform;
+		PhysicsComponent m_Physics;
+
 		float m_MoveSpeed = 2.5f;
 
 		Mesh* m_Mesh = nullptr;

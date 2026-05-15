@@ -1,6 +1,7 @@
 #include "PlayerActor.h"
 #include "Input/InputManager.h"
 #include "Resources/MeshManager.h"
+#include "Physics/PhysicsSystem.h"
 
 #include <iostream>
 
@@ -32,16 +33,14 @@ namespace Okari
 		std::cout << "[PlayerActor] Destroyed" << std::endl;
 	}
 
-	void PlayerActor::UpdateMovement(float deltaTime, const Camera& camera)
+	void PlayerActor::UpdateMovement(float deltaTime, const Camera& camera, const CollisionWorld& collisionWorld)
 	{
 		glm::vec3 forward = camera.GetForward();
 		forward.y = 0.0f;
-
 		forward = glm::normalize(forward);
 
 		glm::vec3 right = camera.GetRight();
 		right.y = 0.0f;
-		
 		right = glm::normalize(right);
 
 		glm::vec3 direction(0.0f);
@@ -63,5 +62,8 @@ namespace Okari
 			direction = glm::normalize(direction);
 			m_Transform.Position += direction * m_MoveSpeed * deltaTime;
 		}
+
+		// Apply gravity and ground snapping.
+		PhysicsSystem::Update(m_Physics, m_Transform.Position, collisionWorld, deltaTime);
 	}
 }

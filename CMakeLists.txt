@@ -32,8 +32,9 @@ set(ENGINE_SOURCES
     Engine/Rendering/Texture2D.cpp
     Engine/Rendering/Framebuffer.cpp
     Engine/Rendering/Mesh.cpp
-
     Engine/Rendering/GX/GXMaterialBinder.cpp
+
+    Engine/Physics/PhysicsSystem.cpp
 
     Engine/Collision/CollisionWorld.cpp
 

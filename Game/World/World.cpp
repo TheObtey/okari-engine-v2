@@ -576,8 +576,8 @@ namespace Okari
 
         if (auto* player = dynamic_cast<PlayerActor*>(m_Player))
         {
-            player->UpdateMovement(deltaTime, camera);
-            
+            player->UpdateMovement(deltaTime, camera, m_CollisionWorld);
+
             const glm::vec3 playerPos = player->GetTransform().Position;
             const glm::vec3 cameraOffset = glm::vec3(0.0f, 2.5f, 6.0f);
 
