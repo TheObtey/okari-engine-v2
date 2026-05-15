@@ -296,7 +296,7 @@ namespace Okari
         
         m_IsPlaying = false;
 
-        std::ifstream file(path);
+        std::ifstream file(path, std::ios::binary);
 
         if (!file.is_open())
         {
@@ -304,8 +304,23 @@ namespace Okari
             return false;
         }
 
+        std::string fileContent(
+            (std::istreambuf_iterator<char>(file)),
+            std::istreambuf_iterator<char>()
+        );
+
         json data;
-        file >> data;
+
+        try
+        {
+            data = json::parse(fileContent);
+        }
+        catch (const json::parse_error& e)
+        {
+            std::cerr << "JSON parse error in scene file: " << path << "\n"
+                << "  " << e.what() << std::endl;
+            return false;
+        }
 
         if (data.contains("fileType") && data["fileType"] != "Okari.Scene")
         {
@@ -504,7 +519,8 @@ namespace Okari
             }
         }
         
-        m_CollisionWorld.DebugRender(renderer, camera);
+        if (false)
+            m_CollisionWorld.DebugRender(renderer, camera);
     }
 
     void World::RenderPicking(Renderer& renderer, const Camera& camera)
