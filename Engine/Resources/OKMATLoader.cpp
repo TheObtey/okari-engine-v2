@@ -477,7 +477,7 @@ namespace Okari
 		if (!mesh)
 			return false;
 
-		std::ifstream file(okmatPath, std::ios::binary);
+		std::ifstream file(okmatPath);
 
 		if (!file.is_open())
 		{
@@ -485,16 +485,11 @@ namespace Okari
 			return false;
 		}
 
-		std::string fileContent(
-			(std::istreambuf_iterator<char>(file)),
-			std::istreambuf_iterator<char>()
-		);
-
 		nlohmann::json data;
 
 		try
 		{
-			data = nlohmann::json::parse(fileContent);
+			data = nlohmann::json::parse(file);
 		}
 		catch (const nlohmann::json::parse_error& e)
 		{

@@ -15,14 +15,21 @@ namespace Okari
 	{
 		if (m_Object)
 			m_Transform = m_Object->Transform;
+		else if (m_HasSpawnPosition)
+			m_Transform.Position = m_SpawnPosition;
 		else
-			m_Transform.Position = glm::vec3(0.0f, 1.0f, 0.0f);
+			m_Transform.Position = glm::vec3(0.0f, 0.0f, 0.0f);
 
 		m_Transform.Scale = glm::vec3(0.01f);
 
 		m_Mesh = MeshManager::Get().LoadMesh(m_MeshPath);
 
-		std::cout << "[PlayerActor] Created" << std::endl;
+		std::cout << "[PlayerActor] Created at ("
+			<< m_Transform.Position.x << ", "
+			<< m_Transform.Position.y << ", "
+			<< m_Transform.Position.z << ")"
+			<< (m_HasSpawnPosition ? " [pl_spawn]" : " [default]")
+			<< std::endl;
 	}
 
 	void PlayerActor::OnUpdate(float deltaTime)

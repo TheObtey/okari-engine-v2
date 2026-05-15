@@ -206,6 +206,53 @@
                 0.004999999888241291,
                 0.004999999888241291
             ]
+        },
+        {
+            "actorData": null,
+            "actorType": "None",
+            "collisionComponent": {
+                "collision": "",
+                "enabled": true,
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "enabled": true,
+            "id": 5,
+            "meshComponent": {
+                "enabled": false,
+                "mesh": "",
+                "texture": ""
+            },
+            "name": "pl_spawn",
+            "parentId": 0,
+            "position": [
+                3.0,
+                1.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
         }
     ]
 }

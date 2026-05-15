@@ -296,7 +296,7 @@ namespace Okari
         
         m_IsPlaying = false;
 
-        std::ifstream file(path, std::ios::binary);
+        std::ifstream file(path);
 
         if (!file.is_open())
         {
@@ -304,16 +304,11 @@ namespace Okari
             return false;
         }
 
-        std::string fileContent(
-            (std::istreambuf_iterator<char>(file)),
-            std::istreambuf_iterator<char>()
-        );
-
         json data;
 
         try
         {
-            data = json::parse(fileContent);
+            data = json::parse(file);
         }
         catch (const json::parse_error& e)
         {
@@ -561,6 +556,22 @@ namespace Okari
 
         if (player)
         {
+            if (PlayerActor* playerActor = dynamic_cast<PlayerActor*>(player.get()))
+            {
+                for (const WorldObject& obj : m_Objects)
+                {
+                    if (obj.Name == "pl_spawn")
+                    {
+                        playerActor->SetSpawnPosition(obj.Transform.Position);
+                        std::cout << "[World] pl_spawn found at ("
+                            << obj.Transform.Position.x << ", "
+                            << obj.Transform.Position.y << ", "
+                            << obj.Transform.Position.z << ")" << std::endl;
+                        break;
+                    }
+                }
+            }
+
             player->OnCreate();
             m_Player = player.get();
             m_RuntimeActors.push_back(std::move(player));
@@ -576,6 +587,7 @@ namespace Okari
         }
 
         m_RuntimeActors.clear();
+        m_Player = nullptr;
     }
 
     void World::UpdateActors(float deltaTime, Camera& camera)

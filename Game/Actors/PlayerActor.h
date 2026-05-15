@@ -19,6 +19,8 @@ namespace Okari
 
 		void UpdateMovement(float deltaTime, const Camera& camera, const CollisionWorld& collisionWorld);
 
+		void SetSpawnPosition(const glm::vec3& position) { m_SpawnPosition = position; m_HasSpawnPosition = true; }
+
 		Transform& GetTransform() { return m_Transform; }
 		const Transform& GetTransform() const { return m_Transform; }
 
@@ -33,6 +35,9 @@ namespace Okari
 		PhysicsComponent m_Physics;
 
 		float m_MoveSpeed = 2.5f;
+
+		glm::vec3 m_SpawnPosition = glm::vec3(0.0f);
+		bool m_HasSpawnPosition = false;
 
 		Mesh* m_Mesh = nullptr;
 		std::string m_MeshPath = "Assets/Models/Link/Demo01_00_002.fbx";
