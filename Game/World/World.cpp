@@ -401,19 +401,18 @@ namespace Okari
     bool World::SaveToFile(const std::string& path, const std::string& sceneName) const
     {
         json data;
+        data["fileType"] = "Okari.Scene";
         data["name"] = sceneName.c_str();
         data["objects"] = json::array();
 
         for (const auto& obj : m_Objects)
         {
             json jsonObj;
-            jsonObj["fileType"] = "Okari.Scene";
             jsonObj["enabled"] = obj.Enabled;
             jsonObj["actorType"] = obj.ActorType;
             jsonObj["id"] = obj.ID;
             jsonObj["parentId"] = obj.ParentID;
             jsonObj["name"] = obj.Name;
-            jsonObj["type"] = "Cube";
             jsonObj["meshComponent"] = {
                 { "enabled", obj.Mesh.Enabled },
                 { "mesh", obj.Mesh.MeshPath },
