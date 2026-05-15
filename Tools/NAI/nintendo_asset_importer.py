@@ -9,7 +9,7 @@ from tkinter import filedialog, messagebox, ttk
 
 
 APP_TITLE = "(Okari) Nintendo Asset Importer"
-APP_VERSION = "v0.3.2"
+APP_VERSION = "v0.4.0"
 AUTHOR_NAME = "TheObtey"
 AUTHOR_URL = "https://github.com/TheObtey"
 CONFIG_PATH = Path(__file__).with_suffix(".config.json")
@@ -1367,6 +1367,285 @@ def convert_kcl_to_okcol(kcl_path, input_root, output_root, log):
 
 
 
+# ---------------------------------------------------------------------------
+# JNT1 PARSER  (Joint hierarchy — Nintendo J3D)
+# ---------------------------------------------------------------------------
+#
+# JNT1 chunk layout (big-endian):
+#   0x00  tag         "JNT1"
+#   0x04  chunk_size  u32
+#   0x08  joint_count u16
+#   0x0A  padding     u16
+#   0x0C  joint_data_offset  u32  (relative to chunk start)
+#   0x10  remap_table_offset u32
+#   0x14  name_table_offset  u32
+#
+# Each joint entry is 0x40 bytes:
+#   0x00  unknown     u16
+#   0x02  flag        u8   (calc flag)
+#   0x03  attrib      u8
+#   0x04  sx, sy, sz  f32 x3  (scale)
+#   0x10  rx, ry, rz  s16 x3  (rotation, in units of 1/32768 * 180 deg)
+#   0x16  padding     u16
+#   0x18  tx, ty, tz  f32 x3  (translation)
+#   0x24  bsphere_r   f32  (bounding sphere radius)
+#   0x28  bbox_min    f32 x3
+#   0x34  bbox_max    f32 x3
+# ---------------------------------------------------------------------------
+
+JNT1_JOINT_ENTRY_SIZE = 0x40
+JNT1_ROT_SCALE = 180.0 / 32768.0  # s16 raw -> degrees
+
+
+def parse_jnt1(data, jnt1_offset):
+    if jnt1_offset < 0 or jnt1_offset + 0x18 > len(data):
+        return [], {}
+
+    joint_count    = u16(data, jnt1_offset + 0x08)
+    joint_data_rel = safe_u32(data, jnt1_offset + 0x0C, 0)
+    remap_rel      = safe_u32(data, jnt1_offset + 0x10, 0)
+    name_rel       = safe_u32(data, jnt1_offset + 0x14, 0)
+
+    joint_data_offset = jnt1_offset + joint_data_rel if joint_data_rel else None
+    remap_offset      = jnt1_offset + remap_rel      if remap_rel      else None
+    name_table_offset = jnt1_offset + name_rel       if name_rel       else None
+
+    names = read_j3d_string_table(data, name_table_offset) if name_table_offset else []
+
+    remap = []
+    for i in range(joint_count):
+        if remap_offset is not None:
+            remapped = safe_u16(data, remap_offset + i * 2, i)
+            remap.append(remapped if remapped != J3D_INVALID_INDEX else i)
+        else:
+            remap.append(i)
+
+    joints = []
+    for logical_index in range(joint_count):
+        data_index   = remap[logical_index]
+        entry_offset = joint_data_offset + data_index * JNT1_JOINT_ENTRY_SIZE if joint_data_offset is not None else None
+        name = names[logical_index] if logical_index < len(names) else f"joint_{logical_index}"
+
+        if entry_offset is None or entry_offset + JNT1_JOINT_ENTRY_SIZE > len(data):
+            joints.append({
+                "index": logical_index,
+                "data_index": data_index,
+                "name": name,
+                "error": "entry_out_of_bounds",
+            })
+            continue
+
+        unknown = u16(data, entry_offset + 0x00)
+        flag    = u8(data,  entry_offset + 0x02)
+        attrib  = u8(data,  entry_offset + 0x03)
+        sx      = struct.unpack_from(">f", data, entry_offset + 0x04)[0]
+        sy      = struct.unpack_from(">f", data, entry_offset + 0x08)[0]
+        sz      = struct.unpack_from(">f", data, entry_offset + 0x0C)[0]
+        rx_raw  = struct.unpack_from(">h", data, entry_offset + 0x10)[0]
+        ry_raw  = struct.unpack_from(">h", data, entry_offset + 0x12)[0]
+        rz_raw  = struct.unpack_from(">h", data, entry_offset + 0x14)[0]
+        tx      = struct.unpack_from(">f", data, entry_offset + 0x18)[0]
+        ty      = struct.unpack_from(">f", data, entry_offset + 0x1C)[0]
+        tz      = struct.unpack_from(">f", data, entry_offset + 0x20)[0]
+        bsphere = struct.unpack_from(">f", data, entry_offset + 0x24)[0]
+        bbmin_x = struct.unpack_from(">f", data, entry_offset + 0x28)[0]
+        bbmin_y = struct.unpack_from(">f", data, entry_offset + 0x2C)[0]
+        bbmin_z = struct.unpack_from(">f", data, entry_offset + 0x30)[0]
+        bbmax_x = struct.unpack_from(">f", data, entry_offset + 0x34)[0]
+        bbmax_y = struct.unpack_from(">f", data, entry_offset + 0x38)[0]
+        bbmax_z = struct.unpack_from(">f", data, entry_offset + 0x3C)[0]
+
+        joints.append({
+            "index":      logical_index,
+            "data_index": data_index,
+            "name":       name,
+            "scale":      [round(sx, 6), round(sy, 6), round(sz, 6)],
+            "rotation": [
+                round(rx_raw * JNT1_ROT_SCALE, 6),
+                round(ry_raw * JNT1_ROT_SCALE, 6),
+                round(rz_raw * JNT1_ROT_SCALE, 6),
+            ],
+            "rotation_raw": [rx_raw, ry_raw, rz_raw],
+            "translation": [round(tx, 6), round(ty, 6), round(tz, 6)],
+            "bounding_sphere_radius": round(bsphere, 6),
+            "bbox_min": [round(bbmin_x, 6), round(bbmin_y, 6), round(bbmin_z, 6)],
+            "bbox_max": [round(bbmax_x, 6), round(bbmax_y, 6), round(bbmax_z, 6)],
+            "j3d": {
+                "flag":         flag,
+                "attrib":       attrib,
+                "unknown":      unknown,
+                "entry_offset": format_hex(entry_offset - jnt1_offset),
+            },
+        })
+
+    debug = {
+        "joint_count":         joint_count,
+        "joint_data_offset":   format_hex(joint_data_rel),
+        "remap_table_offset":  format_hex(remap_rel),
+        "name_table_offset":   format_hex(name_rel),
+        "joint_entry_size":    format_hex(JNT1_JOINT_ENTRY_SIZE),
+    }
+    return joints, debug
+
+
+# ---------------------------------------------------------------------------
+# EVP1 PARSER  (Envelope / skin weights — Nintendo J3D)
+# ---------------------------------------------------------------------------
+#
+# EVP1 chunk layout (big-endian):
+#   0x00  tag               "EVP1"
+#   0x04  chunk_size        u32
+#   0x08  envelope_count    u16
+#   0x0A  padding           u16
+#   0x0C  count_array_off   u32  -> u8[envelope_count]    (influences per envelope)
+#   0x10  index_array_off   u32  -> u16[total_influences] (joint indices)
+#   0x14  weight_array_off  u32  -> f32[total_influences] (blend weights)
+#   0x18  matrix_array_off  u32  -> f32[envelope_count * 12] (4x3 inv-bind matrices)
+# ---------------------------------------------------------------------------
+
+EVP1_MATRIX_ENTRY_SIZE = 12 * 4  # 12 floats x 4 bytes
+
+
+def parse_evp1(data, evp1_offset):
+    if evp1_offset < 0 or evp1_offset + 0x1C > len(data):
+        return [], {}
+
+    envelope_count   = u16(data, evp1_offset + 0x08)
+    count_array_rel  = safe_u32(data, evp1_offset + 0x0C, 0)
+    index_array_rel  = safe_u32(data, evp1_offset + 0x10, 0)
+    weight_array_rel = safe_u32(data, evp1_offset + 0x14, 0)
+    matrix_array_rel = safe_u32(data, evp1_offset + 0x18, 0)
+
+    count_array_off  = evp1_offset + count_array_rel  if count_array_rel  else None
+    index_array_off  = evp1_offset + index_array_rel  if index_array_rel  else None
+    weight_array_off = evp1_offset + weight_array_rel if weight_array_rel else None
+    matrix_array_off = evp1_offset + matrix_array_rel if matrix_array_rel else None
+
+    counts = []
+    for i in range(envelope_count):
+        if count_array_off is not None and count_array_off + i < len(data):
+            counts.append(u8(data, count_array_off + i))
+        else:
+            counts.append(0)
+
+    envelopes = []
+    influence_cursor = 0
+
+    for env_index in range(envelope_count):
+        n = counts[env_index]
+        influences = []
+
+        for k in range(n):
+            flat = influence_cursor + k
+
+            joint_index = None
+            weight      = None
+
+            if index_array_off is not None:
+                idx_off = index_array_off + flat * 2
+                if idx_off + 2 <= len(data):
+                    joint_index = u16(data, idx_off)
+
+            if weight_array_off is not None:
+                w_off = weight_array_off + flat * 4
+                if w_off + 4 <= len(data):
+                    weight = round(struct.unpack_from(">f", data, w_off)[0], 6)
+
+            influences.append({
+                "joint_index": joint_index,
+                "weight":      weight,
+            })
+
+        influence_cursor += n
+
+        # 4x3 inverse bind matrix (row-major, 3 rows of 4 floats)
+        inv_bind = None
+        if matrix_array_off is not None:
+            m_off = matrix_array_off + env_index * EVP1_MATRIX_ENTRY_SIZE
+            if m_off + EVP1_MATRIX_ENTRY_SIZE <= len(data):
+                floats = list(struct.unpack_from(">12f", data, m_off))
+                inv_bind = [
+                    [round(floats[0],  6), round(floats[1],  6), round(floats[2],  6),  round(floats[3],  6)],
+                    [round(floats[4],  6), round(floats[5],  6), round(floats[6],  6),  round(floats[7],  6)],
+                    [round(floats[8],  6), round(floats[9],  6), round(floats[10], 6),  round(floats[11], 6)],
+                ]
+
+        envelopes.append({
+            "index":           env_index,
+            "influence_count": n,
+            "influences":      influences,
+            "inv_bind_matrix": inv_bind,
+        })
+
+    debug = {
+        "envelope_count":      envelope_count,
+        "total_influences":    influence_cursor,
+        "count_array_offset":  format_hex(count_array_rel),
+        "index_array_offset":  format_hex(index_array_rel),
+        "weight_array_offset": format_hex(weight_array_rel),
+        "matrix_array_offset": format_hex(matrix_array_rel),
+    }
+    return envelopes, debug
+
+
+# ---------------------------------------------------------------------------
+# DRW1 PARSER  (Draw matrix table — Nintendo J3D)
+# ---------------------------------------------------------------------------
+#
+# DRW1 chunk layout (big-endian):
+#   0x00  tag              "DRW1"
+#   0x04  chunk_size       u32
+#   0x08  draw_count       u16
+#   0x0A  padding          u16
+#   0x0C  is_weighted_off  u32  -> u8[draw_count]   (0=joint, 1=envelope)
+#   0x10  data_off         u32  -> u16[draw_count]  (joint_index or envelope_index)
+# ---------------------------------------------------------------------------
+
+
+def parse_drw1(data, drw1_offset):
+    if drw1_offset < 0 or drw1_offset + 0x14 > len(data):
+        return [], {}
+
+    draw_count      = u16(data, drw1_offset + 0x08)
+    is_weighted_rel = safe_u32(data, drw1_offset + 0x0C, 0)
+    data_rel        = safe_u32(data, drw1_offset + 0x10, 0)
+
+    is_weighted_off = drw1_offset + is_weighted_rel if is_weighted_rel else None
+    data_off        = drw1_offset + data_rel        if data_rel        else None
+
+    draw_elements = []
+    for i in range(draw_count):
+        weighted = None
+        index    = None
+
+        if is_weighted_off is not None and is_weighted_off + i < len(data):
+            weighted = bool(u8(data, is_weighted_off + i))
+
+        if data_off is not None:
+            d_off = data_off + i * 2
+            if d_off + 2 <= len(data):
+                raw_index = u16(data, d_off)
+                index = raw_index if raw_index != J3D_INVALID_INDEX else None
+
+        draw_elements.append({
+            "index":      i,
+            "is_weighted": weighted,
+            "data_index": index,
+            # Semantic alias: is_weighted=False -> data_index is a JNT1 joint index
+            #                 is_weighted=True  -> data_index is an EVP1 envelope index
+            "type": "envelope" if weighted else "joint",
+        })
+
+    debug = {
+        "draw_count":         draw_count,
+        "is_weighted_offset": format_hex(is_weighted_rel),
+        "data_offset":        format_hex(data_rel),
+    }
+    return draw_elements, debug
+
+
+
+
 def build_okmat_document(model_path, data):
     chunks = find_j3d_chunks(data)
 
@@ -1379,17 +1658,43 @@ def build_okmat_document(model_path, data):
 
     materials, mat3_debug = parse_mat3(data, chunks["MAT3"][0], textures, chunks["MAT3"][1])
 
+    joints, jnt1_debug = [], {}
+    if "JNT1" in chunks:
+        joints, jnt1_debug = parse_jnt1(data, chunks["JNT1"][0])
+
+    envelopes, evp1_debug = [], {}
+    if "EVP1" in chunks:
+        envelopes, evp1_debug = parse_evp1(data, chunks["EVP1"][0])
+
+    draw_elements, drw1_debug = [], {}
+    if "DRW1" in chunks:
+        draw_elements, drw1_debug = parse_drw1(data, chunks["DRW1"][0])
+
+    has_skeleton = bool(joints)
+
     return {
         "format": "okmat",
-        "version": 1,
+        "version": 2,
         "source": {
             "file": model_path.name,
             "type": data[:8].decode("ascii", errors="replace"),
         },
         "textures": textures,
         "materials": materials,
+        "skeleton": {
+            "has_skeleton": has_skeleton,
+            "joint_count": len(joints),
+            "envelope_count": len(envelopes),
+            "draw_element_count": len(draw_elements),
+            "joints": joints,
+            "envelopes": envelopes,
+            "draw_elements": draw_elements,
+        },
         "debug": {
-            "mat3": mat3_debug
+            "mat3": mat3_debug,
+            "jnt1": jnt1_debug,
+            "evp1": evp1_debug,
+            "drw1": drw1_debug,
         }
     }
 
@@ -1408,7 +1713,10 @@ def convert_model_to_okmat(model_path, input_root, output_root, log):
 
     material_count = len(document["materials"])
     texture_count = len(document["textures"])
-    log(f"[OKMAT] {model_path} -> {output_path} ({material_count} materials, {texture_count} textures)")
+    joint_count = document["skeleton"]["joint_count"]
+    envelope_count = document["skeleton"]["envelope_count"]
+    skeleton_info = f", {joint_count} joints, {envelope_count} envelopes" if joint_count else ""
+    log(f"[OKMAT] {model_path} -> {output_path} ({material_count} materials, {texture_count} textures{skeleton_info})")
     return True
 
 
