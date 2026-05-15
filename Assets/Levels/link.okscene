@@ -1,11 +1,30 @@
 {
+    "fileType": "Okari.Scene",
     "name": "link",
     "objects": [
         {
             "actorData": null,
             "actorType": "None",
+            "collisionComponent": {
+                "collision": "",
+                "enabled": true,
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
             "enabled": true,
-            "fileType": "Okari.Scene",
             "id": 1,
             "meshComponent": {
                 "enabled": true,
@@ -25,11 +44,10 @@
                 0.0
             ],
             "scale": [
-                0.10000000149011612,
-                0.10000000149011612,
-                0.10000000149011612
-            ],
-            "type": "Cube"
+                0.009999999776482582,
+                0.009999999776482582,
+                0.009999999776482582
+            ]
         },
         {
             "actorData": {
@@ -51,8 +69,26 @@
                 "intensity": 0.25
             },
             "actorType": "DirectionalLight",
+            "collisionComponent": {
+                "collision": "",
+                "enabled": true,
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
             "enabled": true,
-            "fileType": "Okari.Scene",
             "id": 2,
             "meshComponent": {
                 "enabled": true,
@@ -63,7 +99,7 @@
             "parentId": 0,
             "position": [
                 0.0,
-                0.0,
+                10.0,
                 0.0
             ],
             "rotation": [
@@ -75,8 +111,7 @@
                 1.0,
                 1.0,
                 1.0
-            ],
-            "type": "Cube"
+            ]
         }
     ]
 }

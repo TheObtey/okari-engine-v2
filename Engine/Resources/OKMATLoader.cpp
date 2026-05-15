@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <iostream>
 #include <algorithm>
+#include <sstream>
 
 namespace Okari
 {
@@ -485,15 +486,57 @@ namespace Okari
 			return false;
 		}
 
+		std::string fileContent(
+			(std::istreambuf_iterator<char>(file)),
+			std::istreambuf_iterator<char>()
+		);
+
+		const std::string materialsKey = "\"materials\"";
+		const size_t materialsPos = fileContent.find(materialsKey);
+
+		if (materialsPos == std::string::npos)
+		{
+			std::cerr << "[OKMATLoader] Invalid OKMAT, missing materials array: " << okmatPath << std::endl;
+			return false;
+		}
+
+		const size_t arrayStart = fileContent.find('[', materialsPos + materialsKey.size());
+
+		if (arrayStart == std::string::npos)
+		{
+			std::cerr << "[OKMATLoader] Invalid OKMAT, malformed materials array: " << okmatPath << std::endl;
+			return false;
+		}
+
+		int depth = 0;
+		size_t arrayEnd = arrayStart;
+
+		for (size_t i = arrayStart; i < fileContent.size(); ++i)
+		{
+			if (fileContent[i] == '[')
+				++depth;
+			else if (fileContent[i] == ']')
+			{
+				--depth;
+				if (depth == 0)
+				{
+					arrayEnd = i;
+					break;
+				}
+			}
+		}
+
+		std::string materialsJson = "{\"materials\":" + fileContent.substr(arrayStart, arrayEnd - arrayStart + 1) + "}";
+
 		nlohmann::json data;
 
 		try
 		{
-			data = nlohmann::json::parse(file);
+			data = nlohmann::json::parse(materialsJson);
 		}
 		catch (const nlohmann::json::parse_error& e)
 		{
-			std::cerr << "[OKMATLoader] JSON parse error in: " << okmatPath << "\n"
+			std::cerr << "[OKMATLoader] JSON parse error in materials section of: " << okmatPath << "\n"
 				<< "  " << e.what() << std::endl;
 			return false;
 		}
