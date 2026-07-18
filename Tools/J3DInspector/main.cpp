@@ -2,11 +2,13 @@
 #include "Formats/J3D/Sections/INF1Parser.h"
 #include "Formats/J3D/Sections/JNT1Parser.h"
 #include "Formats/J3D/Sections/DRW1Parser.h"
+#include "Formats/J3D/Sections/EVP1Parser.h"
 
 #include <iostream>
 #include <string>
 #include <cstddef>
 #include <cstdint>
+#include <cmath>
 
 namespace
 {
@@ -329,6 +331,33 @@ int main(int argc, char** argv)
 
 	const Okari::J3DDRW1Data& drw1 = drw1Result.Data;
 
+	const Okari::J3DSectionInfo* evp1Section = document.FindSection("EVP1");
+
+	if (evp1Section == nullptr)
+	{
+		std::cerr << "\n[J3DInspector] The model has no EVP1 section.\n";
+
+		return 1;
+	}
+
+	const Okari::J3DEVP1ParseResult evp1Result =
+		Okari::J3DEVP1Parser::Parse(
+			document,
+			*evp1Section
+		);
+
+	if (!evp1Result.Succeeded())
+	{
+		std::cerr
+			<< "\n[J3DInspector] "
+			<< evp1Result.Error
+			<< '\n';
+
+		return 1;
+	}
+
+	const Okari::J3DEVP1Data& evp1 = evp1Result.Data;
+
 	std::size_t rigidMatrixCount = 0;
 	std::size_t envelopeMatrixCount = 0;
 
@@ -355,8 +384,68 @@ int main(int argc, char** argv)
 
 		case Okari::J3DDrawMatrixKind::Envelope:
 			++envelopeMatrixCount;
+
+			if (matrix.Parameter >= evp1.Envelopes.size())
+			{
+				std::cerr
+					<< "[J3DInspector] DRW1 matrix "
+					<< matrix.Index
+					<< " references invalid envelope "
+					<< matrix.Parameter
+					<< '\n';
+
+				return 1;
+			}
+
 			break;
 		}
+	}
+
+	std::size_t invalidWeightSumCount = 0;
+
+	for (const Okari::J3DEnvelope& envelope : evp1.Envelopes)
+	{
+		float weightSum = 0.0f;
+
+		if (envelope.WeightedJoints.empty())
+		{
+			std::cerr
+				<< "[J3DInspector] EVP1 envelope "
+				<< envelope.Index
+				<< " contains no joints.\n";
+
+			return 1;
+		}
+
+		for (const Okari::J3DWeightedJoint& weightedJoint : envelope.WeightedJoints)
+		{
+			if (weightedJoint.JointIndex >= jnt1.Joints.size())
+			{
+				std::cerr
+					<< "[J3DInspector] EVP1 envelope "
+					<< envelope.Index
+					<< " references invalid joint "
+					<< weightedJoint.JointIndex
+					<< '\n';
+
+				return 1;
+			}
+
+			if (!std::isfinite(weightedJoint.Weight))
+			{
+				std::cerr
+					<< "[J3DInspector] EVP1 envelope "
+					<< envelope.Index
+					<< " contains a non-finite weight.\n";
+
+				return 1;
+			}
+
+			weightSum += weightedJoint.Weight;
+		}
+
+		if (std::abs(weightSum - 1.0f) > 0.001f)
+			++invalidWeightSumCount;
 	}
 
 	std::cout
@@ -426,6 +515,63 @@ int main(int argc, char** argv)
 			<< "... "
 			<< drw1.Matrices.size() - displayedMatrixCount
 			<< " additional matrices omitted\n";
+	}
+
+	std::cout
+		<< "\nEVP1\n"
+		<< "Envelope count: "
+		<< evp1.EnvelopeCount
+		<< '\n'
+		<< "Total weighted joints: "
+		<< evp1.TotalWeightedJointCount
+		<< '\n'
+		<< "Inverse-bind matrices: "
+		<< evp1.InverseBindMatrices.size()
+		<< '\n'
+		<< "Non-normalized envelopes: "
+		<< invalidWeightSumCount
+		<< "\n\n";
+
+	constexpr std::size_t MaximumDisplayedEnvelopes = 16;
+
+	const std::size_t displayedEnvelopeCount =
+		evp1.Envelopes.size() < MaximumDisplayedEnvelopes
+		? evp1.Envelopes.size()
+		: MaximumDisplayedEnvelopes;
+
+	for (std::size_t envelopeIndex = 0; envelopeIndex < displayedEnvelopeCount; ++envelopeIndex)
+	{
+		const Okari::J3DEnvelope& envelope = evp1.Envelopes[envelopeIndex];
+
+		std::cout
+			<< '['
+			<< envelope.Index
+			<< "] ";
+
+		for (std::size_t influenceIndex = 0; influenceIndex < envelope.WeightedJoints.size(); ++influenceIndex)
+		{
+			const Okari::J3DWeightedJoint& weightedJoint = envelope.WeightedJoints[influenceIndex];
+
+			if (influenceIndex > 0)
+				std::cout << " + ";
+
+			std::cout
+				<< jnt1.Joints[weightedJoint.JointIndex].Name
+				<< '['
+				<< weightedJoint.JointIndex
+				<< "]="
+				<< weightedJoint.Weight;
+		}
+
+		std::cout << '\n';
+	}
+
+	if (evp1.Envelopes.size() > displayedEnvelopeCount)
+	{
+		std::cout
+			<< "... "
+			<< evp1.Envelopes.size() - displayedEnvelopeCount
+			<< " additional envelopes omitted\n";
 	}
 
 	if (document.Data.size() != document.Header.DeclaredFileSize)
