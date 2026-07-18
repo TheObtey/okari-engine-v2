@@ -13,9 +13,16 @@ find_package(OpenGL REQUIRED)
 # SOURCES
 # =========================
 
+set(J3D_SOURCES
+    Engine/IO/BigEndianReader.cpp
+    Engine/Formats/J3D/J3DFileReader.cpp
+)
+
 set(ENGINE_SOURCES
     External/glad/src/glad.c
     External/ufbx/ufbx.c
+
+    ${J3D_SOURCES}
 
     Engine/Core/Application.cpp
     Engine/Core/Time.cpp
@@ -74,6 +81,19 @@ set(COMMON_INCLUDES
     ${CMAKE_SOURCE_DIR}/External/nlohmann
     ${CMAKE_SOURCE_DIR}/External/stb
     ${CMAKE_SOURCE_DIR}/External/ufbx
+)
+
+# =========================
+# J3D INSPECTOR
+# =========================
+
+add_executable(J3DInspector
+    Tools/J3DInspector/main.cpp
+    ${J3D_SOURCES}
+)
+
+target_include_directories(J3DInspector PRIVATE
+    ${CMAKE_SOURCE_DIR}/Engine
 )
 
 # =========================
