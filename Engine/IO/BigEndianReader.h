@@ -20,10 +20,12 @@ namespace Okari
 		void Skip(std::size_t byteCount);
 
 		std::uint8_t ReadU8();
-		std::uint16_t ReadU16();
-		std::uint32_t ReadU32();
+		std::int8_t ReadS8();
 
+		std::uint16_t ReadU16();
 		std::int16_t ReadS16();
+		
+		std::uint32_t ReadU32();
 		float ReadF32();
 
 		std::string ReadFixedString(std::size_t length);

@@ -44,6 +44,17 @@ namespace Okari
 		return m_Data[m_Offset++];
 	}
 
+	std::int8_t BigEndianReader::ReadS8()
+	{
+		const std::uint8_t rawValue = ReadU8();
+
+		const std::int16_t signedValue = rawValue <= 0x7F
+			? static_cast<std::int16_t>(rawValue)
+			: static_cast<std::int16_t>(rawValue) - 0x100;
+
+		return static_cast<std::int8_t>(signedValue);
+	}
+
 	std::uint16_t BigEndianReader::ReadU16()
 	{
 		EnsureAvailable(2);
@@ -54,6 +65,18 @@ namespace Okari
 
 		m_Offset += 2;
 		return value;
+	}
+
+	std::int16_t BigEndianReader::ReadS16()
+	{
+		const std::uint16_t rawValue = ReadU16();
+
+		const std::int32_t signedValue =
+			rawValue <= 0x7FFF
+			? static_cast<std::int32_t>(rawValue)
+			: static_cast<std::int32_t>(rawValue) - 0x10000;
+
+		return static_cast<std::int16_t>(signedValue);
 	}
 
 	std::uint32_t BigEndianReader::ReadU32()
@@ -70,17 +93,7 @@ namespace Okari
 		return value;
 	}
 
-	std::int16_t BigEndianReader::ReadS16()
-	{
-		const std::uint16_t rawValue = ReadU16();
 
-		const std::int32_t signedValue =
-			rawValue <= 0x7FFF
-			? static_cast<std::int32_t>(rawValue)
-			: static_cast<std::int32_t>(rawValue) - 0x10000;
-
-		return static_cast<std::int16_t>(signedValue);
-	}
 
 	float BigEndianReader::ReadF32()
 	{

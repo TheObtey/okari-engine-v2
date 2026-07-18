@@ -1,6 +1,7 @@
 #include "Formats/J3D/J3DFileReader.h"
 #include "Formats/J3D/J3DPoseEvaluator.h"
 #include "Formats/J3D/J3DDrawMatrixEvaluator.h"
+#include "Formats/J3D/J3DVertexDecoder.h"
 
 #include "Formats/J3D/Sections/INF1Parser.h"
 #include "Formats/J3D/Sections/JNT1Parser.h"
@@ -8,6 +9,8 @@
 #include "Formats/J3D/Sections/EVP1Parser.h"
 #include "Formats/J3D/Sections/VTX1Parser.h"
 
+#include <algorithm>
+#include <limits>
 #include <iostream>
 #include <string>
 #include <cstdint>
@@ -318,6 +321,288 @@ int main(int argc, char** argv)
 
 		std::cout << '\n';
 	}
+
+	Okari::J3DVertexDecodeRequest vertexDecodeRequest;
+
+	vertexDecodeRequest.PositionCount = inf1.VertexPositionCount;
+
+	const Okari::J3DVertexDecodeResult vertexDecodeResult = Okari::J3DVertexDecoder::Decode(vtx1, vertexDecodeRequest);
+
+	if (!vertexDecodeResult.Succeeded())
+	{
+		std::cerr
+			<< "\n[J3DInspector] "
+			<< vertexDecodeResult.Error
+			<< '\n';
+
+		return 1;
+	}
+
+	const Okari::J3DDecodedVertexData& vertexData =
+		vertexDecodeResult.Data;
+
+	if (vertexData.Positions.empty())
+	{
+		std::cerr
+			<< "[J3DInspector] VTX1 decoded no positions.\n";
+
+		return 1;
+	}
+
+	glm::vec3 minimumPosition =
+		vertexData.Positions.front();
+
+	glm::vec3 maximumPosition =
+		vertexData.Positions.front();
+
+	for (const glm::vec3& position : vertexData.Positions)
+	{
+		minimumPosition.x =
+			std::min(minimumPosition.x, position.x);
+
+		minimumPosition.y =
+			std::min(minimumPosition.y, position.y);
+
+		minimumPosition.z =
+			std::min(minimumPosition.z, position.z);
+
+		maximumPosition.x =
+			std::max(maximumPosition.x, position.x);
+
+		maximumPosition.y =
+			std::max(maximumPosition.y, position.y);
+
+		maximumPosition.z =
+			std::max(maximumPosition.z, position.z);
+	}
+
+	std::size_t zeroLengthNormalCount = 0;
+
+	float minimumNonZeroNormalLength =
+		std::numeric_limits<float>::max();
+
+	float maximumNormalLength = 0.0f;
+
+	for (const glm::vec3& normal : vertexData.Normals)
+	{
+		const float length = glm::length(normal);
+
+		if (length <= 0.000001f)
+		{
+			++zeroLengthNormalCount;
+			continue;
+		}
+
+		minimumNonZeroNormalLength =
+			std::min(
+				minimumNonZeroNormalLength,
+				length
+			);
+
+		maximumNormalLength =
+			std::max(
+				maximumNormalLength,
+				length
+			);
+	}
+
+	std::cout
+		<< "\nVTX1 DECODED DATA\n"
+		<< "Positions: "
+		<< vertexData.Positions.size()
+		<< '\n'
+		<< "Normals decoded from complete records: "
+		<< vertexData.Normals.size()
+		<< '\n'
+		<< "NBT frames: "
+		<< vertexData.NBTFrames.size()
+		<< '\n'
+		<< "CLR0 entries: "
+		<< vertexData.Colors[0].size()
+		<< '\n'
+		<< "CLR1 entries: "
+		<< vertexData.Colors[1].size()
+		<< '\n';
+
+	for (
+		std::size_t channel = 0;
+		channel < vertexData.TexCoords.size();
+		++channel
+		)
+	{
+		if (vertexData.TexCoords[channel].empty())
+			continue;
+
+		std::cout
+			<< "TEX"
+			<< channel
+			<< " entries: "
+			<< vertexData.TexCoords[channel].size()
+			<< '\n';
+	}
+
+	std::cout
+		<< "Position bounds: min=("
+		<< minimumPosition.x
+		<< ", "
+		<< minimumPosition.y
+		<< ", "
+		<< minimumPosition.z
+		<< ") max=("
+		<< maximumPosition.x
+		<< ", "
+		<< maximumPosition.y
+		<< ", "
+		<< maximumPosition.z
+		<< ")\n";
+
+	if (!vertexData.Normals.empty())
+	{
+		std::cout
+			<< "Zero-length normal records: "
+			<< zeroLengthNormalCount
+			<< '\n';
+
+		if (
+			zeroLengthNormalCount <
+			vertexData.Normals.size()
+			)
+		{
+			std::cout
+				<< "Non-zero normal length range: "
+				<< minimumNonZeroNormalLength
+				<< " -> "
+				<< maximumNormalLength
+				<< '\n';
+		}
+	}
+
+	constexpr std::size_t DisplayedVertexSampleCount = 3;
+
+	const std::size_t positionSampleCount =
+		std::min(
+			vertexData.Positions.size(),
+			DisplayedVertexSampleCount
+		);
+
+	std::cout << "\nPosition samples\n";
+
+	for (
+		std::size_t index = 0;
+		index < positionSampleCount;
+		++index
+		)
+	{
+		const glm::vec3& position =
+			vertexData.Positions[index];
+
+		std::cout
+			<< '['
+			<< index
+			<< "] ("
+			<< position.x
+			<< ", "
+			<< position.y
+			<< ", "
+			<< position.z
+			<< ")\n";
+	}
+
+	const std::size_t normalSampleCount =
+		std::min(
+			vertexData.Normals.size(),
+			DisplayedVertexSampleCount
+		);
+
+	std::cout << "\nNormal samples\n";
+
+	for (
+		std::size_t index = 0;
+		index < normalSampleCount;
+		++index
+		)
+	{
+		const glm::vec3& normal =
+			vertexData.Normals[index];
+
+		std::cout
+			<< '['
+			<< index
+			<< "] ("
+			<< normal.x
+			<< ", "
+			<< normal.y
+			<< ", "
+			<< normal.z
+			<< ") length="
+			<< glm::length(normal)
+			<< '\n';
+	}
+
+	if (!vertexData.Colors[0].empty())
+	{
+		std::cout << "\nCLR0 samples\n";
+
+		const std::size_t colorSampleCount =
+			std::min(
+				vertexData.Colors[0].size(),
+				DisplayedVertexSampleCount
+			);
+
+		for (
+			std::size_t index = 0;
+			index < colorSampleCount;
+			++index
+			)
+		{
+			const Okari::J3DColorRGBA8& color =
+				vertexData.Colors[0][index];
+
+			std::cout
+				<< '['
+				<< index
+				<< "] ("
+				<< static_cast<unsigned int>(color.R)
+				<< ", "
+				<< static_cast<unsigned int>(color.G)
+				<< ", "
+				<< static_cast<unsigned int>(color.B)
+				<< ", "
+				<< static_cast<unsigned int>(color.A)
+				<< ")\n";
+		}
+	}
+
+	if (!vertexData.TexCoords[0].empty())
+	{
+		std::cout << "\nTEX0 samples\n";
+
+		const std::size_t texCoordSampleCount =
+			std::min(
+				vertexData.TexCoords[0].size(),
+				DisplayedVertexSampleCount
+			);
+
+		for (
+			std::size_t index = 0;
+			index < texCoordSampleCount;
+			++index
+			)
+		{
+			const glm::vec2& texCoord =
+				vertexData.TexCoords[0][index];
+
+			std::cout
+				<< '['
+				<< index
+				<< "] ("
+				<< texCoord.x
+				<< ", "
+				<< texCoord.y
+				<< ")\n";
+		}
+	}
+
 
 	const Okari::J3DSectionInfo* jnt1Section = document.FindSection("JNT1");
 
