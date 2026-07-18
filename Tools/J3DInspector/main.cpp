@@ -6,6 +6,7 @@
 #include "Formats/J3D/Sections/JNT1Parser.h"
 #include "Formats/J3D/Sections/DRW1Parser.h"
 #include "Formats/J3D/Sections/EVP1Parser.h"
+#include "Formats/J3D/Sections/VTX1Parser.h"
 
 #include <iostream>
 #include <string>
@@ -174,6 +175,149 @@ int main(int argc, char** argv)
 	}
 
 	const Okari::J3DINF1Data& inf1 = inf1Result.Data;
+
+	const Okari::J3DSectionInfo* vtx1Section =
+		document.FindSection("VTX1");
+
+	if (vtx1Section == nullptr)
+	{
+		std::cerr
+			<< "\n[J3DInspector] The model has no VTX1 section.\n";
+
+		return 1;
+	}
+
+	const Okari::J3DVTX1ParseResult vtx1Result =
+		Okari::J3DVTX1Parser::Parse(
+			document,
+			*vtx1Section
+		);
+
+	if (!vtx1Result.Succeeded())
+	{
+		std::cerr
+			<< "\n[J3DInspector] "
+			<< vtx1Result.Error
+			<< '\n';
+
+		return 1;
+	}
+
+	const Okari::J3DVTX1Data& vtx1 =
+		vtx1Result.Data;
+
+	const Okari::J3DVertexFormatDescriptor* positionFormat =
+		vtx1.FindFormat(
+			Okari::J3DVertexAttribute::Position
+		);
+
+	const Okari::J3DVertexArrayData* positionArray =
+		vtx1.FindArray(
+			Okari::J3DVertexAttribute::Position
+		);
+
+	if (
+		positionFormat == nullptr ||
+		positionArray == nullptr
+		)
+	{
+		std::cerr
+			<< "[J3DInspector] VTX1 has no position array.\n";
+
+		return 1;
+	}
+
+	const std::uint64_t requiredPositionByteCount =
+		static_cast<std::uint64_t>(
+			inf1.VertexPositionCount
+			) *
+		positionFormat->ElementStride;
+
+	if (positionArray->ByteSize < requiredPositionByteCount)
+	{
+		std::cerr
+			<< "[J3DInspector] VTX1 position array contains only "
+			<< positionArray->ByteSize
+			<< " bytes, but INF1 requires "
+			<< requiredPositionByteCount
+			<< " bytes.\n";
+
+		return 1;
+	}
+
+	const std::uint64_t bytesAfterPositionPayload =
+		positionArray->ByteSize -
+		requiredPositionByteCount;
+
+	std::cout
+		<< "\nVTX1\n"
+		<< "Format table offset: 0x"
+		<< std::hex
+		<< std::uppercase
+		<< vtx1.FormatTableOffset
+		<< std::dec
+		<< '\n'
+		<< "Format descriptors: "
+		<< vtx1.Formats.size()
+		<< '\n'
+		<< "Vertex arrays: "
+		<< vtx1.Arrays.size()
+		<< "\n\n";
+
+	for (
+		const Okari::J3DVertexArrayData& array :
+		vtx1.Arrays
+		)
+	{
+		const Okari::J3DVertexFormatDescriptor* format =
+			vtx1.FindFormat(array.Attribute);
+
+		if (format == nullptr)
+		{
+			std::cerr
+				<< "[J3DInspector] Missing VTX1 format during display.\n";
+
+			return 1;
+		}
+
+		std::cout
+			<< Okari::ToString(array.Attribute)
+			<< " | components="
+			<< Okari::DescribeComponentCount(*format)
+			<< " | type="
+			<< Okari::DescribeComponentType(*format)
+			<< " | shift="
+			<< static_cast<unsigned int>(
+				format->FractionalBits
+				)
+			<< " | offset=0x"
+			<< std::hex
+			<< std::uppercase
+			<< array.Offset
+			<< std::dec
+			<< " | bytes="
+			<< array.ByteSize
+			<< " | stride="
+			<< array.ElementStride
+			<< " | capacity="
+			<< array.ElementCapacity
+			<< " | remainder="
+			<< array.RemainderByteCount;
+
+		if (
+			array.Attribute ==
+			Okari::J3DVertexAttribute::Position
+			)
+		{
+			std::cout
+				<< " | INF1 count="
+				<< inf1.VertexPositionCount
+				<< " | bytes after payload="
+				<< bytesAfterPositionPayload;
+		}
+
+		std::cout << '\n';
+	}
 
 	const Okari::J3DSectionInfo* jnt1Section = document.FindSection("JNT1");
 
