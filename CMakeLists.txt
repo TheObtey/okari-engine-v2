@@ -21,6 +21,7 @@ set(J3D_SOURCES
 
     Engine/Formats/J3D/Sections/INF1Parser.cpp
     Engine/Formats/J3D/Sections/JNT1Parser.cpp
+    Engine/Formats/J3D/Sections/DRW1Parser.cpp
 )
 
 set(ENGINE_SOURCES

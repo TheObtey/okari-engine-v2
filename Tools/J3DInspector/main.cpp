@@ -1,10 +1,12 @@
 #include "Formats/J3D/J3DFileReader.h"
 #include "Formats/J3D/Sections/INF1Parser.h"
 #include "Formats/J3D/Sections/JNT1Parser.h"
+#include "Formats/J3D/Sections/DRW1Parser.h"
 
-#include <iomanip>
 #include <iostream>
 #include <string>
+#include <cstddef>
+#include <cstdint>
 
 namespace
 {
@@ -22,59 +24,55 @@ namespace
 			return "Unknown";
 		}
 	}
-}
 
-void PrintHierarchyNode(
-	const Okari::J3DINF1Data& inf1,
-	const Okari::J3DJNT1Data& jnt1,
-	std::uint32_t nodeIndex,
-	std::size_t depth
-)
-{
-	const Okari::J3DHierarchyNode& node =
-		inf1.Nodes[nodeIndex];
-
-	std::cout
-		<< std::string(depth * 2, ' ')
-		<< Okari::ToString(node.Type)
-		<< '['
-		<< node.Index
-		<< ']';
-
-	if (
-		node.Type ==
-		Okari::J3DHierarchyEntryType::Joint
-		)
+	void PrintHierarchyNode(
+		const Okari::J3DINF1Data& inf1,
+		const Okari::J3DJNT1Data& jnt1,
+		std::uint32_t nodeIndex,
+		std::size_t depth
+	)
 	{
-		if (node.Index < jnt1.Joints.size())
-		{
-			std::cout
-				<< " \""
-				<< jnt1.Joints[node.Index].Name
-				<< '"';
-		}
-		else
-		{
-			std::cout << " <invalid JNT1 index>";
-		}
-	}
+		const Okari::J3DHierarchyNode& node = inf1.Nodes[nodeIndex];
 
-	std::cout
-		<< " @0x"
-		<< std::hex
-		<< std::uppercase
-		<< node.FileOffset
-		<< std::dec
-		<< '\n';
+		std::cout
+			<< std::string(depth * 2, ' ')
+			<< Okari::ToString(node.Type)
+			<< '['
+			<< node.Index
+			<< ']';
 
-	for (const std::uint32_t childIndex : node.Children)
-	{
-		PrintHierarchyNode(
-			inf1,
-			jnt1,
-			childIndex,
-			depth + 1
-		);
+		if (node.Type == Okari::J3DHierarchyEntryType::Joint)
+		{
+			if (node.Index < jnt1.Joints.size())
+			{
+				std::cout
+					<< " \""
+					<< jnt1.Joints[node.Index].Name
+					<< '"';
+			}
+			else
+			{
+				std::cout << " <invalid JNT1 index>";
+			}
+		}
+
+		std::cout
+			<< " @0x"
+			<< std::hex
+			<< std::uppercase
+			<< node.FileOffset
+			<< std::dec
+			<< '\n';
+
+		for (const std::uint32_t childIndex : node.Children)
+		{
+			PrintHierarchyNode(
+				inf1,
+				jnt1,
+				childIndex,
+				depth + 1
+			);
+		}
 	}
 }
 
@@ -89,8 +87,7 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	Okari::J3DReadResult result =
-		Okari::J3DFileReader::Read(argv[1]);
+	Okari::J3DReadResult result = Okari::J3DFileReader::Read(argv[1]);
 
 	if (!result.Succeeded())
 	{
@@ -128,14 +125,9 @@ int main(int argc, char** argv)
 		<< document.Header.SectionCount
 		<< "\n\n";
 
-	for (
-		std::size_t index = 0;
-		index < document.Sections.size();
-		++index
-		)
+	for (std::size_t index = 0; index < document.Sections.size(); ++index)
 	{
-		const Okari::J3DSectionInfo& section =
-			document.Sections[index];
+		const Okari::J3DSectionInfo& section = document.Sections[index];
 
 		std::cout
 			<< '[' << index << "] "
@@ -152,13 +144,11 @@ int main(int argc, char** argv)
 			<< " bytes)\n";
 	}
 
-	const Okari::J3DSectionInfo* inf1Section =
-		document.FindSection("INF1");
+	const Okari::J3DSectionInfo* inf1Section = document.FindSection("INF1");
 
 	if (inf1Section == nullptr)
 	{
-		std::cerr
-			<< "\n[J3DInspector] The model has no INF1 section.\n";
+		std::cerr << "\n[J3DInspector] The model has no INF1 section.\n";
 
 		return 1;
 	}
@@ -181,8 +171,7 @@ int main(int argc, char** argv)
 
 	const Okari::J3DINF1Data& inf1 = inf1Result.Data;
 
-	const Okari::J3DSectionInfo* jnt1Section =
-		document.FindSection("JNT1");
+	const Okari::J3DSectionInfo* jnt1Section = document.FindSection("JNT1");
 
 	if (jnt1Section == nullptr)
 	{
@@ -208,8 +197,7 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	const Okari::J3DJNT1Data& jnt1 =
-		jnt1Result.Data;
+	const Okari::J3DJNT1Data& jnt1 = jnt1Result.Data;
 
 	std::cout
 		<< "\nJNT1\n"
@@ -261,11 +249,7 @@ int main(int argc, char** argv)
 
 	for (const Okari::J3DHierarchyNode& node : inf1.Nodes)
 	{
-		if (
-			node.Type ==
-			Okari::J3DHierarchyEntryType::Joint &&
-			node.Index >= jnt1.Joints.size()
-			)
+		if (node.Type == Okari::J3DHierarchyEntryType::Joint && node.Index >= jnt1.Joints.size())
 		{
 			std::cerr
 				<< "[J3DInspector] INF1 references invalid joint "
@@ -318,8 +302,133 @@ int main(int argc, char** argv)
 		);
 	}
 
-	if (document.Data.size() !=
-		document.Header.DeclaredFileSize)
+	const Okari::J3DSectionInfo* drw1Section = document.FindSection("DRW1");
+
+	if (drw1Section == nullptr)
+	{
+		std::cerr << "\n[J3DInspector] The model has no DRW1 section.\n";
+
+		return 1;
+	}
+
+	const Okari::J3DDRW1ParseResult drw1Result =
+		Okari::J3DDRW1Parser::Parse(
+			document,
+			*drw1Section
+		);
+
+	if (!drw1Result.Succeeded())
+	{
+		std::cerr
+			<< "\n[J3DInspector] "
+			<< drw1Result.Error
+			<< '\n';
+
+		return 1;
+	}
+
+	const Okari::J3DDRW1Data& drw1 = drw1Result.Data;
+
+	std::size_t rigidMatrixCount = 0;
+	std::size_t envelopeMatrixCount = 0;
+
+	for (const Okari::J3DDrawMatrixDefinition& matrix : drw1.Matrices)
+	{
+		switch (matrix.Kind)
+		{
+		case Okari::J3DDrawMatrixKind::Joint:
+			++rigidMatrixCount;
+
+			if (matrix.Parameter >= jnt1.Joints.size())
+			{
+				std::cerr
+					<< "[J3DInspector] DRW1 matrix "
+					<< matrix.Index
+					<< " references invalid joint "
+					<< matrix.Parameter
+					<< '\n';
+
+				return 1;
+			}
+
+			break;
+
+		case Okari::J3DDrawMatrixKind::Envelope:
+			++envelopeMatrixCount;
+			break;
+		}
+	}
+
+	std::cout
+		<< "\nDRW1\n"
+		<< "Matrix count: "
+		<< drw1.MatrixCount
+		<< '\n'
+		<< "Type table offset: 0x"
+		<< std::hex
+		<< std::uppercase
+		<< drw1.MatrixTypeTableOffset
+		<< '\n'
+		<< "Parameter table offset: 0x"
+		<< drw1.MatrixParameterTableOffset
+		<< std::dec
+		<< '\n'
+		<< "Rigid joint matrices: "
+		<< rigidMatrixCount
+		<< '\n'
+		<< "Weighted envelope matrices: "
+		<< envelopeMatrixCount
+		<< "\n\n";
+
+	if (drw1.Matrices.size() != drw1.MatrixCount)
+	{
+		std::cerr
+			<< "[J3DInspector] DRW1 parsed matrix count does not "
+			<< "match the declared matrix count.\n";
+
+		return 1;
+	}
+
+	constexpr std::size_t MaximumDisplayedMatrices = 32;
+
+	const std::size_t displayedMatrixCount =
+		drw1.Matrices.size() < MaximumDisplayedMatrices
+		? drw1.Matrices.size()
+		: MaximumDisplayedMatrices;
+
+	for (std::size_t index = 0; index < displayedMatrixCount; ++index)
+	{
+		const Okari::J3DDrawMatrixDefinition& matrix = drw1.Matrices[index];
+
+		std::cout
+			<< '['
+			<< matrix.Index
+			<< "] "
+			<< Okari::ToString(matrix.Kind)
+			<< '['
+			<< matrix.Parameter
+			<< ']';
+
+		if (matrix.Kind == Okari::J3DDrawMatrixKind::Joint)
+		{
+			std::cout
+				<< " \""
+				<< jnt1.Joints[matrix.Parameter].Name
+				<< '"';
+		}
+
+		std::cout << '\n';
+	}
+
+	if (drw1.Matrices.size() > displayedMatrixCount)
+	{
+		std::cout
+			<< "... "
+			<< drw1.Matrices.size() - displayedMatrixCount
+			<< " additional matrices omitted\n";
+	}
+
+	if (document.Data.size() != document.Header.DeclaredFileSize)
 	{
 		std::cout
 			<< "\nWarning: the physical file contains trailing "
