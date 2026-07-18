@@ -39,6 +39,17 @@ namespace Okari
 		std::vector<J3DSectionInfo> Sections;
 
 		std::vector<std::uint8_t> Data;
+
+		const J3DSectionInfo* FindSection(const std::string& tag) const
+		{
+			for (const J3DSectionInfo& section : Sections)
+			{
+				if (section.Tag == tag)
+					return &section;
+			}
+
+			return nullptr;
+		}
 	};
 
 	struct J3DReadResult
