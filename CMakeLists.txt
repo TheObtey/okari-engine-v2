@@ -15,8 +15,12 @@ find_package(OpenGL REQUIRED)
 
 set(J3D_SOURCES
     Engine/IO/BigEndianReader.cpp
+
     Engine/Formats/J3D/J3DFileReader.cpp
+    Engine/Formats/J3D/J3DStringTable.cpp
+
     Engine/Formats/J3D/Sections/INF1Parser.cpp
+    Engine/Formats/J3D/Sections/JNT1Parser.cpp
 )
 
 set(ENGINE_SOURCES

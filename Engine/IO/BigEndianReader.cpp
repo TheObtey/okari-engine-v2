@@ -1,6 +1,7 @@
 #include "IO/BigEndianReader.h"
 
 #include <stdexcept>
+#include <cstring>
 
 namespace Okari
 {
@@ -69,6 +70,38 @@ namespace Okari
 		return value;
 	}
 
+	std::int16_t BigEndianReader::ReadS16()
+	{
+		const std::uint16_t rawValue = ReadU16();
+
+		const std::int32_t signedValue =
+			rawValue <= 0x7FFF
+			? static_cast<std::int32_t>(rawValue)
+			: static_cast<std::int32_t>(rawValue) - 0x10000;
+
+		return static_cast<std::int16_t>(signedValue);
+	}
+
+	float BigEndianReader::ReadF32()
+	{
+		const std::uint32_t rawValue = ReadU32();
+
+		float value = 0.0f;
+
+		static_assert(
+			sizeof(value) == sizeof(rawValue),
+			"J3D float parsing requires 32-bit floats"
+			);
+
+		std::memcpy(
+			&value,
+			&rawValue,
+			sizeof(value)
+		);
+
+		return value;
+	}
+
 	std::string BigEndianReader::ReadFixedString(std::size_t length)
 	{
 		EnsureAvailable(length);
@@ -79,6 +112,30 @@ namespace Okari
 
 		m_Offset += length;
 		return value;
+	}
+
+	std::string BigEndianReader::ReadCString(std::size_t maxLength)
+	{
+		const std::size_t startOffset = m_Offset;
+
+		for (std::size_t index = 0; index < maxLength; index++)
+		{
+			const char character = static_cast<char>(ReadU8());
+
+			if (character == '\0')
+			{
+				const char* begin =
+					reinterpret_cast<const char*>(
+						m_Data.data() + startOffset
+					);
+
+				return std::string(begin, index);
+			}
+		}
+
+		throw std::runtime_error(
+			"BigEndianReader encountered an unterminated string"
+		);
 	}
 
 	void BigEndianReader::EnsureAvailable(std::size_t byteCount) const

@@ -23,7 +23,11 @@ namespace Okari
 		std::uint16_t ReadU16();
 		std::uint32_t ReadU32();
 
+		std::int16_t ReadS16();
+		float ReadF32();
+
 		std::string ReadFixedString(std::size_t length);
+		std::string ReadCString(std::size_t maxLength);
 
 	private:
 		void EnsureAvailable(std::size_t byteCount) const;

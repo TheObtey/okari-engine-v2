@@ -1,5 +1,6 @@
 #include "Formats/J3D/J3DFileReader.h"
 #include "Formats/J3D/Sections/INF1Parser.h"
+#include "Formats/J3D/Sections/JNT1Parser.h"
 
 #include <iomanip>
 #include <iostream>
@@ -25,6 +26,7 @@ namespace
 
 void PrintHierarchyNode(
 	const Okari::J3DINF1Data& inf1,
+	const Okari::J3DJNT1Data& jnt1,
 	std::uint32_t nodeIndex,
 	std::size_t depth
 )
@@ -37,7 +39,27 @@ void PrintHierarchyNode(
 		<< Okari::ToString(node.Type)
 		<< '['
 		<< node.Index
-		<< ']'
+		<< ']';
+
+	if (
+		node.Type ==
+		Okari::J3DHierarchyEntryType::Joint
+		)
+	{
+		if (node.Index < jnt1.Joints.size())
+		{
+			std::cout
+				<< " \""
+				<< jnt1.Joints[node.Index].Name
+				<< '"';
+		}
+		else
+		{
+			std::cout << " <invalid JNT1 index>";
+		}
+	}
+
+	std::cout
 		<< " @0x"
 		<< std::hex
 		<< std::uppercase
@@ -49,6 +71,7 @@ void PrintHierarchyNode(
 	{
 		PrintHierarchyNode(
 			inf1,
+			jnt1,
 			childIndex,
 			depth + 1
 		);
@@ -158,6 +181,101 @@ int main(int argc, char** argv)
 
 	const Okari::J3DINF1Data& inf1 = inf1Result.Data;
 
+	const Okari::J3DSectionInfo* jnt1Section =
+		document.FindSection("JNT1");
+
+	if (jnt1Section == nullptr)
+	{
+		std::cerr
+			<< "\n[J3DInspector] The model has no JNT1 section.\n";
+
+		return 1;
+	}
+
+	const Okari::J3DJNT1ParseResult jnt1Result =
+		Okari::J3DJNT1Parser::Parse(
+			document,
+			*jnt1Section
+		);
+
+	if (!jnt1Result.Succeeded())
+	{
+		std::cerr
+			<< "\n[J3DInspector] "
+			<< jnt1Result.Error
+			<< '\n';
+
+		return 1;
+	}
+
+	const Okari::J3DJNT1Data& jnt1 =
+		jnt1Result.Data;
+
+	std::cout
+		<< "\nJNT1\n"
+		<< "Joint count: "
+		<< jnt1.JointCount
+		<< '\n'
+		<< "Joint data offset: 0x"
+		<< std::hex
+		<< std::uppercase
+		<< jnt1.JointDataOffset
+		<< '\n'
+		<< "Remap table offset: 0x"
+		<< jnt1.RemapTableOffset
+		<< '\n'
+		<< "Name table offset: 0x"
+		<< jnt1.NameTableOffset
+		<< std::dec
+		<< "\n\n";
+
+	for (const Okari::J3DJoint& joint : jnt1.Joints)
+	{
+		std::cout
+			<< '['
+			<< joint.LogicalIndex
+			<< "] "
+			<< joint.Name
+			<< " | data="
+			<< joint.DataIndex
+			<< " | scale=("
+			<< joint.Transform.Scale.X
+			<< ", "
+			<< joint.Transform.Scale.Y
+			<< ", "
+			<< joint.Transform.Scale.Z
+			<< ") | rotationRaw=("
+			<< joint.Transform.Rotation.X
+			<< ", "
+			<< joint.Transform.Rotation.Y
+			<< ", "
+			<< joint.Transform.Rotation.Z
+			<< ") | translation=("
+			<< joint.Transform.Translation.X
+			<< ", "
+			<< joint.Transform.Translation.Y
+			<< ", "
+			<< joint.Transform.Translation.Z
+			<< ")\n";
+	}
+
+	for (const Okari::J3DHierarchyNode& node : inf1.Nodes)
+	{
+		if (
+			node.Type ==
+			Okari::J3DHierarchyEntryType::Joint &&
+			node.Index >= jnt1.Joints.size()
+			)
+		{
+			std::cerr
+				<< "[J3DInspector] INF1 references invalid joint "
+				<< node.Index
+				<< '\n';
+
+			return 1;
+		}
+	}
+
 	std::cout
 		<< "\nINF1\n"
 		<< "Load flags: 0x"
@@ -188,10 +306,13 @@ int main(int argc, char** argv)
 		<< inf1.RootNodes.size()
 		<< "\n\n";
 
+	std::cout << "\nINF1 hierarchy with JNT1 names\n\n";
+
 	for (const std::uint32_t rootNodeIndex : inf1.RootNodes)
 	{
 		PrintHierarchyNode(
 			inf1,
+			jnt1,
 			rootNodeIndex,
 			0
 		);
