@@ -30,7 +30,7 @@ namespace Okari
 		J3DHierarchyEntryType Type = J3DHierarchyEntryType::Joint;
 		std::uint16_t Index = 0;
 
-		std::uint32_t ParentNode = -1; // -1 is for root node
+		std::int32_t ParentNode = -1; // -1 is for root node
 
 		std::vector<std::uint32_t> Children;
 

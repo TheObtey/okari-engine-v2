@@ -18,6 +18,7 @@ set(J3D_SOURCES
 
     Engine/Formats/J3D/J3DFileReader.cpp
     Engine/Formats/J3D/J3DStringTable.cpp
+    Engine/Formats/J3D/J3DPoseEvaluator.cpp
 
     Engine/Formats/J3D/Sections/INF1Parser.cpp
     Engine/Formats/J3D/Sections/JNT1Parser.cpp
@@ -101,6 +102,7 @@ add_executable(J3DInspector
 
 target_include_directories(J3DInspector PRIVATE
     ${CMAKE_SOURCE_DIR}/Engine
+    ${CMAKE_SOURCE_DIR}/External/glm
 )
 
 # =========================

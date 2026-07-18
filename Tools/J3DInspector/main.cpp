@@ -1,4 +1,6 @@
 #include "Formats/J3D/J3DFileReader.h"
+#include "Formats/J3D/J3DPoseEvaluator.h"
+
 #include "Formats/J3D/Sections/INF1Parser.h"
 #include "Formats/J3D/Sections/JNT1Parser.h"
 #include "Formats/J3D/Sections/DRW1Parser.h"
@@ -6,7 +8,6 @@
 
 #include <iostream>
 #include <string>
-#include <cstddef>
 #include <cstdint>
 #include <cmath>
 
@@ -358,6 +359,25 @@ int main(int argc, char** argv)
 
 	const Okari::J3DEVP1Data& evp1 = evp1Result.Data;
 
+	const Okari::J3DPoseEvaluationResult poseResult =
+		Okari::J3DPoseEvaluator::EvaluateRestPose(
+			inf1,
+			jnt1
+		);
+
+	if (!poseResult.Succeeded())
+	{
+		std::cerr
+			<< "\n[J3DInspector] "
+			<< poseResult.Error
+			<< '\n';
+
+		return 1;
+	}
+
+	const Okari::J3DRestPose& restPose =
+		poseResult.Pose;
+
 	std::size_t rigidMatrixCount = 0;
 	std::size_t envelopeMatrixCount = 0;
 
@@ -572,6 +592,80 @@ int main(int argc, char** argv)
 			<< "... "
 			<< evp1.Envelopes.size() - displayedEnvelopeCount
 			<< " additional envelopes omitted\n";
+	}
+
+	std::cout
+		<< "\nJ3D REST POSE\n"
+		<< "Joint matrices: "
+		<< restPose.Joints.size()
+		<< '\n'
+		<< "Root joints: "
+		<< restPose.RootJointIndices.size()
+		<< '\n'
+		<< "Scaling rule: 0x"
+		<< std::hex
+		<< std::uppercase
+		<< restPose.ScalingRule
+		<< std::dec
+		<< "\n\n";
+
+	constexpr std::size_t MaximumDisplayedPoseJoints = 20;
+
+	const std::size_t displayedPoseJointCount =
+		restPose.Joints.size() < MaximumDisplayedPoseJoints
+		? restPose.Joints.size()
+		: MaximumDisplayedPoseJoints;
+
+	for (
+		std::size_t jointIndex = 0;
+		jointIndex < displayedPoseJointCount;
+		++jointIndex
+		)
+	{
+		const Okari::J3DJointPose& jointPose =
+			restPose.Joints[jointIndex];
+
+		std::cout
+			<< '['
+			<< jointIndex
+			<< "] "
+			<< jnt1.Joints[jointIndex].Name
+			<< " | parent=";
+
+		if (jointPose.ParentJointIndex < 0)
+		{
+			std::cout << "<root>";
+		}
+		else
+		{
+			const std::size_t parentJointIndex =
+				static_cast<std::size_t>(
+					jointPose.ParentJointIndex
+					);
+
+			std::cout
+				<< jnt1.Joints[parentJointIndex].Name
+				<< '['
+				<< parentJointIndex
+				<< ']';
+		}
+
+		std::cout
+			<< " | modelPosition=("
+			<< jointPose.ModelMatrix[3][0]
+			<< ", "
+			<< jointPose.ModelMatrix[3][1]
+			<< ", "
+			<< jointPose.ModelMatrix[3][2]
+			<< ")\n";
+	}
+
+	if (restPose.Joints.size() > displayedPoseJointCount)
+	{
+		std::cout
+			<< "... "
+			<< restPose.Joints.size() - displayedPoseJointCount
+			<< " additional pose joints omitted\n";
 	}
 
 	if (document.Data.size() != document.Header.DeclaredFileSize)
