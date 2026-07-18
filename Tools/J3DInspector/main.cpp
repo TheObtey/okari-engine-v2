@@ -1,5 +1,6 @@
 #include "Formats/J3D/J3DFileReader.h"
 #include "Formats/J3D/J3DPoseEvaluator.h"
+#include "Formats/J3D/J3DDrawMatrixEvaluator.h"
 
 #include "Formats/J3D/Sections/INF1Parser.h"
 #include "Formats/J3D/Sections/JNT1Parser.h"
@@ -468,6 +469,26 @@ int main(int argc, char** argv)
 			++invalidWeightSumCount;
 	}
 
+	const Okari::J3DDrawMatrixEvaluationResult
+		drawMatrixResult =
+		Okari::J3DDrawMatrixEvaluator::Evaluate(
+			restPose,
+			drw1,
+			evp1
+		);
+
+	if (!drawMatrixResult.Succeeded())
+	{
+		std::cerr
+			<< "\n[J3DInspector] "
+			<< drawMatrixResult.Error
+			<< '\n';
+
+		return 1;
+	}
+
+	const Okari::J3DDrawMatrixPalette& drawPalette = drawMatrixResult.Palette;
+
 	std::cout
 		<< "\nDRW1\n"
 		<< "Matrix count: "
@@ -666,6 +687,66 @@ int main(int argc, char** argv)
 			<< "... "
 			<< restPose.Joints.size() - displayedPoseJointCount
 			<< " additional pose joints omitted\n";
+	}
+
+	std::cout
+		<< "\nJ3D DRAW MATRIX PALETTE\n"
+		<< "Raw DRW1 definitions: "
+		<< drawPalette.RawDefinitionCount
+		<< '\n'
+		<< "Effective draw matrices: "
+		<< drawPalette.EffectiveDefinitionCount
+		<< '\n'
+		<< "Duplicated envelope suffix removed: "
+		<< (
+			drawPalette.RemovedDuplicatedEnvelopeSuffix
+			? "yes"
+			: "no"
+			)
+		<< '\n'
+		<< "Rigid matrices: "
+		<< drawPalette.RigidMatrixCount
+		<< '\n'
+		<< "Envelope matrices: "
+		<< drawPalette.EnvelopeMatrixCount
+		<< '\n'
+		<< "Maximum envelope identity error: "
+		<< drawPalette.MaximumEnvelopeIdentityError
+		<< "\n\n";
+
+	constexpr std::size_t MaximumDisplayedResolvedEnvelopes = 8;
+
+	std::size_t displayedResolvedEnvelopes = 0;
+
+	for (
+		const Okari::J3DResolvedDrawMatrix& matrix :
+		drawPalette.Matrices
+		)
+	{
+		if (matrix.Kind != Okari::J3DDrawMatrixKind::Envelope)
+			continue;
+
+		std::cout
+			<< '['
+			<< matrix.SourceDefinitionIndex
+			<< "] Envelope["
+			<< matrix.Parameter
+			<< "]"
+			<< " | translation=("
+			<< matrix.Matrix[3][0]
+			<< ", "
+			<< matrix.Matrix[3][1]
+			<< ", "
+			<< matrix.Matrix[3][2]
+			<< ')'
+			<< " | identityError="
+			<< matrix.BindPoseIdentityError
+			<< '\n';
+
+		++displayedResolvedEnvelopes;
+
+		if (displayedResolvedEnvelopes >= MaximumDisplayedResolvedEnvelopes)
+			break;
 	}
 
 	if (document.Data.size() != document.Header.DeclaredFileSize)
