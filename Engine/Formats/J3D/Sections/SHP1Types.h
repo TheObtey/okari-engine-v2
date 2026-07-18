@@ -16,6 +16,23 @@ namespace Okari
 		MultiMatrix = 3
 	};
 
+	struct J3DShapeMatrixGroup
+	{
+		std::uint16_t LocalIndex = 0;
+
+		std::uint32_t MatrixInitDataIndex = 0;
+		std::uint32_t DrawInitDataIndex = 0;
+
+		std::uint16_t UseMatrixIndex = 0;
+		std::uint16_t UseMatrixCount = 0;
+		std::uint32_t FirstUseMatrixIndex = 0;
+
+		std::vector<std::uint16_t> RawMatrixTable;
+
+		std::uint32_t DisplayListSize = 0;
+		std::uint32_t DisplayListOffset = 0;
+	};
+
 	struct J3DShapeRecord
 	{
 		// Index used by INF1 and by the rest of the model
@@ -36,6 +53,8 @@ namespace Okari
 		std::uint16_t DrawInitDataIndex = 0;
 		
 		std::uint16_t Padding0x0A = 0;
+
+		std::vector<J3DShapeMatrixGroup> MatrixGroups;
 
 		float BoundingSphereRadius = 0.0f;
 		J3DBoundingBox Bounds;

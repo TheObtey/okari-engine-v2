@@ -1149,6 +1149,146 @@ namespace
 				<< ")\n";
 		}
 	}
+
+	void PrintShapeMatrixGroups(
+		const Okari::J3DSHP1Data& shp1
+	)
+	{
+		constexpr std::uint16_t ReusePreviousMatrix =
+			0xFFFF;
+
+		std::size_t decodedGroupCount = 0;
+		std::size_t totalMatrixTableEntries = 0;
+		std::size_t reusedMatrixEntryCount = 0;
+		std::size_t zeroMatrixCountGroups = 0;
+		std::size_t singleMatrixMismatches = 0;
+		std::uint64_t totalDisplayListBytes = 0;
+
+		std::cout
+			<< "\nSHP1 MATRIX GROUPS\n";
+
+		for (const Okari::J3DShapeRecord& shape : shp1.Shapes)
+		{
+			for (
+				const Okari::J3DShapeMatrixGroup& group :
+				shape.MatrixGroups
+				)
+			{
+				++decodedGroupCount;
+
+				totalMatrixTableEntries +=
+					group.RawMatrixTable.size();
+
+				totalDisplayListBytes +=
+					group.DisplayListSize;
+
+				if (group.UseMatrixCount == 0)
+					++zeroMatrixCountGroups;
+
+				for (
+					const std::uint16_t matrixIndex :
+				group.RawMatrixTable
+					)
+				{
+					if (
+						matrixIndex ==
+						ReusePreviousMatrix
+						)
+					{
+						++reusedMatrixEntryCount;
+					}
+				}
+
+				if (
+					shape.MatrixType ==
+					Okari::J3DShapeMatrixType::SingleMatrix
+					)
+				{
+					const bool tableMatches =
+						group.RawMatrixTable.size() == 1 &&
+						group.RawMatrixTable[0] ==
+						group.UseMatrixIndex;
+
+					if (!tableMatches)
+						++singleMatrixMismatches;
+				}
+
+				std::cout
+					<< "shape["
+					<< shape.LogicalIndex
+					<< "] group["
+					<< group.LocalIndex
+					<< "]"
+					<< " matrixRecord="
+					<< group.MatrixInitDataIndex
+					<< " drawRecord="
+					<< group.DrawInitDataIndex
+					<< " useMatrix="
+					<< group.UseMatrixIndex
+					<< " matrixCount="
+					<< group.UseMatrixCount
+					<< " firstMatrix="
+					<< group.FirstUseMatrixIndex
+					<< " displayListOffset=0x"
+					<< std::hex
+					<< std::uppercase
+					<< group.DisplayListOffset
+					<< " displayListSize=0x"
+					<< group.DisplayListSize
+					<< std::dec
+					<< '\n'
+					<< "    matrixTable=[";
+
+				for (
+					std::size_t matrixSlot = 0;
+					matrixSlot <
+					group.RawMatrixTable.size();
+					++matrixSlot
+					)
+				{
+					if (matrixSlot > 0)
+						std::cout << ", ";
+
+					const std::uint16_t matrixIndex =
+						group.RawMatrixTable[matrixSlot];
+
+					if (
+						matrixIndex ==
+						ReusePreviousMatrix
+						)
+					{
+						std::cout << "0xFFFF";
+					}
+					else
+					{
+						std::cout << matrixIndex;
+					}
+				}
+
+				std::cout << "]\n";
+			}
+		}
+
+		std::cout
+			<< "Decoded matrix groups: "
+			<< decodedGroupCount
+			<< '\n'
+			<< "Matrix-table entries: "
+			<< totalMatrixTableEntries
+			<< '\n'
+			<< "Reuse entries (0xFFFF): "
+			<< reusedMatrixEntryCount
+			<< '\n'
+			<< "Zero-count groups: "
+			<< zeroMatrixCountGroups
+			<< '\n'
+			<< "Single-matrix table mismatches: "
+			<< singleMatrixMismatches
+			<< '\n'
+			<< "Total referenced display-list bytes: "
+			<< totalDisplayListBytes
+			<< '\n';
+	}
 }
 
 int main(int argc, char** argv)
@@ -1250,6 +1390,8 @@ int main(int argc, char** argv)
 	PrintShapeSectionSummary(shp1);
 
 	PrintShapeRecords(shp1);
+	
+	PrintShapeMatrixGroups(shp1);
 
 	const Okari::J3DSectionInfo* jnt1Section =
 		FindRequiredSection(document, "JNT1");

@@ -14,6 +14,9 @@ namespace Okari
 	{
 		constexpr std::size_t SHP1HeaderSize = 0x2C;
 		constexpr std::size_t ShapeRecordSize = 0x28;
+		constexpr std::size_t MatrixInitRecordSize = 0x08;
+		constexpr std::size_t DrawInitRecordSize = 0x08;
+		constexpr std::uint16_t ReusePreviousMatrix = 0xFFFF;
 
 		J3DSHP1ParseResult Failure(const std::string& message)
 		{
@@ -336,6 +339,190 @@ namespace Okari
 				data.Shapes.push_back(
 					std::move(shape)
 				);
+			}
+
+			for (J3DShapeRecord& shape : data.Shapes)
+			{
+				shape.MatrixGroups.reserve(
+					shape.MatrixGroupCount
+				);
+
+				for (
+					std::uint16_t localGroupIndex = 0;
+					localGroupIndex < shape.MatrixGroupCount;
+					++localGroupIndex
+					)
+				{
+					const std::uint32_t matrixInitDataIndex =
+						static_cast<std::uint32_t>(
+							shape.MatrixInitDataIndex
+							) +
+						localGroupIndex;
+
+					const std::uint32_t drawInitDataIndex =
+						static_cast<std::uint32_t>(
+							shape.DrawInitDataIndex
+							) +
+						localGroupIndex;
+
+					const std::uint64_t matrixInitRecordOffset =
+						static_cast<std::uint64_t>(
+							data.MatrixInitDataOffset
+							) +
+						static_cast<std::uint64_t>(
+							matrixInitDataIndex
+							) *
+						MatrixInitRecordSize;
+
+					if (!RangeFitsInsideSection(
+						matrixInitRecordOffset,
+						MatrixInitRecordSize,
+						section.Size
+					))
+					{
+						return Failure(
+							"SHP1 matrix-init record " +
+							std::to_string(matrixInitDataIndex) +
+							" exceeds the section"
+						);
+					}
+
+					const std::uint64_t drawInitRecordOffset =
+						static_cast<std::uint64_t>(
+							data.DrawInitDataOffset
+							) +
+						static_cast<std::uint64_t>(
+							drawInitDataIndex
+							) *
+						DrawInitRecordSize;
+
+					if (!RangeFitsInsideSection(
+						drawInitRecordOffset,
+						DrawInitRecordSize,
+						section.Size
+					))
+					{
+						return Failure(
+							"SHP1 draw-init record " +
+							std::to_string(drawInitDataIndex) +
+							" exceeds the section"
+						);
+					}
+
+					J3DShapeMatrixGroup group;
+
+					group.LocalIndex = localGroupIndex;
+					group.MatrixInitDataIndex =
+						matrixInitDataIndex;
+					group.DrawInitDataIndex =
+						drawInitDataIndex;
+
+					reader.Seek(
+						static_cast<std::size_t>(
+							section.Offset +
+							matrixInitRecordOffset
+							)
+					);
+
+					group.UseMatrixIndex =
+						reader.ReadU16();
+
+					group.UseMatrixCount =
+						reader.ReadU16();
+
+					group.FirstUseMatrixIndex =
+						reader.ReadU32();
+
+					const std::uint64_t matrixTableByteOffset =
+						static_cast<std::uint64_t>(
+							data.MatrixTableOffset
+							) +
+						static_cast<std::uint64_t>(
+							group.FirstUseMatrixIndex
+							) *
+						sizeof(std::uint16_t);
+
+					const std::uint64_t matrixTableByteCount =
+						static_cast<std::uint64_t>(
+							group.UseMatrixCount
+							) *
+						sizeof(std::uint16_t);
+
+					if (!RangeFitsInsideSection(
+						matrixTableByteOffset,
+						matrixTableByteCount,
+						section.Size
+					))
+					{
+						return Failure(
+							"SHP1 matrix table for shape " +
+							std::to_string(shape.LogicalIndex) +
+							", group " +
+							std::to_string(localGroupIndex) +
+							" exceeds the section"
+						);
+					}
+
+					group.RawMatrixTable.reserve(
+						group.UseMatrixCount
+					);
+
+					reader.Seek(
+						static_cast<std::size_t>(
+							section.Offset +
+							matrixTableByteOffset
+							)
+					);
+
+					for (
+						std::uint16_t matrixSlot = 0;
+						matrixSlot < group.UseMatrixCount;
+						++matrixSlot
+						)
+					{
+						group.RawMatrixTable.push_back(
+							reader.ReadU16()
+						);
+					}
+
+					reader.Seek(
+						static_cast<std::size_t>(
+							section.Offset +
+							drawInitRecordOffset
+							)
+					);
+
+					group.DisplayListSize =
+						reader.ReadU32();
+
+					group.DisplayListOffset =
+						reader.ReadU32();
+
+					const std::uint64_t displayListOffset =
+						static_cast<std::uint64_t>(
+							data.DisplayListDataOffset
+							) +
+						group.DisplayListOffset;
+
+					if (!RangeFitsInsideSection(
+						displayListOffset,
+						group.DisplayListSize,
+						section.Size
+					))
+					{
+						return Failure(
+							"SHP1 display list for shape " +
+							std::to_string(shape.LogicalIndex) +
+							", group " +
+							std::to_string(localGroupIndex) +
+							" exceeds the section"
+						);
+					}
+
+					shape.MatrixGroups.push_back(
+						std::move(group)
+					);
+				}
 			}
 
 			J3DSHP1ParseResult result;
