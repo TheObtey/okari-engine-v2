@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Formats/J3D/J3DStringTable.h"
+#include "Formats/J3D/J3DGeometryTypes.h"
 
 #include <cstdint>
 #include <string>
@@ -8,24 +9,11 @@
 
 namespace Okari
 {
-	struct J3DVector3F
-	{
-		float X = 0.0f;
-		float Y = 0.0f;
-		float Z = 0.0f;
-	};
-
 	struct J3DVector3S16
 	{
 		std::int16_t X = 0;
 		std::int16_t Y = 0;
 		std::int16_t Z = 0;
-	};
-
-	struct J3DBoundingBox
-	{
-		J3DVector3F Minimum;
-		J3DVector3F Maximum;
 	};
 
 	struct J3DJointTransform

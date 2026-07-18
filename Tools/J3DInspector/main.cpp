@@ -8,7 +8,9 @@
 #include "Formats/J3D/Sections/INF1Parser.h"
 #include "Formats/J3D/Sections/JNT1Parser.h"
 #include "Formats/J3D/Sections/VTX1Parser.h"
+#include "Formats/J3D/Sections/SHP1Parser.h"
 
+#include <array>
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -973,6 +975,180 @@ namespace
 				break;
 		}
 	}
+
+	void PrintShapeSectionSummary(
+		const Okari::J3DSHP1Data& shp1
+	)
+	{
+		std::size_t nonIdentityRemapCount = 0;
+
+		for (
+			std::size_t logicalIndex = 0;
+			logicalIndex < shp1.RemapTable.size();
+			++logicalIndex
+			)
+		{
+			if (shp1.RemapTable[logicalIndex] != logicalIndex)
+				++nonIdentityRemapCount;
+		}
+
+		std::cout
+			<< "\nSHP1\n"
+			<< "Shape count: "
+			<< shp1.ShapeCount
+			<< '\n'
+			<< "Padding: 0x"
+			<< std::hex
+			<< std::uppercase
+			<< shp1.Padding
+			<< '\n'
+			<< "Shape init data offset: 0x"
+			<< shp1.ShapeInitDataOffset
+			<< '\n'
+			<< "Remap table offset: 0x"
+			<< shp1.RemapTableOffset
+			<< '\n'
+			<< "Name table offset: 0x"
+			<< shp1.NameTableOffset
+			<< '\n'
+			<< "Vertex descriptor table offset: 0x"
+			<< shp1.VertexDescriptorTableOffset
+			<< '\n'
+			<< "Matrix table offset: 0x"
+			<< shp1.MatrixTableOffset
+			<< '\n'
+			<< "Display-list data offset: 0x"
+			<< shp1.DisplayListDataOffset
+			<< '\n'
+			<< "Matrix init data offset: 0x"
+			<< shp1.MatrixInitDataOffset
+			<< '\n'
+			<< "Draw init data offset: 0x"
+			<< shp1.DrawInitDataOffset
+			<< std::dec
+			<< '\n'
+			<< "Remap entries: "
+			<< shp1.RemapTable.size()
+			<< '\n'
+			<< "Non-identity remap entries: "
+			<< nonIdentityRemapCount
+			<< '\n';
+	}
+
+	const char* ToString(
+		Okari::J3DShapeMatrixType type
+	)
+	{
+		switch (type)
+		{
+		case Okari::J3DShapeMatrixType::SingleMatrix:
+			return "SingleMatrix";
+
+		case Okari::J3DShapeMatrixType::Billboard:
+			return "Billboard";
+
+		case Okari::J3DShapeMatrixType::YBillboard:
+			return "YBillboard";
+
+		case Okari::J3DShapeMatrixType::MultiMatrix:
+			return "MultiMatrix";
+
+		default:
+			return "Unknown";
+		}
+	}
+
+	void PrintShapeRecords(
+		const Okari::J3DSHP1Data& shp1
+	)
+	{
+		std::array<std::size_t, 4> matrixTypeCounts{};
+		std::size_t totalMatrixGroupCount = 0;
+		std::size_t unexpectedPaddingCount = 0;
+
+		for (const Okari::J3DShapeRecord& shape : shp1.Shapes)
+		{
+			const std::size_t matrixTypeIndex =
+				static_cast<std::size_t>(
+					shape.MatrixType
+					);
+
+			++matrixTypeCounts[matrixTypeIndex];
+
+			totalMatrixGroupCount +=
+				shape.MatrixGroupCount;
+
+			if (
+				shape.Padding0x01 != 0xFF ||
+				shape.Padding0x0A != 0xFFFF
+				)
+			{
+				++unexpectedPaddingCount;
+			}
+		}
+
+		std::cout
+			<< "\nSHP1 SHAPE RECORDS\n"
+			<< "Decoded records: "
+			<< shp1.Shapes.size()
+			<< '\n'
+			<< "Total matrix groups: "
+			<< totalMatrixGroupCount
+			<< '\n'
+			<< "Single-matrix shapes: "
+			<< matrixTypeCounts[0]
+			<< '\n'
+			<< "Billboard shapes: "
+			<< matrixTypeCounts[1]
+			<< '\n'
+			<< "Y-billboard shapes: "
+			<< matrixTypeCounts[2]
+			<< '\n'
+			<< "Multi-matrix shapes: "
+			<< matrixTypeCounts[3]
+			<< '\n'
+			<< "Unexpected padding records: "
+			<< unexpectedPaddingCount
+			<< '\n';
+
+		for (const Okari::J3DShapeRecord& shape : shp1.Shapes)
+		{
+			std::cout
+				<< '['
+				<< shape.LogicalIndex
+				<< "] data="
+				<< shape.DataIndex
+				<< " type="
+				<< ToString(shape.MatrixType)
+				<< " groups="
+				<< shape.MatrixGroupCount
+				<< " vtxDescOffset=0x"
+				<< std::hex
+				<< std::uppercase
+				<< shape.VertexDescriptorListOffset
+				<< std::dec
+				<< " matrixInitIndex="
+				<< shape.MatrixInitDataIndex
+				<< " drawInitIndex="
+				<< shape.DrawInitDataIndex
+				<< " radius="
+				<< shape.BoundingSphereRadius
+				<< '\n'
+				<< "    bounds min=("
+				<< shape.Bounds.Minimum.X
+				<< ", "
+				<< shape.Bounds.Minimum.Y
+				<< ", "
+				<< shape.Bounds.Minimum.Z
+				<< ") max=("
+				<< shape.Bounds.Maximum.X
+				<< ", "
+				<< shape.Bounds.Maximum.Y
+				<< ", "
+				<< shape.Bounds.Maximum.Z
+				<< ")\n";
+		}
+	}
 }
 
 int main(int argc, char** argv)
@@ -1048,6 +1224,32 @@ int main(int argc, char** argv)
 
 	if (!DecodeAndPrintVertexData(inf1, vtx1))
 		return 1;
+
+	const Okari::J3DSectionInfo* shp1Section =
+		FindRequiredSection(document, "SHP1");
+
+	if (shp1Section == nullptr)
+		return 1;
+
+	const Okari::J3DSHP1ParseResult shp1Result =
+		Okari::J3DSHP1Parser::Parse(document, *shp1Section);
+
+	if (!shp1Result.Succeeded())
+	{
+		std::cerr
+			<< "\n[J3DInspector] "
+			<< shp1Result.Error
+			<< '\n';
+
+		return 1;
+	}
+
+	const Okari::J3DSHP1Data& shp1 =
+		shp1Result.Data;
+
+	PrintShapeSectionSummary(shp1);
+
+	PrintShapeRecords(shp1);
 
 	const Okari::J3DSectionInfo* jnt1Section =
 		FindRequiredSection(document, "JNT1");
