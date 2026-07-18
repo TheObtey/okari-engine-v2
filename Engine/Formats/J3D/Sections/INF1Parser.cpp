@@ -191,12 +191,11 @@ namespace Okari
 				static_cast<std::size_t>(hierarchyStart64)
 			);
 
-			std::vector<std::uint32_t> parentStack;
+			std::vector<std::uint32_t> jointStack;
 
-			std::optional<std::uint32_t> lastNodeIndex;
+			// Index in data.Nodes from last encountered real Joint
+			std::optional<std::uint32_t> lastJointNodeIndex;
 
-			// Open appears immediatly after a real node
-			bool canOpenLastNode = false;
 			bool foundEnd = false;
 
 			while (reader.Tell() + HierarchyEntrySize <= sectionEnd)
@@ -228,8 +227,8 @@ namespace Okari
 
 				if (entryType == J3DHierarchyEntryType::End)
 				{
-					if (!parentStack.empty())
-						return Failure("INF1 hierarchy ended with unclosed nodes");
+					if (!jointStack.empty())
+						return Failure("INF1 hierarchy ended with unclosed joints");
 
 					foundEnd = true;
 					break;
@@ -237,34 +236,29 @@ namespace Okari
 
 				if (entryType == J3DHierarchyEntryType::Open)
 				{
-					if (!canOpenLastNode || !lastNodeIndex.has_value())
+					if (!lastJointNodeIndex.has_value())
 					{
 						return Failure(
-							"INF1 Open command has no preceding node at " +
+							"INF1 Open command has no preceding joint at " +
 							FormatHex(entryOffset)
 						);
 					}
 
-					parentStack.push_back(*lastNodeIndex);
-					canOpenLastNode = false;
-
+					jointStack.push_back(*lastJointNodeIndex);
 					continue;
 				}
 
 				if (entryType == J3DHierarchyEntryType::Close)
 				{
-					if (parentStack.empty())
+					if (jointStack.empty())
 					{
 						return Failure(
-							"INF1 Close command has no open parent at " +
+							"INF1 Close command has no open joint at " +
 							FormatHex(entryOffset)
 						);
 					}
 
-					lastNodeIndex = parentStack.back();
-					parentStack.pop_back();
-
-					canOpenLastNode = false;
+					jointStack.pop_back();
 					continue;
 				}
 
@@ -282,26 +276,26 @@ namespace Okari
 				node.Index = entryIndex;
 				node.FileOffset = static_cast<std::uint32_t>(entryOffset);
 
-				if (!parentStack.empty())
-					node.ParentNode = static_cast<std::int32_t>(parentStack.back());
-				
+				if (!jointStack.empty())
+					node.ParentNode = static_cast<std::int32_t>(jointStack.back());
+
 				const std::uint32_t nodeIndex = static_cast<std::uint32_t>(data.Nodes.size());
 
 				data.Nodes.push_back(std::move(node));
 
-				if (parentStack.empty())
+				if (jointStack.empty())
 				{
 					data.RootNodes.push_back(nodeIndex);
 				}
 				else
 				{
-					data.Nodes[parentStack.back()]
+					data.Nodes[jointStack.back()]
 						.Children
 						.push_back(nodeIndex);
 				}
 
-				lastNodeIndex = nodeIndex;
-				canOpenLastNode = true;
+				if (entryType == J3DHierarchyEntryType::Joint)
+					lastJointNodeIndex = nodeIndex;
 			}
 
 			if (!foundEnd)
