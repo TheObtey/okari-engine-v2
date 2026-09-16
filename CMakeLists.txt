@@ -22,6 +22,7 @@ set(J3D_SOURCES
     Engine/Formats/J3D/J3DDrawMatrixEvaluator.cpp
     Engine/Formats/J3D/J3DVertexDecoder.cpp
     Engine/Formats/J3D/J3DShapeDisplayListParser.cpp
+    Engine/Formats/J3D/J3DShapeVertexIndexScanner.cpp
 
     Engine/Formats/J3D/Sections/INF1Parser.cpp
     Engine/Formats/J3D/Sections/JNT1Parser.cpp

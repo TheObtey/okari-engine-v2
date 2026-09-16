@@ -3,6 +3,7 @@
 #include "Formats/J3D/J3DPoseEvaluator.h"
 #include "Formats/J3D/J3DVertexDecoder.h"
 #include "Formats/J3D/J3DShapeDisplayListParser.h"
+#include "Formats/J3D/J3DShapeVertexIndexScanner.h"
 
 #include "Formats/J3D/Sections/DRW1Parser.h"
 #include "Formats/J3D/Sections/EVP1Parser.h"
@@ -258,13 +259,10 @@ namespace
 	}
 
 	bool DecodeAndPrintVertexData(
-		const Okari::J3DINF1Data& inf1,
-		const Okari::J3DVTX1Data& vtx1
+		const Okari::J3DVTX1Data& vtx1,
+		const Okari::J3DVertexDecodeRequest& request
 	)
 	{
-		Okari::J3DVertexDecodeRequest request;
-		request.PositionCount = inf1.VertexPositionCount;
-
 		const Okari::J3DVertexDecodeResult result =
 			Okari::J3DVertexDecoder::Decode(vtx1, request);
 
@@ -1542,6 +1540,71 @@ namespace
 			<< trailingNoopCount
 			<< '\n';
 	}
+
+	void PrintIndexRange(
+		const char* name,
+		const Okari::J3DVertexIndexRange& range
+	)
+	{
+		std::cout
+			<< name
+			<< ": ";
+
+		if (!range.Used)
+		{
+			std::cout << "unused\n";
+			return;
+		}
+
+		std::cout
+			<< "references="
+			<< range.ReferenceCount
+			<< " maxIndex="
+			<< range.MaximumIndex
+			<< " requiredCount="
+			<< range.RequiredElementCount()
+			<< '\n';
+	}
+
+	void PrintShapeVertexIndexUsage(
+		const Okari::J3DShapeVertexIndexUsage& usage,
+		const Okari::J3DINF1Data& inf1
+	)
+	{
+		std::cout
+			<< "\nSHP1 VERTEX INDEX USAGE\n";
+
+		PrintIndexRange("POS", usage.Position);
+		PrintIndexRange("NRM", usage.Normal);
+		PrintIndexRange("NBT", usage.NBT);
+
+		PrintIndexRange("CLR0", usage.Colors[0]);
+		PrintIndexRange("CLR1", usage.Colors[1]);
+
+		for (
+			std::size_t channel = 0;
+			channel < usage.TexCoords.size();
+			++channel
+			)
+		{
+			const std::string name =
+				"TEX" +
+				std::to_string(channel);
+
+			PrintIndexRange(
+				name.c_str(),
+				usage.TexCoords[channel]
+			);
+		}
+
+		std::cout
+			<< "INF1 position count: "
+			<< inf1.VertexPositionCount
+			<< '\n'
+			<< "SHP1 required position count: "
+			<< usage.Position.RequiredElementCount()
+			<< '\n';
+	}
 }
 
 int main(int argc, char** argv)
@@ -1615,9 +1678,6 @@ int main(int argc, char** argv)
 	if (!PrintVertexArrays(inf1, vtx1))
 		return 1;
 
-	if (!DecodeAndPrintVertexData(inf1, vtx1))
-		return 1;
-
 	const Okari::J3DSectionInfo* shp1Section =
 		FindRequiredSection(document, "SHP1");
 
@@ -1673,6 +1733,44 @@ int main(int argc, char** argv)
 	PrintShapeDisplayListSummary(
 		displayListResult.Data
 	);
+
+	const Okari::J3DShapeVertexIndexScanResult
+		indexScanResult =
+		Okari::J3DShapeVertexIndexScanner::Scan(
+			document,
+			*shp1Section,
+			shp1,
+			vtx1,
+			displayListResult.Data
+		);
+
+	if (!indexScanResult.Succeeded())
+	{
+		std::cerr
+			<< "\n[J3DInspector] "
+			<< indexScanResult.Error
+			<< '\n';
+
+		return 1;
+	}
+
+	const Okari::J3DShapeVertexIndexUsage&
+		indexUsage =
+		indexScanResult.Usage;
+
+	PrintShapeVertexIndexUsage(
+		indexUsage,
+		inf1
+	);
+
+	const Okari::J3DVertexDecodeRequest
+		vertexDecodeRequest =
+		indexUsage.BuildDecodeRequest();
+
+	if (!DecodeAndPrintVertexData(vtx1, vertexDecodeRequest))
+	{
+		return 1;
+	}
 
 	const Okari::J3DSectionInfo* jnt1Section =
 		FindRequiredSection(document, "JNT1");
