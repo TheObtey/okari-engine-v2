@@ -265,54 +265,6 @@ namespace Okari
 		}
 	}
 
-	const char* ToString(J3DVertexAttribute attribute)
-	{
-		switch (attribute)
-		{
-		case J3DVertexAttribute::Position:
-			return "POS";
-
-		case J3DVertexAttribute::Normal:
-			return "NRM";
-
-		case J3DVertexAttribute::NBT:
-			return "NBT";
-
-		case J3DVertexAttribute::Color0:
-			return "CLR0";
-
-		case J3DVertexAttribute::Color1:
-			return "CLR1";
-
-		case J3DVertexAttribute::TexCoord0:
-			return "TEX0";
-
-		case J3DVertexAttribute::TexCoord1:
-			return "TEX1";
-
-		case J3DVertexAttribute::TexCoord2:
-			return "TEX2";
-
-		case J3DVertexAttribute::TexCoord3:
-			return "TEX3";
-
-		case J3DVertexAttribute::TexCoord4:
-			return "TEX4";
-
-		case J3DVertexAttribute::TexCoord5:
-			return "TEX5";
-
-		case J3DVertexAttribute::TexCoord6:
-			return "TEX6";
-
-		case J3DVertexAttribute::TexCoord7:
-			return "TEX7";
-
-		default:
-			return "Unknown";
-		}
-	}
-
 	std::string DescribeComponentCount(const J3DVertexFormatDescriptor& format)
 	{
 		switch (format.Attribute)

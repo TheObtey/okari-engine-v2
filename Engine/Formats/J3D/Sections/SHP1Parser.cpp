@@ -14,6 +14,7 @@ namespace Okari
 	{
 		constexpr std::size_t SHP1HeaderSize = 0x2C;
 		constexpr std::size_t ShapeRecordSize = 0x28;
+		constexpr std::size_t VertexDescriptorRecordSize = 0x08;
 		constexpr std::size_t MatrixInitRecordSize = 0x08;
 		constexpr std::size_t DrawInitRecordSize = 0x08;
 		constexpr std::uint16_t ReusePreviousMatrix = 0xFFFF;
@@ -55,6 +56,73 @@ namespace Okari
 				static_cast<std::uint8_t>(
 					J3DShapeMatrixType::MultiMatrix
 					);
+		}
+
+		bool DecodeVertexAttribute(
+			std::uint32_t rawValue,
+			J3DVertexAttribute& attribute
+		)
+		{
+			if (
+				rawValue <=
+				static_cast<std::uint32_t>(
+					J3DVertexAttribute::TexCoord7
+					) ||
+				rawValue ==
+				static_cast<std::uint32_t>(
+					J3DVertexAttribute::NBT
+					)
+				)
+			{
+				attribute =
+					static_cast<J3DVertexAttribute>(
+						rawValue
+						);
+
+				return true;
+			}
+
+			return false;
+		}
+
+		bool DecodeVertexInputType(
+			std::uint32_t rawValue,
+			J3DVertexInputType& inputType
+		)
+		{
+			if (
+				rawValue <=
+				static_cast<std::uint32_t>(
+					J3DVertexInputType::Index16
+					)
+				)
+			{
+				inputType =
+					static_cast<J3DVertexInputType>(
+						rawValue
+						);
+
+				return true;
+			}
+
+			return false;
+		}
+
+		bool ContainsVertexDescriptor(
+			const J3DShapeRecord& shape,
+			J3DVertexAttribute attribute
+		)
+		{
+			for (
+				const J3DShapeVertexDescriptor& descriptor :
+				shape.VertexDescriptors
+				)
+			{
+				if (descriptor.Attribute == attribute)
+					return true;
+			}
+
+			return false;
 		}
 
 		bool IsFinite(const J3DVector3F& value)
@@ -339,6 +407,167 @@ namespace Okari
 				data.Shapes.push_back(
 					std::move(shape)
 				);
+			}
+
+			if (
+				data.VertexDescriptorTableOffset == 0 &&
+				!data.Shapes.empty()
+				)
+			{
+				return Failure(
+					"SHP1 has shapes but no vertex descriptor table"
+				);
+			}
+
+			if (
+				data.MatrixTableOffset <=
+				data.VertexDescriptorTableOffset
+				)
+			{
+				return Failure(
+					"SHP1 vertex descriptor table has an invalid range"
+				);
+			}
+
+			for (J3DShapeRecord& shape : data.Shapes)
+			{
+				const std::uint64_t descriptorListOffset =
+					static_cast<std::uint64_t>(
+						data.VertexDescriptorTableOffset
+						) +
+					shape.VertexDescriptorListOffset;
+
+				if (
+					descriptorListOffset <
+					data.VertexDescriptorTableOffset ||
+					descriptorListOffset >=
+					data.MatrixTableOffset
+					)
+				{
+					return Failure(
+						"SHP1 vertex descriptor list for shape " +
+						std::to_string(shape.LogicalIndex) +
+						" starts outside its table"
+					);
+				}
+
+				const std::uint64_t remainingDescriptorBytes =
+					static_cast<std::uint64_t>(
+						data.MatrixTableOffset
+						) -
+					descriptorListOffset;
+
+				const std::uint64_t maximumDescriptorRecords =
+					remainingDescriptorBytes /
+					VertexDescriptorRecordSize;
+
+				if (maximumDescriptorRecords == 0)
+				{
+					return Failure(
+						"SHP1 vertex descriptor list for shape " +
+						std::to_string(shape.LogicalIndex) +
+						" has no complete record"
+					);
+				}
+
+				reader.Seek(
+					static_cast<std::size_t>(
+						section.Offset +
+						descriptorListOffset
+						)
+				);
+
+				bool foundTerminator = false;
+
+				for (
+					std::uint64_t descriptorIndex = 0;
+					descriptorIndex < maximumDescriptorRecords;
+					++descriptorIndex
+					)
+				{
+					const std::uint32_t rawAttribute =
+						reader.ReadU32();
+
+					const std::uint32_t rawInputType =
+						reader.ReadU32();
+
+					if (
+						rawAttribute ==
+						static_cast<std::uint32_t>(
+							J3DVertexAttribute::Null
+							)
+						)
+					{
+						shape.VertexDescriptorTerminatorType =
+							rawInputType;
+
+						foundTerminator = true;
+						break;
+					}
+
+					J3DVertexAttribute attribute;
+
+					if (!DecodeVertexAttribute(
+						rawAttribute,
+						attribute
+					))
+					{
+						return Failure(
+							"SHP1 shape " +
+							std::to_string(shape.LogicalIndex) +
+							" uses unsupported GX attribute " +
+							std::to_string(rawAttribute)
+						);
+					}
+
+					J3DVertexInputType inputType;
+
+					if (!DecodeVertexInputType(
+						rawInputType,
+						inputType
+					))
+					{
+						return Failure(
+							"SHP1 shape " +
+							std::to_string(shape.LogicalIndex) +
+							" uses invalid input type " +
+							std::to_string(rawInputType) +
+							" for attribute " +
+							ToString(attribute)
+						);
+					}
+
+					if (ContainsVertexDescriptor(
+						shape,
+						attribute
+					))
+					{
+						return Failure(
+							"SHP1 shape " +
+							std::to_string(shape.LogicalIndex) +
+							" declares attribute " +
+							ToString(attribute) +
+							" more than once"
+						);
+					}
+
+					J3DShapeVertexDescriptor descriptor;
+					descriptor.Attribute = attribute;
+					descriptor.InputType = inputType;
+
+					shape.VertexDescriptors.push_back(
+						descriptor
+					);
+				}
+
+				if (!foundTerminator)
+				{
+					return Failure(
+						"SHP1 vertex descriptor list for shape " +
+						std::to_string(shape.LogicalIndex) +
+						" has no NULL terminator"
+					);
+				}
 			}
 
 			for (J3DShapeRecord& shape : data.Shapes)

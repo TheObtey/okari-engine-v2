@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Formats/J3D/J3DGXVertexTypes.h"
+
 #include <array>
 #include <cstdint>
 #include <string>
@@ -7,27 +9,6 @@
 
 namespace Okari
 {
-	enum class J3DVertexAttribute : std::uint32_t
-	{
-		Position = 9,
-		Normal = 10,
-		Color0 = 11,
-		Color1 = 12,
-		TexCoord0 = 13,
-		TexCoord1 = 14,
-		TexCoord2 = 15,
-		TexCoord3 = 16,
-		TexCoord4 = 17,
-		TexCoord5 = 18,
-		TexCoord6 = 19,
-		TexCoord7 = 20,
-
-		// Particular GX attribute that regroup normal, binormal and tengent
-		NBT = 25,
-
-		Null = 0xFF
-	};
-
 	struct J3DVertexFormatDescriptor
 	{
 		J3DVertexAttribute Attribute = J3DVertexAttribute::Null;
@@ -103,8 +84,6 @@ namespace Okari
 			return Error.empty();
 		}
 	};
-
-	const char* ToString(J3DVertexAttribute attribute);
 
 	std::string DescribeComponentCount(const J3DVertexFormatDescriptor& format);
 

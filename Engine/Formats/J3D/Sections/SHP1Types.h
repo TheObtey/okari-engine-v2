@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Formats/J3D/J3DGeometryTypes.h"
+#include "Formats/J3D/J3DGXVertexTypes.h"
 
 #include <cstdint>
 #include <string>
@@ -8,6 +9,13 @@
 
 namespace Okari
 {
+	struct J3DShapeVertexDescriptor
+	{
+		J3DVertexAttribute Attribute = J3DVertexAttribute::Null;
+
+		J3DVertexInputType InputType = J3DVertexInputType::None;
+	};
+
 	enum class J3DShapeMatrixType : std::uint8_t
 	{
 		SingleMatrix = 0,
@@ -53,6 +61,10 @@ namespace Okari
 		std::uint16_t DrawInitDataIndex = 0;
 		
 		std::uint16_t Padding0x0A = 0;
+
+		std::vector<J3DShapeVertexDescriptor> VertexDescriptors;
+
+		std::uint32_t VertexDescriptorTerminatorType = 0;
 
 		std::vector<J3DShapeMatrixGroup> MatrixGroups;
 

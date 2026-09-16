@@ -17,6 +17,7 @@
 #include <iostream>
 #include <limits>
 #include <string>
+#include <set>
 
 namespace
 {
@@ -1289,6 +1290,144 @@ namespace
 			<< totalDisplayListBytes
 			<< '\n';
 	}
+
+	void PrintShapeVertexDescriptors(
+		const Okari::J3DSHP1Data& shp1,
+		const Okari::J3DVTX1Data& vtx1
+	)
+	{
+		std::set<std::uint16_t> uniqueDescriptorOffsets;
+
+		std::size_t totalDescriptors = 0;
+		std::size_t missingPositionShapes = 0;
+		std::size_t nonDirectMatrixDescriptors = 0;
+		std::size_t missingIndexedArrays = 0;
+		std::size_t nonZeroTerminatorTypes = 0;
+
+		std::cout
+			<< "\nSHP1 VERTEX DESCRIPTORS\n";
+
+		for (const Okari::J3DShapeRecord& shape : shp1.Shapes)
+		{
+			uniqueDescriptorOffsets.insert(
+				shape.VertexDescriptorListOffset
+			);
+
+			totalDescriptors +=
+				shape.VertexDescriptors.size();
+
+			bool hasPosition = false;
+
+			if (shape.VertexDescriptorTerminatorType != 0)
+				++nonZeroTerminatorTypes;
+
+			std::cout
+				<< "shape["
+				<< shape.LogicalIndex
+				<< "] descriptorOffset=0x"
+				<< std::hex
+				<< std::uppercase
+				<< shape.VertexDescriptorListOffset
+				<< " terminatorType=0x"
+				<< shape.VertexDescriptorTerminatorType
+				<< std::dec
+				<< " descriptors="
+				<< shape.VertexDescriptors.size()
+				<< '\n'
+				<< "    ";
+
+			for (
+				std::size_t descriptorIndex = 0;
+				descriptorIndex <
+				shape.VertexDescriptors.size();
+				++descriptorIndex
+				)
+			{
+				const Okari::J3DShapeVertexDescriptor&
+					descriptor =
+					shape.VertexDescriptors[
+						descriptorIndex
+					];
+
+				if (descriptorIndex > 0)
+					std::cout << ", ";
+
+				std::cout
+					<< Okari::ToString(
+						descriptor.Attribute
+					)
+					<< '='
+					<< Okari::ToString(
+						descriptor.InputType
+					);
+
+				if (
+					descriptor.Attribute ==
+					Okari::J3DVertexAttribute::Position
+					)
+				{
+					hasPosition = true;
+				}
+
+				if (
+					Okari::IsMatrixIndexAttribute(
+						descriptor.Attribute
+					) &&
+					descriptor.InputType !=
+					Okari::J3DVertexInputType::Direct
+					)
+				{
+					++nonDirectMatrixDescriptors;
+				}
+
+				const bool usesIndexedArray =
+					Okari::IsVertexArrayAttribute(
+						descriptor.Attribute
+					) &&
+					(
+						descriptor.InputType ==
+						Okari::J3DVertexInputType::Index8 ||
+						descriptor.InputType ==
+						Okari::J3DVertexInputType::Index16
+						);
+
+				if (
+					usesIndexedArray &&
+					vtx1.FindArray(
+						descriptor.Attribute
+					) == nullptr
+					)
+				{
+					++missingIndexedArrays;
+				}
+			}
+
+			if (!hasPosition)
+				++missingPositionShapes;
+
+			std::cout << '\n';
+		}
+
+		std::cout
+			<< "Unique descriptor lists: "
+			<< uniqueDescriptorOffsets.size()
+			<< '\n'
+			<< "Descriptors across shapes: "
+			<< totalDescriptors
+			<< '\n'
+			<< "Shapes missing POS: "
+			<< missingPositionShapes
+			<< '\n'
+			<< "Non-direct matrix descriptors: "
+			<< nonDirectMatrixDescriptors
+			<< '\n'
+			<< "Indexed descriptors without VTX1 array: "
+			<< missingIndexedArrays
+			<< '\n'
+			<< "Non-zero terminator types: "
+			<< nonZeroTerminatorTypes
+			<< '\n';
+	}
 }
 
 int main(int argc, char** argv)
@@ -1392,6 +1531,11 @@ int main(int argc, char** argv)
 	PrintShapeRecords(shp1);
 	
 	PrintShapeMatrixGroups(shp1);
+
+	PrintShapeVertexDescriptors(
+		shp1,
+		vtx1
+	);
 
 	const Okari::J3DSectionInfo* jnt1Section =
 		FindRequiredSection(document, "JNT1");
