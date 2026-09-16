@@ -71,9 +71,12 @@ int main(int argc, char** argv)
     const Okari::AABB& bounds =
         previewResult.PreviewMesh->GetBounds();
 
-    const glm::vec3 center =
+    const glm::vec3 sourceCenter =
         ((bounds.Min + bounds.Max) * 0.5f) *
         renderScale;
+
+    const glm::vec3 center =
+        sourceCenter * renderScale;
 
     const glm::vec3 halfExtents =
         ((bounds.Max - bounds.Min) * 0.5f) *
@@ -86,10 +89,10 @@ int main(int argc, char** argv)
         1280.0f / 720.0f
     );
 
-    camera.SetTarget(center);
+    camera.SetTarget(sourceCenter);
 
     camera.SetPosition(
-        center +
+        sourceCenter +
         glm::vec3(
             0.0f,
             radius * 0.15f,
@@ -97,15 +100,36 @@ int main(int argc, char** argv)
         )
     );
 
-    const glm::mat4 modelMatrix =
-        glm::scale(
-            glm::mat4(1.0f),
-            glm::vec3(renderScale)
-        );
-
     while (!window.ShouldClose())
     {
         renderer.BeginFrame();
+
+        const float angle =
+            static_cast<float>(glfwGetTime()) *
+            glm::radians(25.0f);
+
+        glm::mat4 modelMatrix(1.0f);
+
+        modelMatrix = glm::translate(
+            modelMatrix,
+            center
+        );
+
+        modelMatrix = glm::rotate(
+            modelMatrix,
+            angle,
+            glm::vec3(0.0f, 1.0f, 0.0f)
+        );
+
+        modelMatrix = glm::scale(
+            modelMatrix,
+            glm::vec3(renderScale)
+        );
+
+        modelMatrix = glm::translate(
+            modelMatrix,
+            -sourceCenter
+        );
 
         renderer.DrawMeshDebug(
             modelMatrix,
