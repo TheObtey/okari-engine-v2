@@ -6,6 +6,7 @@
 #include "Formats/J3D/J3DShapeDisplayListParser.h"
 #include "Formats/J3D/J3DShapeVertexIndexScanner.h"
 #include "Formats/J3D/J3DShapeVertexReferenceDecoder.h"
+#include "Formats/J3D/J3DGeometryAssembler.h"
 
 #include "Formats/J3D/Sections/DRW1Parser.h"
 #include "Formats/J3D/Sections/EVP1Parser.h"
@@ -260,26 +261,10 @@ namespace
 		return true;
 	}
 
-	bool DecodeAndPrintVertexData(
-		const Okari::J3DVTX1Data& vtx1,
-		const Okari::J3DVertexDecodeRequest& request
+	bool PrintDecodedVertexData(
+		const Okari::J3DDecodedVertexData& vertexData
 	)
 	{
-		const Okari::J3DVertexDecodeResult result =
-			Okari::J3DVertexDecoder::Decode(vtx1, request);
-
-		if (!result.Succeeded())
-		{
-			std::cerr
-				<< "\n[J3DInspector] "
-				<< result.Error
-				<< '\n';
-
-			return false;
-		}
-
-		const Okari::J3DDecodedVertexData& vertexData = result.Data;
-
 		if (vertexData.Positions.empty())
 		{
 			std::cerr << "[J3DInspector] VTX1 decoded no positions.\n";
@@ -1945,6 +1930,128 @@ namespace
 			<< invalidDrawMatrices
 			<< '\n';
 	}
+
+	void PrintAssembledGeometry(
+		const Okari::J3DAssembledGeometry& geometry
+	)
+	{
+		std::size_t primitiveCount = 0;
+		std::size_t vertexCount = 0;
+
+		std::size_t verticesWithNormal = 0;
+		std::size_t verticesWithColor0 = 0;
+		std::size_t verticesWithTex0 = 0;
+
+		std::set<std::uint16_t> usedDrawMatrices;
+
+		std::size_t displayedSamples = 0;
+
+		std::cout
+			<< "\nJ3D ASSEMBLED CPU GEOMETRY\n";
+
+		for (
+			const Okari::J3DAssembledShapeGroup& group :
+			geometry.Groups
+			)
+		{
+			for (
+				const Okari::J3DAssembledPrimitive& primitive :
+				group.Primitives
+				)
+			{
+				++primitiveCount;
+
+				for (
+					const Okari::J3DAssembledVertex& vertex :
+					primitive.Vertices
+					)
+				{
+					++vertexCount;
+
+					if (vertex.Normal.has_value())
+						++verticesWithNormal;
+
+					if (vertex.Colors[0].has_value())
+						++verticesWithColor0;
+
+					if (vertex.TexCoords[0].has_value())
+						++verticesWithTex0;
+
+					usedDrawMatrices.insert(
+						vertex.DrawMatrixIndex
+					);
+
+					if (displayedSamples < 10)
+					{
+						std::cout
+							<< "shape["
+							<< group.ShapeIndex
+							<< "] group["
+							<< group.GroupIndex
+							<< "] pos=("
+							<< vertex.Position.x
+							<< ", "
+							<< vertex.Position.y
+							<< ", "
+							<< vertex.Position.z
+							<< ')';
+
+						if (vertex.Normal.has_value())
+						{
+							std::cout
+								<< " nrm=("
+								<< vertex.Normal->x
+								<< ", "
+								<< vertex.Normal->y
+								<< ", "
+								<< vertex.Normal->z
+								<< ')';
+						}
+
+						if (vertex.TexCoords[0].has_value())
+						{
+							std::cout
+								<< " uv0=("
+								<< vertex.TexCoords[0]->x
+								<< ", "
+								<< vertex.TexCoords[0]->y
+								<< ')';
+						}
+
+						std::cout
+							<< " drawMatrix="
+							<< vertex.DrawMatrixIndex
+							<< '\n';
+
+						++displayedSamples;
+					}
+				}
+			}
+		}
+
+		std::cout
+			<< "Groups: "
+			<< geometry.Groups.size()
+			<< '\n'
+			<< "Primitives: "
+			<< primitiveCount
+			<< '\n'
+			<< "Assembled vertices: "
+			<< vertexCount
+			<< '\n'
+			<< "Vertices with normal: "
+			<< verticesWithNormal
+			<< '\n'
+			<< "Vertices with CLR0: "
+			<< verticesWithColor0
+			<< '\n'
+			<< "Vertices with TEX0: "
+			<< verticesWithTex0
+			<< '\n'
+			<< "Distinct draw matrices referenced: "
+			<< usedDrawMatrices.size()
+			<< '\n';
+	}
 }
 
 int main(int argc, char** argv)
@@ -2107,10 +2214,27 @@ int main(int argc, char** argv)
 		vertexDecodeRequest =
 		indexUsage.BuildDecodeRequest();
 
-	if (!DecodeAndPrintVertexData(vtx1, vertexDecodeRequest))
+	const Okari::J3DVertexDecodeResult vertexDecodeResult =
+		Okari::J3DVertexDecoder::Decode(
+			vtx1,
+			vertexDecodeRequest
+		);
+
+	if (!vertexDecodeResult.Succeeded())
 	{
+		std::cerr
+			<< "\n[J3DInspector] "
+			<< vertexDecodeResult.Error
+			<< '\n';
+
 		return 1;
 	}
+
+	const Okari::J3DDecodedVertexData& vertexData =
+		vertexDecodeResult.Data;
+
+	if (!PrintDecodedVertexData(vertexData))
+		return 1;
 
 	const Okari::J3DSectionInfo* jnt1Section =
 		FindRequiredSection(document, "JNT1");
@@ -2278,6 +2402,28 @@ int main(int argc, char** argv)
 	PrintShapeVertexReferences(
 		vertexReferenceResult.Data,
 		drawPalette.Matrices.size()
+	);
+
+	const Okari::J3DGeometryAssemblyResult
+		geometryAssemblyResult =
+		Okari::J3DGeometryAssembler::Assemble(
+			vertexReferenceResult.Data,
+			vertexData,
+			drawPalette
+		);
+
+	if (!geometryAssemblyResult.Succeeded())
+	{
+		std::cerr
+			<< "\n[J3DInspector] "
+			<< geometryAssemblyResult.Error
+			<< '\n';
+
+		return 1;
+	}
+
+	PrintAssembledGeometry(
+		geometryAssemblyResult.Geometry
 	);
 
 	if (document.Data.size() != document.Header.DeclaredFileSize)
