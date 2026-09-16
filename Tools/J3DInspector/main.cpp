@@ -7,6 +7,7 @@
 #include "Formats/J3D/J3DShapeVertexIndexScanner.h"
 #include "Formats/J3D/J3DShapeVertexReferenceDecoder.h"
 #include "Formats/J3D/J3DGeometryAssembler.h"
+#include "Formats/J3D/J3DTriangleTopologyBuilder.h"
 
 #include "Formats/J3D/Sections/DRW1Parser.h"
 #include "Formats/J3D/Sections/EVP1Parser.h"
@@ -2052,6 +2053,46 @@ namespace
 			<< usedDrawMatrices.size()
 			<< '\n';
 	}
+
+	void PrintTriangleGeometry(
+		const Okari::J3DTriangleGeometry& geometry
+	)
+	{
+		std::cout
+			<< "\nJ3D TRIANGLE TOPOLOGY\n"
+			<< "Ranges: "
+			<< geometry.Ranges.size()
+			<< '\n'
+			<< "Triangle vertices: "
+			<< geometry.Vertices.size()
+			<< '\n'
+			<< "Triangles: "
+			<< geometry.TriangleCount()
+			<< '\n';
+
+		std::size_t emptyRanges = 0;
+		std::size_t invalidRanges = 0;
+
+		for (
+			const Okari::J3DTriangleRange& range :
+			geometry.Ranges
+			)
+		{
+			if (range.VertexCount == 0)
+				++emptyRanges;
+
+			if ((range.VertexCount % 3) != 0)
+				++invalidRanges;
+		}
+
+		std::cout
+			<< "Empty ranges: "
+			<< emptyRanges
+			<< '\n'
+			<< "Ranges not divisible by 3: "
+			<< invalidRanges
+			<< '\n';
+	}
 }
 
 int main(int argc, char** argv)
@@ -2424,6 +2465,23 @@ int main(int argc, char** argv)
 
 	PrintAssembledGeometry(
 		geometryAssemblyResult.Geometry
+	);
+
+	const Okari::J3DTriangleTopologyResult topologyResult =
+		Okari::J3DTriangleTopologyBuilder::Build(geometryAssemblyResult.Geometry);
+
+	if (!topologyResult.Succeeded())
+	{
+		std::cerr
+			<< "\n[J3DInspector] "
+			<< topologyResult.Error
+			<< '\n';
+
+		return 1;
+	}
+
+	PrintTriangleGeometry(
+		topologyResult.Geometry
 	);
 
 	if (document.Data.size() != document.Header.DeclaredFileSize)

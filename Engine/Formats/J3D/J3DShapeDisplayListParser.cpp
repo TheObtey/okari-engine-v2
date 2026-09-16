@@ -30,7 +30,7 @@ namespace Okari
 				return true;
 
 			case 0x88:
-				type = J3DGXPrimitiveType::QuadStrip;
+				type = J3DGXPrimitiveType::Quads2;
 				return true;
 
 			case 0x90:
@@ -223,8 +223,8 @@ namespace Okari
 		case J3DGXPrimitiveType::Quads:
 			return "QUADS";
 
-		case J3DGXPrimitiveType::QuadStrip:
-			return "QUAD_STRIP";
+		case J3DGXPrimitiveType::Quads2:
+			return "QUADS_2";
 
 		case J3DGXPrimitiveType::Triangles:
 			return "TRIANGLES";

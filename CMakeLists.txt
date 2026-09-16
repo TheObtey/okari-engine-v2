@@ -26,6 +26,7 @@ set(J3D_SOURCES
     Engine/Formats/J3D/J3DShapeVertexIndexScanner.cpp
     Engine/Formats/J3D/J3DShapeVertexReferenceDecoder.cpp
     Engine/Formats/J3D/J3DGeometryAssembler.cpp
+    Engine/Formats/J3D/J3DTriangleTopologyBuilder.cpp
 
     Engine/Formats/J3D/Sections/INF1Parser.cpp
     Engine/Formats/J3D/Sections/JNT1Parser.cpp

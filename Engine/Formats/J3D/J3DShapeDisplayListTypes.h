@@ -9,7 +9,7 @@ namespace Okari
 	enum class J3DGXPrimitiveType : std::uint8_t
 	{
 		Quads = 0x80,
-		QuadStrip = 0x88,
+		Quads2 = 0x88,
 		Triangles = 0x90,
 		TriangleStrip = 0x98,
 		TriangleFan = 0xA0,
@@ -20,8 +20,7 @@ namespace Okari
 
 	struct J3DShapePrimitiveRecord
 	{
-		J3DGXPrimitiveType Type =
-			J3DGXPrimitiveType::Triangles;
+		J3DGXPrimitiveType Type = J3DGXPrimitiveType::Triangles;
 
 		std::uint8_t VertexFormat = 0;
 		std::uint16_t VertexCount = 0;
