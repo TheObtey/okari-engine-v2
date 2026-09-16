@@ -122,6 +122,8 @@ target_include_directories(J3DInspector PRIVATE
 
 add_executable(J3DViewer
     Tools/J3DViewer/main.cpp
+    Tools/J3DViewer/J3DPreviewMeshBuilder.cpp
+
     ${ENGINE_SOURCES}
 )
 

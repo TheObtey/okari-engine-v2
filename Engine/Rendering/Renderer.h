@@ -36,6 +36,8 @@ namespace Okari
         void DrawMesh(const Transform& transform, Mesh* mesh, std::string& texturePath, const Camera& camera, const DirectionalLight& light);
         void DrawMesh(const glm::mat4& modelMatrix, Mesh* mesh, std::string& texturePath, const Camera& camera, const DirectionalLight& light);
         
+        void DrawMeshDebug(const glm::mat4& modelMatrix, Mesh* mesh, const Camera& camera, const glm::vec3& color);
+
         void DrawMeshOutline(const Transform& transform, Mesh* mesh, const Camera& camera);
         void DrawMeshOutline(const glm::mat4& modelMatrix, Mesh* mesh, const Camera& camera);
         

@@ -458,6 +458,43 @@ namespace Okari
         glBindVertexArray(0);
     }
 
+    void Renderer::DrawMeshDebug(const glm::mat4& modelMatrix, Mesh* mesh, const Camera& camera, const glm::vec3& color)
+    {
+        if (!mesh)
+            return;
+
+        m_OutlineShader->Bind();
+
+        const glm::mat4 mvp =
+            camera.GetProjectionMatrix() *
+            camera.GetViewMatrix() *
+            modelMatrix;
+
+        m_OutlineShader->SetMat4("u_MVP", mvp);
+        m_OutlineShader->SetVec3("u_Color", color);
+
+        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
+
+        glDisable(GL_CULL_FACE);
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        mesh->Bind();
+
+        glDrawArrays(
+            GL_TRIANGLES,
+            0,
+            mesh->GetVertexCount()
+        );
+
+        glBindVertexArray(0);
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+
+    }
+
     void Renderer::DrawMeshOutline(const Transform& transform, Mesh* mesh, const Camera& camera)
     {
         DrawMeshOutline(transform.GetModelMatrix(), mesh, camera);
