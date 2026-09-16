@@ -1,4 +1,5 @@
 #include "Formats/J3D/J3DDrawMatrixEvaluator.h"
+#include "Formats/J3D/J3DShapeMatrixPaletteResolver.h"
 #include "Formats/J3D/J3DFileReader.h"
 #include "Formats/J3D/J3DPoseEvaluator.h"
 #include "Formats/J3D/J3DVertexDecoder.h"
@@ -1714,6 +1715,65 @@ namespace
 			<< usage.Position.RequiredElementCount()
 			<< '\n';
 	}
+
+	void PrintShapeMatrixPalette(
+		const Okari::J3DShapeMatrixPalette& palette,
+		const Okari::J3DDrawMatrixPalette& drawPalette
+	)
+	{
+		std::cout
+			<< "\nSHP1 RESOLVED MATRIX PALETTES\n";
+
+		for (
+			const Okari::J3DResolvedShapeMatrixGroup& group :
+			palette.Groups
+			)
+		{
+			std::cout
+				<< "shape["
+				<< group.ShapeIndex
+				<< "] group["
+				<< group.GroupIndex
+				<< "] loaded="
+				<< group.LoadedSlotCount
+				<< " reused="
+				<< group.ReusedSlotCount
+				<< " effective=[";
+
+			for (
+				std::size_t slot = 0;
+				slot <
+				group.DrawMatrixIndices.size();
+				++slot
+				)
+			{
+				if (slot > 0)
+					std::cout << ", ";
+
+				std::cout
+					<< group.DrawMatrixIndices[slot];
+			}
+
+			std::cout << "]\n";
+		}
+
+		std::cout
+			<< "Resolved groups: "
+			<< palette.Groups.size()
+			<< '\n'
+			<< "Directly loaded slots: "
+			<< palette.LoadedSlotCount
+			<< '\n'
+			<< "Reused slots: "
+			<< palette.ReusedSlotCount
+			<< '\n'
+			<< "Maximum resolved draw-matrix index: "
+			<< palette.MaximumDrawMatrixIndex
+			<< '\n'
+			<< "Available draw matrices: "
+			<< drawPalette.Matrices.size()
+			<< '\n';
+	}
 }
 
 int main(int argc, char** argv)
@@ -1996,6 +2056,32 @@ int main(int argc, char** argv)
 	PrintEnvelopes(evp1, jnt1, invalidWeightSumCount);
 	PrintRestPose(restPose, jnt1);
 	PrintDrawMatrixPalette(drawPalette);
+
+	const Okari::J3DShapeMatrixPaletteResult
+		shapeMatrixPaletteResult =
+		Okari::J3DShapeMatrixPaletteResolver::Resolve(
+			shp1,
+			drawPalette
+		);
+
+	if (!shapeMatrixPaletteResult.Succeeded())
+	{
+		std::cerr
+			<< "\n[J3DInspector] "
+			<< shapeMatrixPaletteResult.Error
+			<< '\n';
+
+		return 1;
+	}
+
+	const Okari::J3DShapeMatrixPalette&
+		shapeMatrixPalette =
+		shapeMatrixPaletteResult.Palette;
+
+	PrintShapeMatrixPalette(
+		shapeMatrixPalette,
+		drawPalette
+	);
 
 	if (document.Data.size() != document.Header.DeclaredFileSize)
 	{
