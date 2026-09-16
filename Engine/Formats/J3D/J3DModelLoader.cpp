@@ -8,6 +8,9 @@
 #include "Formats/J3D/J3DShapeDisplayListParser.h"
 #include "Formats/J3D/J3DShapeVertexIndexScanner.h"
 #include "Formats/J3D/J3DVertexDecoder.h"
+#include "Formats/J3D/J3DShapeVertexReferenceDecoder.h"
+#include "Formats/J3D/J3DGeometryAssembler.h"
+#include "Formats/J3D/J3DTriangleTopologyBuilder.h"
 
 #include "Formats/J3D/Sections/INF1Parser.h"
 #include "Formats/J3D/Sections/VTX1Parser.h"
@@ -332,6 +335,58 @@ namespace Okari
         }
 
         model.VertexData = vertexDecodeResult.Data;
+
+        const J3DShapeVertexReferenceDecodeResult vertexReferenceResult =
+            J3DShapeVertexReferenceDecoder::Decode(
+                model.Document,
+                *shp1Section,
+                model.Shp1,
+                model.Vtx1,
+                model.DisplayLists,
+                model.ShapeMatrixPalette
+            );
+
+        if (!vertexReferenceResult.Succeeded())
+        {
+            return Failure(
+                "Failed to decode SHP1 vertex references: " +
+                vertexReferenceResult.Error
+            );
+        }
+
+        model.VertexReferences = vertexReferenceResult.Data;
+
+        const J3DGeometryAssemblyResult geometryResult =
+            J3DGeometryAssembler::Assemble(
+                model.VertexReferences,
+                model.VertexData,
+                model.DrawMatrices
+            );
+
+        if (!geometryResult.Succeeded())
+        {
+            return Failure(
+                "Failed to assemble J3D CPU geometry: " +
+                geometryResult.Error
+            );
+        }
+
+        model.Geometry = geometryResult.Geometry;
+
+        const J3DTriangleTopologyResult topologyResult =
+            J3DTriangleTopologyBuilder::Build(
+                model.Geometry
+            );
+
+        if (!topologyResult.Succeeded())
+        {
+            return Failure(
+                "Failed to build J3D triangle topology: " +
+                topologyResult.Error
+            );
+        }
+
+        model.TriangleGeometry = topologyResult.Geometry;
 
         J3DModelLoadResult result;
         result.Model = std::move(model);

@@ -6,6 +6,9 @@
 #include "Formats/J3D/J3DShapeMatrixPaletteTypes.h"
 #include "Formats/J3D/J3DShapeDisplayListTypes.h"
 #include "Formats/J3D/J3DVertexData.h"
+#include "Formats/J3D/J3DShapeVertexReferenceTypes.h"
+#include "Formats/J3D/J3DAssembledGeometryTypes.h"
+#include "Formats/J3D/J3DTriangleGeometryTypes.h"
 
 #include "Formats/J3D/Sections/INF1Types.h"
 #include "Formats/J3D/Sections/VTX1Types.h"
@@ -32,5 +35,8 @@ namespace Okari
         J3DShapeMatrixPalette ShapeMatrixPalette;
         J3DShapeDisplayListData DisplayLists;
         J3DDecodedVertexData VertexData;
+        J3DShapeVertexReferenceData VertexReferences;
+        J3DAssembledGeometry Geometry;
+        J3DTriangleGeometry TriangleGeometry;
     };
 }

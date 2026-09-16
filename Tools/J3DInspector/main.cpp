@@ -2242,6 +2242,146 @@ namespace
 			<< "Decoded TEX0: "
 			<< model.VertexData.TexCoords[0].size()
 			<< '\n';
+
+		std::size_t decodedPrimitiveCount = 0;
+		std::size_t decodedVertexReferenceCount = 0;
+		std::size_t explicitMatrixVertexCount = 0;
+		std::size_t implicitMatrixVertexCount = 0;
+		std::size_t invalidDrawMatrixCount = 0;
+
+		for (const Okari::J3DDecodedShapeGroup& group :
+			model.VertexReferences.Groups)
+		{
+			decodedPrimitiveCount += group.Primitives.size();
+
+			for (const Okari::J3DDecodedShapePrimitive& primitive :
+				group.Primitives)
+			{
+				decodedVertexReferenceCount += primitive.Vertices.size();
+
+				for (const Okari::J3DShapeVertexReference& vertex :
+					primitive.Vertices)
+				{
+					if (vertex.RawPositionMatrixIndex.has_value())
+						++explicitMatrixVertexCount;
+					else
+						++implicitMatrixVertexCount;
+
+					if (vertex.DrawMatrixIndex >= model.DrawMatrices.Matrices.size())
+						++invalidDrawMatrixCount;
+				}
+			}
+		}
+
+		std::cout
+			<< "Decoded vertex-reference groups: "
+			<< model.VertexReferences.Groups.size()
+			<< '\n'
+			<< "Decoded vertex-reference primitives: "
+			<< decodedPrimitiveCount
+			<< '\n'
+			<< "Decoded vertex references: "
+			<< decodedVertexReferenceCount
+			<< '\n'
+			<< "Vertices with PNMTXIDX: "
+			<< explicitMatrixVertexCount
+			<< '\n'
+			<< "Vertices with implicit matrix: "
+			<< implicitMatrixVertexCount
+			<< '\n'
+			<< "Invalid draw-matrix references: "
+			<< invalidDrawMatrixCount
+			<< '\n';
+
+		std::size_t assembledPrimitiveCount = 0;
+		std::size_t assembledVertexCount = 0;
+		std::size_t verticesWithNormal = 0;
+		std::size_t verticesWithColor0 = 0;
+		std::size_t verticesWithTex0 = 0;
+
+		std::set<std::uint16_t> referencedDrawMatrices;
+
+		for (const Okari::J3DAssembledShapeGroup& group :
+			model.Geometry.Groups)
+		{
+			assembledPrimitiveCount += group.Primitives.size();
+
+			for (const Okari::J3DAssembledPrimitive& primitive :
+				group.Primitives)
+			{
+				assembledVertexCount += primitive.Vertices.size();
+
+				for (const Okari::J3DAssembledVertex& vertex :
+					primitive.Vertices)
+				{
+					if (vertex.Normal.has_value())
+						++verticesWithNormal;
+
+					if (vertex.Colors[0].has_value())
+						++verticesWithColor0;
+
+					if (vertex.TexCoords[0].has_value())
+						++verticesWithTex0;
+
+					referencedDrawMatrices.insert(
+						vertex.DrawMatrixIndex
+					);
+				}
+			}
+		}
+
+		std::cout
+			<< "Assembled geometry groups: "
+			<< model.Geometry.Groups.size()
+			<< '\n'
+			<< "Assembled primitives: "
+			<< assembledPrimitiveCount
+			<< '\n'
+			<< "Assembled vertices: "
+			<< assembledVertexCount
+			<< '\n'
+			<< "Vertices with normal: "
+			<< verticesWithNormal
+			<< '\n'
+			<< "Vertices with CLR0: "
+			<< verticesWithColor0
+			<< '\n'
+			<< "Vertices with TEX0: "
+			<< verticesWithTex0
+			<< '\n'
+			<< "Referenced draw matrices: "
+			<< referencedDrawMatrices.size()
+			<< '\n';
+
+		std::size_t emptyTriangleRanges = 0;
+		std::size_t invalidTriangleRanges = 0;
+
+		for (const Okari::J3DTriangleRange& range :
+			model.TriangleGeometry.Ranges)
+		{
+			if (range.VertexCount == 0)
+				++emptyTriangleRanges;
+
+			if ((range.VertexCount % 3) != 0)
+				++invalidTriangleRanges;
+		}
+
+		std::cout
+			<< "Triangle ranges: "
+			<< model.TriangleGeometry.Ranges.size()
+			<< '\n'
+			<< "Triangle vertices: "
+			<< model.TriangleGeometry.Vertices.size()
+			<< '\n'
+			<< "Triangles: "
+			<< model.TriangleGeometry.TriangleCount()
+			<< '\n'
+			<< "Empty triangle ranges: "
+			<< emptyTriangleRanges
+			<< '\n'
+			<< "Invalid triangle ranges: "
+			<< invalidTriangleRanges
+			<< '\n';
 	}
 }
 
