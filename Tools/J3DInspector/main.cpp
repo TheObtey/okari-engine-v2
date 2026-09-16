@@ -2,6 +2,7 @@
 #include "Formats/J3D/J3DFileReader.h"
 #include "Formats/J3D/J3DPoseEvaluator.h"
 #include "Formats/J3D/J3DVertexDecoder.h"
+#include "Formats/J3D/J3DShapeDisplayListParser.h"
 
 #include "Formats/J3D/Sections/DRW1Parser.h"
 #include "Formats/J3D/Sections/EVP1Parser.h"
@@ -1428,6 +1429,119 @@ namespace
 			<< nonZeroTerminatorTypes
 			<< '\n';
 	}
+
+	void PrintShapeDisplayListSummary(
+		const Okari::J3DShapeDisplayListData& data
+	)
+	{
+		std::size_t primitiveCount = 0;
+		std::size_t vertexCount = 0;
+		std::size_t embeddedNoopCount = 0;
+		std::size_t trailingNoopCount = 0;
+
+		std::array<std::size_t, 8> primitiveTypeCounts{};
+
+		std::cout
+			<< "\nSHP1 DISPLAY LIST STRUCTURE\n";
+
+		for (
+			const Okari::J3DShapeDisplayListGroup& group :
+			data.Groups
+			)
+		{
+			primitiveCount +=
+				group.Primitives.size();
+
+			embeddedNoopCount +=
+				group.EmbeddedNoopByteCount;
+
+			trailingNoopCount +=
+				group.TrailingNoopByteCount;
+
+			for (
+				const Okari::J3DShapePrimitiveRecord& primitive :
+				group.Primitives
+				)
+			{
+				vertexCount += primitive.VertexCount;
+
+				const std::size_t primitiveIndex =
+					(
+						static_cast<std::uint8_t>(
+							primitive.Type
+							) -
+						0x80
+						) /
+					0x08;
+
+				if (
+					primitiveIndex <
+					primitiveTypeCounts.size()
+					)
+				{
+					++primitiveTypeCounts[
+						primitiveIndex
+					];
+				}
+			}
+
+			std::cout
+				<< "shape["
+				<< group.ShapeIndex
+				<< "] group["
+				<< group.GroupIndex
+				<< "] vertexSize="
+				<< group.EncodedVertexSize
+				<< " primitives="
+				<< group.Primitives.size()
+				<< " trailingNoops="
+				<< group.TrailingNoopByteCount
+				<< " embeddedNoops="
+				<< group.EmbeddedNoopByteCount
+				<< '\n';
+		}
+
+		std::cout
+			<< "Decoded groups: "
+			<< data.Groups.size()
+			<< '\n'
+			<< "Primitive records: "
+			<< primitiveCount
+			<< '\n'
+			<< "Referenced GX vertices: "
+			<< vertexCount
+			<< '\n'
+			<< "QUADS: "
+			<< primitiveTypeCounts[0]
+			<< '\n'
+			<< "QUAD_STRIP: "
+			<< primitiveTypeCounts[1]
+			<< '\n'
+			<< "TRIANGLES: "
+			<< primitiveTypeCounts[2]
+			<< '\n'
+			<< "TRIANGLE_STRIP: "
+			<< primitiveTypeCounts[3]
+			<< '\n'
+			<< "TRIANGLE_FAN: "
+			<< primitiveTypeCounts[4]
+			<< '\n'
+			<< "LINES: "
+			<< primitiveTypeCounts[5]
+			<< '\n'
+			<< "LINE_STRIP: "
+			<< primitiveTypeCounts[6]
+			<< '\n'
+			<< "POINTS: "
+			<< primitiveTypeCounts[7]
+			<< '\n'
+			<< "Embedded NOOP bytes: "
+			<< embeddedNoopCount
+			<< '\n'
+			<< "Trailing NOOP bytes: "
+			<< trailingNoopCount
+			<< '\n';
+	}
 }
 
 int main(int argc, char** argv)
@@ -1535,6 +1649,29 @@ int main(int argc, char** argv)
 	PrintShapeVertexDescriptors(
 		shp1,
 		vtx1
+	);
+
+	const Okari::J3DShapeDisplayListParseResult
+		displayListResult =
+		Okari::J3DShapeDisplayListParser::Parse(
+			document,
+			*shp1Section,
+			shp1,
+			vtx1
+		);
+
+	if (!displayListResult.Succeeded())
+	{
+		std::cerr
+			<< "\n[J3DInspector] "
+			<< displayListResult.Error
+			<< '\n';
+
+		return 1;
+	}
+
+	PrintShapeDisplayListSummary(
+		displayListResult.Data
 	);
 
 	const Okari::J3DSectionInfo* jnt1Section =
