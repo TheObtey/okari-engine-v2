@@ -1566,6 +1566,86 @@ namespace
 			<< '\n';
 	}
 
+	void PrintMatrixIndexUsage(
+		const char* name,
+		const Okari::J3DDirectMatrixIndexUsage& usage
+	)
+	{
+		std::cout
+			<< name
+			<< ": ";
+
+		if (!usage.Used)
+		{
+			std::cout << "unused\n";
+			return;
+		}
+
+		std::set<unsigned int> logicalSlots;
+
+		std::cout
+			<< "references="
+			<< usage.ReferenceCount
+			<< " minRaw="
+			<< static_cast<unsigned int>(
+				usage.MinimumRawValue
+				)
+			<< " maxRaw="
+			<< static_cast<unsigned int>(
+				usage.MaximumRawValue
+				)
+			<< " distinct="
+			<< usage.DistinctValueCount()
+			<< " nonMultipleOf3="
+			<< usage.NonMultipleOfThreeCount
+			<< '\n'
+			<< "    rawValues=[";
+
+		bool first = true;
+
+		for (
+			std::size_t rawValue = 0;
+			rawValue < usage.SeenRawValues.size();
+			++rawValue
+			)
+		{
+			if (!usage.SeenRawValues[rawValue])
+				continue;
+
+			if (!first)
+				std::cout << ", ";
+
+			std::cout << rawValue;
+			first = false;
+
+			logicalSlots.insert(
+				static_cast<unsigned int>(
+					rawValue / 3
+					)
+			);
+		}
+
+		std::cout
+			<< "]\n"
+			<< "    candidateSlots=[";
+
+		first = true;
+
+		for (
+			const unsigned int slot :
+		logicalSlots
+			)
+		{
+			if (!first)
+				std::cout << ", ";
+
+			std::cout << slot;
+			first = false;
+		}
+
+		std::cout << "]\n";
+	}
+
 	void PrintShapeVertexIndexUsage(
 		const Okari::J3DShapeVertexIndexUsage& usage,
 		const Okari::J3DINF1Data& inf1
@@ -1573,6 +1653,35 @@ namespace
 	{
 		std::cout
 			<< "\nSHP1 VERTEX INDEX USAGE\n";
+
+		std::cout
+			<< "\nDirect matrix indices\n";
+
+		PrintMatrixIndexUsage(
+			"PNMTXIDX",
+			usage.MatrixIndices.Position
+		);
+
+		for (
+			std::size_t channel = 0;
+			channel <
+			usage.MatrixIndices.TexCoords.size();
+			++channel
+			)
+		{
+			const std::string name =
+				"TEX" +
+				std::to_string(channel) +
+				"MTXIDX";
+
+			PrintMatrixIndexUsage(
+				name.c_str(),
+				usage.MatrixIndices.TexCoords[channel]
+			);
+		}
+
+		std::cout
+			<< "\nIndexed vertex arrays\n";
 
 		PrintIndexRange("POS", usage.Position);
 		PrintIndexRange("NRM", usage.Normal);

@@ -5,6 +5,7 @@
 #include <array>
 #include <cstdint>
 #include <string>
+#include <cstddef>
 
 namespace Okari
 {
@@ -32,11 +33,69 @@ namespace Okari
 		}
 	};
 
+	struct J3DDirectMatrixIndexUsage
+	{
+		bool Used = false;
+
+		std::uint8_t MinimumRawValue = 0;
+		std::uint8_t MaximumRawValue = 0;
+
+		std::uint64_t ReferenceCount = 0;
+		std::uint64_t NonMultipleOfThreeCount = 0;
+
+		std::array<bool, 256> SeenRawValues{};
+
+		void Observe(std::uint8_t rawValue)
+		{
+			if (!Used)
+			{
+				MinimumRawValue = rawValue;
+				MaximumRawValue = rawValue;
+				Used = true;
+			}
+			else
+			{
+				if (rawValue < MinimumRawValue)
+					MinimumRawValue = rawValue;
+
+				if (rawValue > MaximumRawValue)
+					MaximumRawValue = rawValue;
+			}
+
+			++ReferenceCount;
+
+			if ((rawValue % 3) != 0)
+				++NonMultipleOfThreeCount;
+
+			SeenRawValues[rawValue] = true;
+		}
+
+		std::size_t DistinctValueCount() const
+		{
+			std::size_t count = 0;
+
+			for (const bool seen : SeenRawValues)
+			{
+				if (seen)
+					++count;
+			}
+
+			return count;
+		}
+	};
+
+	struct J3DShapeMatrixIndexUsage
+	{
+		J3DDirectMatrixIndexUsage Position;
+		std::array<J3DDirectMatrixIndexUsage, 8> TexCoords;
+	};
+
 	struct J3DShapeVertexIndexUsage
 	{
 		J3DVertexIndexRange Position;
 		J3DVertexIndexRange Normal;
 		J3DVertexIndexRange NBT;
+		J3DShapeMatrixIndexUsage MatrixIndices;
 
 		std::array<J3DVertexIndexRange, 2> Colors;
 		std::array<J3DVertexIndexRange, 8> TexCoords;

@@ -75,6 +75,40 @@ namespace Okari
 					);
 		}
 
+		J3DDirectMatrixIndexUsage* ResolveMatrixIndexUsage(
+			J3DShapeVertexIndexUsage& usage,
+			J3DVertexAttribute attribute
+		)
+		{
+			if (
+				attribute ==
+				J3DVertexAttribute::PositionMatrixIndex
+				)
+			{
+				return &usage.MatrixIndices.Position;
+			}
+
+			if (
+				attribute >=
+				J3DVertexAttribute::TexCoord0MatrixIndex &&
+				attribute <=
+				J3DVertexAttribute::TexCoord7MatrixIndex
+				)
+			{
+				const std::size_t channel =
+					static_cast<std::size_t>(
+						static_cast<std::uint32_t>(attribute) -
+						static_cast<std::uint32_t>(
+							J3DVertexAttribute::TexCoord0MatrixIndex
+							)
+						);
+
+				return &usage.MatrixIndices.TexCoords[channel];
+			}
+
+			return nullptr;
+		}
+
 		J3DVertexIndexRange* ResolveIndexRange(
 			J3DShapeVertexIndexUsage& usage,
 			J3DVertexAttribute attribute,
@@ -258,9 +292,26 @@ namespace Okari
 								);
 							}
 
-							// La valeur sera interprétée lors de la
-							// résolution des palettes de matrices.
-							reader.Skip(1);
+							J3DDirectMatrixIndexUsage* matrixUsage =
+								ResolveMatrixIndexUsage(
+									usage,
+									descriptor.Attribute
+								);
+
+							if (matrixUsage == nullptr)
+							{
+								return Failure(
+									"Unsupported GX matrix-index attribute"
+								);
+							}
+
+							const std::uint8_t rawMatrixIndex =
+								reader.ReadU8();
+
+							matrixUsage->Observe(
+								rawMatrixIndex
+							);
+
 							continue;
 						}
 
