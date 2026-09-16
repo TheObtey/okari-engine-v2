@@ -9,6 +9,8 @@
 #include "Formats/J3D/J3DGeometryAssembler.h"
 #include "Formats/J3D/J3DTriangleTopologyBuilder.h"
 
+#include "Formats/J3D/J3DModelLoader.h"
+
 #include "Formats/J3D/Sections/DRW1Parser.h"
 #include "Formats/J3D/Sections/EVP1Parser.h"
 #include "Formats/J3D/Sections/INF1Parser.h"
@@ -2093,6 +2095,154 @@ namespace
 			<< invalidRanges
 			<< '\n';
 	}
+
+	void PrintModelLoaderSmokeTest(
+		const Okari::J3DModelData& model
+	)
+	{
+		std::cout
+			<< "\nJ3D MODEL LOADER SMOKE TEST\n"
+			<< "Sections: "
+			<< model.Document.Sections.size()
+			<< '\n'
+			<< "INF1 positions: "
+			<< model.Inf1.VertexPositionCount
+			<< '\n'
+			<< "VTX1 arrays: "
+			<< model.Vtx1.Arrays.size()
+			<< '\n'
+			<< "EVP1 envelopes: "
+			<< model.Evp1.Envelopes.size()
+			<< '\n'
+			<< "DRW1 definitions: "
+			<< model.Drw1.Matrices.size()
+			<< '\n'
+			<< "JNT1 joints: "
+			<< model.Jnt1.Joints.size()
+			<< '\n'
+			<< "SHP1 shapes: "
+			<< model.Shp1.Shapes.size()
+			<< '\n'
+			<< "SHP1 matrix groups: ";
+
+		std::size_t matrixGroupCount = 0;
+
+		for (
+			const Okari::J3DShapeRecord& shape :
+			model.Shp1.Shapes
+			)
+		{
+			matrixGroupCount +=
+				shape.MatrixGroups.size();
+		}
+
+		std::cout
+			<< matrixGroupCount
+			<< '\n';
+
+		std::cout
+			<< "Rest pose joints: "
+			<< model.RestPose.Joints.size()
+			<< '\n'
+			<< "Rest pose roots: "
+			<< model.RestPose.RootJointIndices.size()
+			<< '\n'
+			<< "Rest pose scaling rule: 0x"
+			<< std::hex
+			<< std::uppercase
+			<< model.RestPose.ScalingRule
+			<< std::dec
+			<< '\n';
+
+		std::cout
+			<< "DRW1 raw matrices: "
+			<< model.DrawMatrices.RawDefinitionCount
+			<< '\n'
+			<< "DRW1 effective matrices: "
+			<< model.DrawMatrices.EffectiveDefinitionCount
+			<< '\n'
+			<< "DRW1 rigid matrices: "
+			<< model.DrawMatrices.RigidMatrixCount
+			<< '\n'
+			<< "DRW1 envelope matrices: "
+			<< model.DrawMatrices.EnvelopeMatrixCount
+			<< '\n'
+			<< "DRW1 duplicated envelope suffix removed: "
+			<< (
+				model.DrawMatrices.RemovedDuplicatedEnvelopeSuffix
+				? "yes"
+				: "no"
+				)
+			<< '\n'
+			<< "DRW1 max bind-pose identity error: "
+			<< model.DrawMatrices.MaximumEnvelopeIdentityError
+			<< '\n';
+
+		std::cout
+			<< "DRW1 palette size: "
+			<< model.DrawMatrices.Matrices.size()
+			<< '\n';
+
+		std::cout
+			<< "SHP1 resolved matrix groups: "
+			<< model.ShapeMatrixPalette.Groups.size()
+			<< '\n'
+			<< "SHP1 loaded matrix slots: "
+			<< model.ShapeMatrixPalette.LoadedSlotCount
+			<< '\n'
+			<< "SHP1 reused matrix slots: "
+			<< model.ShapeMatrixPalette.ReusedSlotCount
+			<< '\n'
+			<< "SHP1 maximum draw-matrix index: "
+			<< model.ShapeMatrixPalette.MaximumDrawMatrixIndex
+			<< '\n';
+
+		std::size_t primitiveCount = 0;
+		std::size_t referencedVertexCount = 0;
+
+		for (const Okari::J3DShapeDisplayListGroup& group :
+			model.DisplayLists.Groups)
+		{
+			primitiveCount += group.Primitives.size();
+
+			for (const Okari::J3DShapePrimitiveRecord& primitive :
+				group.Primitives)
+			{
+				referencedVertexCount += primitive.VertexCount;
+			}
+		}
+
+		std::cout
+			<< "GX display-list groups: "
+			<< model.DisplayLists.Groups.size()
+			<< '\n'
+			<< "GX primitives: "
+			<< primitiveCount
+			<< '\n'
+			<< "GX vertex references: "
+			<< referencedVertexCount
+			<< '\n';
+
+		std::cout
+			<< "Decoded positions: "
+			<< model.VertexData.Positions.size()
+			<< '\n'
+			<< "Decoded normals: "
+			<< model.VertexData.Normals.size()
+			<< '\n'
+			<< "Decoded NBT frames: "
+			<< model.VertexData.NBTFrames.size()
+			<< '\n'
+			<< "Decoded CLR0: "
+			<< model.VertexData.Colors[0].size()
+			<< '\n'
+			<< "Decoded CLR1: "
+			<< model.VertexData.Colors[1].size()
+			<< '\n'
+			<< "Decoded TEX0: "
+			<< model.VertexData.TexCoords[0].size()
+			<< '\n';
+	}
 }
 
 int main(int argc, char** argv)
@@ -2105,6 +2255,23 @@ int main(int argc, char** argv)
 
 		return 1;
 	}
+
+	const Okari::J3DModelLoadResult modelLoadResult =
+		Okari::J3DModelLoader::Load(argv[1]);
+
+	if (!modelLoadResult.Succeeded())
+	{
+		std::cerr
+			<< "[J3DInspector] J3DModelLoader: "
+			<< modelLoadResult.Error
+			<< '\n';
+
+		return 1;
+	}
+
+	PrintModelLoaderSmokeTest(
+		modelLoadResult.Model
+	);
 
 	const Okari::J3DReadResult readResult = Okari::J3DFileReader::Read(argv[1]);
 

@@ -17,6 +17,7 @@ set(J3D_SOURCES
     Engine/IO/BigEndianReader.cpp
 
     Engine/Formats/J3D/J3DFileReader.cpp
+    Engine/Formats/J3D/J3DModelLoader.cpp
     Engine/Formats/J3D/J3DStringTable.cpp
     Engine/Formats/J3D/J3DPoseEvaluator.cpp
     Engine/Formats/J3D/J3DDrawMatrixEvaluator.cpp
