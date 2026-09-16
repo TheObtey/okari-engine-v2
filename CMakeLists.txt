@@ -117,6 +117,28 @@ target_include_directories(J3DInspector PRIVATE
 )
 
 # =========================
+# J3D VIEWER
+# =========================
+
+add_executable(J3DViewer
+    Tools/J3DViewer/main.cpp
+    ${ENGINE_SOURCES}
+)
+
+target_include_directories(J3DViewer PRIVATE
+    ${COMMON_INCLUDES}
+)
+
+target_link_libraries(J3DViewer PRIVATE
+    glfw
+    OpenGL::GL
+)
+
+target_compile_definitions(J3DViewer PRIVATE
+    OKARI_ASSET_DIR="${CMAKE_SOURCE_DIR}/Assets"
+)
+
+# =========================
 # SANDBOX
 # =========================
 
@@ -189,4 +211,10 @@ add_custom_command(TARGET OkariEditor POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_SOURCE_DIR}/Assets
     $<TARGET_FILE_DIR:OkariEditor>/Assets
+)
+
+add_custom_command(TARGET J3DViewer POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/Assets
+    $<TARGET_FILE_DIR:J3DViewer>/Assets
 )
