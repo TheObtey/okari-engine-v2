@@ -5,6 +5,7 @@
 #include "Formats/J3D/J3DVertexDecoder.h"
 #include "Formats/J3D/J3DShapeDisplayListParser.h"
 #include "Formats/J3D/J3DShapeVertexIndexScanner.h"
+#include "Formats/J3D/J3DShapeVertexReferenceDecoder.h"
 
 #include "Formats/J3D/Sections/DRW1Parser.h"
 #include "Formats/J3D/Sections/EVP1Parser.h"
@@ -1774,6 +1775,176 @@ namespace
 			<< drawPalette.Matrices.size()
 			<< '\n';
 	}
+
+	void PrintShapeVertexReferences(
+		const Okari::J3DShapeVertexReferenceData& data,
+		std::size_t drawMatrixCount
+	)
+	{
+		std::size_t groupCount = 0;
+		std::size_t primitiveCount = 0;
+		std::size_t vertexCount = 0;
+
+		std::size_t explicitMatrixVertices = 0;
+		std::size_t implicitMatrixVertices = 0;
+		std::size_t invalidDrawMatrices = 0;
+
+		std::size_t sampleCount = 0;
+
+		std::cout
+			<< "\nSHP1 DECODED VERTEX REFERENCES\n";
+
+		for (
+			const Okari::J3DDecodedShapeGroup& group :
+			data.Groups
+			)
+		{
+			++groupCount;
+
+			for (
+				const Okari::J3DDecodedShapePrimitive& primitive :
+				group.Primitives
+				)
+			{
+				++primitiveCount;
+
+				for (
+					const Okari::J3DShapeVertexReference& vertex :
+					primitive.Vertices
+					)
+				{
+					++vertexCount;
+
+					if (
+						vertex.RawPositionMatrixIndex.has_value()
+						)
+					{
+						++explicitMatrixVertices;
+					}
+					else
+					{
+						++implicitMatrixVertices;
+					}
+
+					if (
+						vertex.DrawMatrixIndex >=
+						drawMatrixCount
+						)
+					{
+						++invalidDrawMatrices;
+					}
+
+					if (sampleCount < 12)
+					{
+						std::cout
+							<< "shape["
+							<< group.ShapeIndex
+							<< "] group["
+							<< group.GroupIndex
+							<< "]"
+							<< " POS="
+							<< *vertex.PositionIndex
+							<< " NRM=";
+
+						if (
+							vertex.NormalIndices[0].
+							has_value()
+							)
+						{
+							std::cout
+								<< *vertex.NormalIndices[0];
+						}
+						else
+						{
+							std::cout << "none";
+						}
+
+						std::cout
+							<< " CLR0=";
+
+						if (
+							vertex.ColorIndices[0].
+							has_value()
+							)
+						{
+							std::cout
+								<< *vertex.ColorIndices[0];
+						}
+						else
+						{
+							std::cout << "none";
+						}
+
+						std::cout
+							<< " TEX0=";
+
+						if (
+							vertex.TexCoordIndices[0].
+							has_value()
+							)
+						{
+							std::cout
+								<< *vertex.TexCoordIndices[0];
+						}
+						else
+						{
+							std::cout << "none";
+						}
+
+						std::cout
+							<< " matrixSlot="
+							<< static_cast<unsigned int>(
+								vertex.PositionMatrixSlot
+								)
+							<< " drawMatrix="
+							<< vertex.DrawMatrixIndex;
+
+						if (
+							vertex.RawPositionMatrixIndex.
+							has_value()
+							)
+						{
+							std::cout
+								<< " rawPNMTXIDX="
+								<< static_cast<unsigned int>(
+									*vertex.
+									RawPositionMatrixIndex
+									);
+						}
+						else
+						{
+							std::cout
+								<< " rawPNMTXIDX=implicit";
+						}
+
+						std::cout << '\n';
+
+						++sampleCount;
+					}
+				}
+			}
+		}
+
+		std::cout
+			<< "Decoded groups: "
+			<< groupCount
+			<< '\n'
+			<< "Decoded primitives: "
+			<< primitiveCount
+			<< '\n'
+			<< "Decoded vertex references: "
+			<< vertexCount
+			<< '\n'
+			<< "Vertices with PNMTXIDX: "
+			<< explicitMatrixVertices
+			<< '\n'
+			<< "Vertices with implicit matrix: "
+			<< implicitMatrixVertices
+			<< '\n'
+			<< "Invalid draw-matrix references: "
+			<< invalidDrawMatrices
+			<< '\n';
+	}
 }
 
 int main(int argc, char** argv)
@@ -2081,6 +2252,32 @@ int main(int argc, char** argv)
 	PrintShapeMatrixPalette(
 		shapeMatrixPalette,
 		drawPalette
+	);
+
+	const Okari::J3DShapeVertexReferenceDecodeResult
+		vertexReferenceResult =
+		Okari::J3DShapeVertexReferenceDecoder::Decode(
+			document,
+			*shp1Section,
+			shp1,
+			vtx1,
+			displayListResult.Data,
+			shapeMatrixPalette
+		);
+
+	if (!vertexReferenceResult.Succeeded())
+	{
+		std::cerr
+			<< "\n[J3DInspector] "
+			<< vertexReferenceResult.Error
+			<< '\n';
+
+		return 1;
+	}
+
+	PrintShapeVertexReferences(
+		vertexReferenceResult.Data,
+		drawPalette.Matrices.size()
 	);
 
 	if (document.Data.size() != document.Header.DeclaredFileSize)
